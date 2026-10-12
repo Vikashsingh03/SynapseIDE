@@ -8,6 +8,7 @@ import TabBar from '../components/TabBar';
 import EditorPanel from '../components/EditorPanel';
 import Toolbar from '../components/Toolbar';
 import OutputPanel from '../components/OutputPanel';
+import SnippetHost from '../components/SnippetHost';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import CommandPalette from '../components/CommandPalette';
@@ -238,6 +239,8 @@ function EditorPage() {
           onToggleMinimap={toggleMinimap}
           onOpenReview={() => setReviewOpen(true)}
         />
+
+        <SnippetHost theme={theme} />
 
         {/* Neura code review modal */}
         <CodeReviewModal

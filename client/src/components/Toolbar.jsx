@@ -21,7 +21,8 @@ import {
   Share2,
   LogOut,
   Command,
-  ScanSearch
+  ScanSearch,
+  Code2,
 } from 'lucide-react';
 
 export default function Toolbar({
@@ -290,6 +291,13 @@ export default function Toolbar({
 
       {/* Right: theme, room, exit, avatar */}
       <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('synapse:open-snippets'))}
+          className={t.iconBtn}
+          title="Code snippets (prefix + Tab in editor)"
+        >
+          <Code2 size={17} />
+        </button>
         <NotificationBell theme={theme} />
         <button
           onClick={onToggleTheme}

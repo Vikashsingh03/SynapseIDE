@@ -11,6 +11,7 @@ import TabBar from '../components/TabBar';
 import EditorPanel from '../components/EditorPanel';
 import Toolbar from '../components/Toolbar';
 import OutputPanel from '../components/OutputPanel';
+import SnippetHost from '../components/SnippetHost';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import VoiceChat from '../components/VoiceChat';
@@ -743,6 +744,8 @@ function RoomSession({ roomId }) {
       />
 
       <div className="flex flex-1 overflow-hidden p-2 gap-2 min-h-0">
+        <SnippetHost theme={theme} />
+
         {!zenMode && (
           <Sidebar
             theme={theme}

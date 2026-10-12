@@ -3,6 +3,7 @@ import Editor from '@monaco-editor/react';
 import { MonacoBinding } from 'y-monaco';
 import { useFiles } from '../contexts/FileContext';
 import { getMonacoLanguage } from '../utils/languageMap';
+import { registerSnippetProvider, registerSnippetUseCommand } from '../services/snippetProvider';
 import { getThemeClasses } from '../utils/theme';
 import { Loader2, Users, FileCode2 } from 'lucide-react';
 
@@ -278,6 +279,55 @@ export default function EditorPanel({
         : 'vs';
   const language = activeFile ? getMonacoLanguage(activeFile.name) : 'plaintext';
 
+  // Re-register snippet provider when the file language changes
+  useEffect(() => {
+    if (monacoRef.current && language !== 'plaintext') {
+      registerSnippetProvider(monacoRef.current, language).catch(() => {});
+    }
+  }, [language]);
+
+  // Collect current selection for "save as snippet"
+  useEffect(() => {
+    const onCollect = () => {
+      const editor = editorRef.current;
+      let code = '';
+      try {
+        const model = editor?.getModel();
+        const sel = editor?.getSelection();
+        if (model && sel && !sel.isEmpty()) {
+          code = model.getValueInRange(sel);
+        }
+      } catch {}
+      window.dispatchEvent(new CustomEvent('synapse:save-snippet', { detail: { code } }));
+    };
+    window.addEventListener('synapse:collect-selection', onCollect);
+    return () => window.removeEventListener('synapse:collect-selection', onCollect);
+  }, []);
+
+  // Insert snippet from SnippetManager (with tab-stop support)
+  useEffect(() => {
+    const onInsert = (e) => {
+      const editor = editorRef.current;
+      const code = e.detail?.code;
+      if (!editor || !code) return;
+      editor.focus();
+      try {
+        // VS Code's own snippet controller — ${1:...} tab stops work natively
+        const ctrl = editor.getContribution('snippetController2');
+        if (ctrl && typeof ctrl.insert === 'function') {
+          ctrl.insert(code);
+          return;
+        }
+      } catch {}
+      // Fallback: plain insert at cursor
+      const sel = editor.getSelection();
+      const op = { range: sel, text: code, forceMoveMarkers: true };
+      editor.executeEdits('synapse-snippet', [op]);
+    };
+    window.addEventListener('synapse:insert-snippet', onInsert);
+    return () => window.removeEventListener('synapse:insert-snippet', onInsert);
+  }, []);
+
   // Keep sharedTextRef current so onMount can access the latest Y.Text
   // without a stale-closure issue.
   useEffect(() => {
@@ -454,6 +504,13 @@ export default function EditorPanel({
 
             // Register custom color themes (Dracula, Monokai, Night Owl, GitHub Dark)
             defineCustomEditorThemes(monaco);
+
+            // ─── Snippet Tab-completion (VS Code style) ───
+            try {
+              const mLang = getMonacoLanguage(activeFile?.name || '');
+              registerSnippetProvider(monaco, mLang);
+              registerSnippetUseCommand(editor);
+            } catch {}
 
             // If sharedText already arrived before the editor mounted, create
             // the binding immediately here so we don't wait for a re-render.

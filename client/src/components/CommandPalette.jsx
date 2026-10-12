@@ -24,6 +24,8 @@ import {
   Camera,
   Palette,
   Eye,
+  Code2,
+  BookmarkPlus,
 } from 'lucide-react';
 
 /**
@@ -183,6 +185,20 @@ export default function CommandPalette({
         label: 'Review code with Neura',
         hint: 'AI',
         run: () => onOpenReview?.(),
+      },
+      {
+        key: 'snippets',
+        icon: Code2,
+        label: 'Snippets: browse & insert',
+        hint: 'Tab',
+        run: () => window.dispatchEvent(new CustomEvent('synapse:open-snippets')),
+      },
+      {
+        key: 'snippet-save',
+        icon: BookmarkPlus,
+        label: 'Snippets: save selection as snippet',
+        hint: '',
+        run: () => window.dispatchEvent(new CustomEvent('synapse:collect-selection')),
       },
       {
         key: 'snapshot',
