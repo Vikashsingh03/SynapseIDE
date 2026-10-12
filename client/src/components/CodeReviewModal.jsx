@@ -229,7 +229,7 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
                 return (
                   <div
                     key={i}
-                    className={`rounded-xl border p-4 animate-fade-up ${theme === 'dark' ? 'bg-white/[0.03] border-white/10' : 'bg-slate-50 border-slate-200'}`}
+                    className={`rounded-xl border p-4 animate-fade-up ${theme === 'dark' ? 'bg-white/3 border-white/10' : 'bg-slate-50 border-slate-200'}`}
                     style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
                   >
                     <div className="flex items-center gap-2.5 mb-1.5">
