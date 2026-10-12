@@ -57,6 +57,46 @@ function emitParticipants(io, roomId) {
 const FILE_LOCK_TIMEOUT_MS = 45000;
 const roomLocks = new Map();
 
+// ─── Notifications: userId -> Set<socketId> for direct real-time emits ───
+const userSockets = new Map();
+const NotificationModel = require('../models/Notification');
+const UserModel = require('../models/User');
+
+function trackUserSocket(userId, socketId) {
+  const id = String(userId || '');
+  if (!id) return;
+  if (!userSockets.has(id)) userSockets.set(id, new Set());
+  userSockets.get(id).add(socketId);
+}
+
+function untrackUserSocket(userId, socketId) {
+  const id = String(userId || '');
+  const set = userSockets.get(id);
+  if (!set) return;
+  set.delete(socketId);
+  if (set.size === 0) userSockets.delete(id);
+}
+
+function emitToUser(io, userId, event, payload) {
+  const set = userSockets.get(String(userId || ''));
+  if (!set) return;
+  for (const socketId of set) {
+    io.to(socketId).emit(event, payload);
+  }
+}
+
+// Extract @username mentions from chat content
+function extractMentions(content) {
+  const mentions = new Set();
+  const re = /@([A-Za-z0-9_.-]{2,32})/g;
+  let m;
+  const text = String(content || '');
+  while ((m = re.exec(text)) !== null) {
+    mentions.add(m[1].toLowerCase());
+  }
+  return [...mentions];
+}
+
 async function recordRoomMembership(roomId, participant) {
   const userId = String(participant?.userId || '').trim();
   if (!roomId || !userId) {
@@ -223,6 +263,7 @@ function createSocketServer(httpServer) {
   io.use(verifySocketUser);
 
   io.on('connection', (socket) => {
+    trackUserSocket(socket.data.user?.userId, socket.id);
     // P0-03: never trust userId/username from the payload — identity always
     // comes from the verified JWT (socket.data.user).
     socket.on('join-room', async ({ roomId } = {}) => {
@@ -354,6 +395,37 @@ function createSocketServer(httpServer) {
         }
         const newMessage = await MessageModel.create(msgData);
         io.to(activeRoomId).emit('chat-message', newMessage);
+
+        // ─── @mention notifications ───
+        try {
+          const mentionNames = extractMentions(content).filter(
+            (n) => n !== String(msgData.senderName || '').toLowerCase()
+          );
+          if (mentionNames.length > 0) {
+            const mentionedUsers = await UserModel.find({
+              name: { $in: mentionNames.map((n) => new RegExp(`^${escapeRegExp(n)}$`, 'i')) },
+            })
+              .select('_id name')
+              .lean();
+            const senderId = String(msgData.senderId);
+            for (const u of mentionedUsers) {
+              const targetId = String(u._id);
+              if (targetId === senderId) continue;
+              const notif = await NotificationModel.create({
+                userId: targetId,
+                type: 'mention',
+                title: `${msgData.senderName} mentioned you`,
+                message: String(content).slice(0, 120),
+                roomId: activeRoomId,
+                fromUser: { userId: senderId, name: msgData.senderName },
+                link: `/room/${activeRoomId}`,
+              });
+              emitToUser(io, targetId, 'notification', notif);
+            }
+          }
+        } catch (mentionErr) {
+          console.error('Mention notification error:', mentionErr.message);
+        }
       } catch (err) {
         console.error('Error saving chat message:', err);
       }
@@ -801,6 +873,7 @@ function createSocketServer(httpServer) {
 
     socket.on('disconnect', () => {
       const roomId = socket.data.roomId;
+      untrackUserSocket(socket.data.user?.userId, socket.id);
       releaseLocksForSocket(io, socket);
       if (!roomId) {
         return;

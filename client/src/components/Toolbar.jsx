@@ -6,6 +6,7 @@ import { getThemeClasses } from '../utils/theme';
 import { LANGUAGES, getLanguageByExtension } from '../utils/languageMap';
 import { getAvatarColor, getAvatarStyle, getUserInitial } from '../utils/avatar';
 import SynapseLogo from './SynapseLogo';
+import NotificationBell from './NotificationBell';
 import {
   LayoutGrid,
   Play,
@@ -289,6 +290,7 @@ export default function Toolbar({
 
       {/* Right: theme, room, exit, avatar */}
       <div className="flex items-center gap-2 shrink-0">
+        <NotificationBell theme={theme} />
         <button
           onClick={onToggleTheme}
           className={t.iconBtn}

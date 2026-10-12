@@ -14,6 +14,7 @@ const aiRoute = require('./routes/ai');
 const authRoute = require('./routes/auth');
 const roomsRoute = require('./routes/rooms');
 const livekitRoute = require('./routes/livekit');
+const notificationsRoute = require('./routes/notifications');
 const { globalLimiter } = require('./middleware/rateLimits');
 const { createSocketServer } = require('./socket/socketManager');
 
@@ -56,6 +57,7 @@ app.use('/api/ai', aiRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/rooms', roomsRoute);
 app.use('/api/livekit', livekitRoute);
+app.use('/api/notifications', notificationsRoute);
 
 app.get('/api/health', (req, res) => {
   res.json({
