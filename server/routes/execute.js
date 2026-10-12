@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const authMiddleware = require('../middleware/auth');
 const { executeLimiter } = require('../middleware/rateLimits');
+const Activity = require('../models/Activity');
 
 const router = express.Router();
 
@@ -21,6 +22,28 @@ const LANGUAGE_MAP = {
   54: 'cpp',      // C++
   62: 'java',     // Java
 };
+
+const LANG_NAME = { 71: 'python', 63: 'javascript', 54: 'cpp', 62: 'java' };
+
+function dayBucket(d = new Date()) {
+  return d.toISOString().slice(0, 10);
+}
+
+// Fire-and-forget activity logging (never blocks the response)
+function logRun(userId, languageId, sourceCode, success) {
+  try {
+    const lines = String(sourceCode || '').split(/\r?\n/).filter((l) => l.trim()).length;
+    Activity.create({
+      userId: String(userId),
+      type: 'run',
+      language: LANG_NAME[Number(languageId)] || null,
+      languageId: Number(languageId) || null,
+      linesOfCode: lines,
+      success: !!success,
+      day: dayBucket(),
+    }).catch(() => {});
+  } catch {}
+}
 
 // Submit code and get result
 router.post('/execute', authMiddleware, executeLimiter, async (req, res) => {
@@ -56,6 +79,9 @@ router.post('/execute', authMiddleware, executeLimiter, async (req, res) => {
     });
 
     const data = response.data || {};
+
+    // Analytics: log the run (fire-and-forget)
+    logRun(req.user.userId || req.user.id, language_id, source_code, true);
 
     // Judge0-style status taaki existing frontend bina change ke chale
     res.json({

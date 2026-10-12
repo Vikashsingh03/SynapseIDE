@@ -16,6 +16,7 @@ const roomsRoute = require('./routes/rooms');
 const livekitRoute = require('./routes/livekit');
 const notificationsRoute = require('./routes/notifications');
 const snippetsRoute = require('./routes/snippets');
+const analyticsRoute = require('./routes/analytics');
 const { globalLimiter } = require('./middleware/rateLimits');
 const { createSocketServer } = require('./socket/socketManager');
 
@@ -60,6 +61,7 @@ app.use('/api/rooms', roomsRoute);
 app.use('/api/livekit', livekitRoute);
 app.use('/api/notifications', notificationsRoute);
 app.use('/api/snippets', snippetsRoute);
+app.use('/api/analytics', analyticsRoute);
 
 app.get('/api/health', (req, res) => {
   res.json({

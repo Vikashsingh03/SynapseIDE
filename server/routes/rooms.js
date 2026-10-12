@@ -2,6 +2,18 @@ const express = require('express');
 const authMiddleware = require('../middleware/auth');
 const Room = require('../models/Room');
 const { createRoom, getRoomSnapshot } = require('../socket/roomStore');
+const Activity = require('../models/Activity');
+
+function logActivity(userId, type, roomId) {
+  try {
+    Activity.create({
+      userId: String(userId),
+      type,
+      roomId: roomId || null,
+      day: new Date().toISOString().slice(0, 10),
+    }).catch(() => {});
+  } catch {}
+}
 
 const router = express.Router();
 
@@ -13,6 +25,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
   try {
     const room = await createRoom(req.user, roomName);
+    logActivity(req.user.userId || req.user.id, 'room_create', room.roomId);
     res.status(201).json({
       room: {
         roomId: room.roomId,

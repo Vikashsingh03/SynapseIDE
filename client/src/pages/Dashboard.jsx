@@ -20,6 +20,7 @@ import {
 import { getRecentRooms, getSharedRooms, deleteRoom } from '../services/roomService';
 import { getAvatarStyle, getUserInitial } from '../utils/avatar';
 import { getThemeClasses } from '../utils/theme';
+import AnalyticsSection from '../components/AnalyticsSection';
 import { readStorage } from '../utils/storage';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -442,6 +443,11 @@ export default function Dashboard() {
           {ACTIONS.map((action, i) => (
             <ActionCard key={action.to} action={action} index={i} t={t} />
           ))}
+        </section>
+
+        {/* Analytics */}
+        <section className="mb-12 animate-fade-up" style={{ animationDelay: '80ms' }}>
+          <AnalyticsSection theme={theme} />
         </section>
 
         {/* Rooms */}
