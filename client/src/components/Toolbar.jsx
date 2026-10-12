@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useFiles } from '../contexts/FileContext';
 import { executeCode } from '../services/api';
@@ -18,7 +18,8 @@ import {
   Moon,
   Copy,
   Share2,
-  LogOut
+  LogOut,
+  Command
 } from 'lucide-react';
 
 export default function Toolbar({
@@ -32,7 +33,8 @@ export default function Toolbar({
   onCopyInvite,
   onExitRoom,
   onExit,
-  currentUser
+  currentUser,
+  onOpenPalette
 }) {
   const { activeFile, renameFile } = useFiles();
   const [isRunning, setIsRunning] = useState(false);
@@ -83,6 +85,29 @@ export default function Toolbar({
       setIsRunning(false);
     }
   }, [activeFile, currentLang, stdinValue, isRunning, setOutput]);
+
+  // ── Tadka pack: command palette can trigger a run via CustomEvent ──
+  useEffect(() => {
+    const onRunEvent = () => handleRun();
+    window.addEventListener('synapse:run-code', onRunEvent);
+    return () => window.removeEventListener('synapse:run-code', onRunEvent);
+  }, [handleRun]);
+
+  // ── Tadka pack: Ctrl/Cmd + Enter runs code (from the editor, not from inputs) ──
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        const inMonaco = e.target?.closest?.('.monaco-editor');
+        const inField = e.target?.closest?.('input, textarea, [contenteditable="true"]');
+        if (inMonaco || !inField) {
+          e.preventDefault();
+          handleRun();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleRun]);
 
   const handleSave = () => {
     if (onSaveVersion) {
@@ -208,6 +233,16 @@ export default function Toolbar({
               </div>
             )}
           </div>
+
+          {/* Command palette trigger */}
+          <button
+            onClick={onOpenPalette}
+            title="Command palette (Ctrl+K or Ctrl+Shift+P)"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 hover:-translate-y-px active:translate-y-0 ${theme === 'dark' ? 'text-slate-300 hover:bg-white/[0.07]' : 'text-slate-600 hover:bg-white'}`}
+          >
+            <Command size={13} className="text-violet-400" />
+            <span className={t.kbd}>Ctrl K</span>
+          </button>
         </div>
       </div>
 

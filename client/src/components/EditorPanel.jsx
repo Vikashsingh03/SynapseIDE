@@ -148,6 +148,7 @@ function FileLockBanner({ activeFileLock, isReadOnly, lockNotice, theme }) {
 
 export default function EditorPanel({
   theme,
+  editorSettings,
   onCursorMove,
   onSelectionChange,
   onLocalChange,
@@ -365,10 +366,10 @@ export default function EditorPanel({
           options={{
             readOnly: isReadOnly,
             domReadOnly: isReadOnly,
-            fontSize: 15,
+            fontSize: editorSettings?.fontSize ?? 15,
             fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
             fontLigatures: true,
-            minimap: { enabled: true, scale: 1 },
+            minimap: { enabled: editorSettings?.minimap ?? true, scale: 1 },
             scrollBeyondLastLine: false,
             smoothScrolling: true,
             cursorBlinking: 'smooth',
@@ -376,7 +377,7 @@ export default function EditorPanel({
             renderLineHighlight: 'all',
             bracketPairColorization: { enabled: true },
             formatOnPaste: true,
-            wordWrap: 'off',
+            wordWrap: editorSettings?.wordWrap ?? 'off',
             padding: { top: 24, bottom: 24 },
             lineNumbers: 'on',
             glyphMargin: false,

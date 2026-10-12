@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileProvider } from '../contexts/FileContext';
 import { useAuth } from '../context/useAuth';
@@ -9,6 +9,8 @@ import Toolbar from '../components/Toolbar';
 import OutputPanel from '../components/OutputPanel';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
+import CommandPalette from '../components/CommandPalette';
+import { useEditorSettings } from '../hooks/useEditorSettings';
 import { readStorage, writeStorage } from '../utils/storage';
 import { getThemeClasses } from '../utils/theme';
 
@@ -28,6 +30,29 @@ function EditorPage() {
     error: null,
     running: false,
   });
+
+  // ── Tadka pack: command palette + editor personalization ──
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const {
+    settings: editorSettings,
+    increaseFont,
+    decreaseFont,
+    toggleWordWrap,
+    toggleMinimap,
+  } = useEditorSettings();
+
+  useEffect(() => {
+    const onKey = (e) => {
+      const isK = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !e.shiftKey;
+      const isVSCodeStyle = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p';
+      if (isK || isVSCodeStyle) {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
@@ -61,6 +86,7 @@ function EditorPage() {
             setOutput={setOutput}
             onExit={handleExit}
             currentUser={user}
+            onOpenPalette={() => setPaletteOpen(true)}
           />
         </div>
 
@@ -81,7 +107,7 @@ function EditorPage() {
               <TabBar theme={theme} />
 
               {/* Editor */}
-              <EditorPanel theme={theme} />
+              <EditorPanel theme={theme} editorSettings={editorSettings} />
 
               {/* Output */}
               <OutputPanel theme={theme} output={output} />
@@ -98,6 +124,20 @@ function EditorPage() {
         <div className="relative z-40 animate-fade-in" style={{ animationDelay: '240ms' }}>
           <StatusBar theme={theme} peersCount={0} />
         </div>
+
+        {/* ⌘K Command Palette */}
+        <CommandPalette
+          open={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onExit={handleExit}
+          settings={editorSettings}
+          onIncreaseFont={increaseFont}
+          onDecreaseFont={decreaseFont}
+          onToggleWordWrap={toggleWordWrap}
+          onToggleMinimap={toggleMinimap}
+        />
       </div>
     </FileProvider>
   );

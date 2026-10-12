@@ -19,6 +19,8 @@ import { getRoom } from '../services/roomService';
 import { RoomYjsManager } from '../services/yjsRoom';
 import { copyText } from '../utils/clipboard';
 import { readStorage, writeStorage } from '../utils/storage';
+import CommandPalette from '../components/CommandPalette';
+import { useEditorSettings } from '../hooks/useEditorSettings';
 
 const FILE_LOCK_RENEW_INTERVAL_MS = 15000;
 
@@ -40,6 +42,29 @@ function RoomSession({ roomId }) {
   const { files, activeFileId, openTabs, updateContent, replaceState, replaceSharedFiles } = useFiles();
   const prevFilesRef = useRef([]);
   const [theme, setTheme] = useState(() => readStorage('synapse-theme') || 'dark');
+
+  // ── Tadka pack: command palette + editor personalization ──
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const {
+    settings: editorSettings,
+    increaseFont,
+    decreaseFont,
+    toggleWordWrap,
+    toggleMinimap,
+  } = useEditorSettings();
+
+  useEffect(() => {
+    const onKey = (e) => {
+      const isK = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !e.shiftKey;
+      const isVSCodeStyle = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p';
+      if (isK || isVSCodeStyle) {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const [output, setOutput] = useState({
     stdout: '',
     stderr: '',
@@ -695,6 +720,7 @@ function RoomSession({ roomId }) {
         onExitRoom={handleExitRoom}
         onSaveVersion={handleSaveVersion}
         currentUser={toolbarUser}
+        onOpenPalette={() => setPaletteOpen(true)}
       />
 
       <div className={`flex flex-1 overflow-hidden p-2.5 gap-2.5 ${theme === 'dark' ? 'bg-[#030509]' : 'bg-slate-200/60'}`}>
@@ -715,6 +741,7 @@ function RoomSession({ roomId }) {
 
           <EditorPanel
             theme={theme}
+            editorSettings={editorSettings}
             onCursorMove={handleCursorMove}
             onSelectionChange={handleSelectionChange}
             onLocalChange={handleLocalChange}
@@ -738,6 +765,20 @@ function RoomSession({ roomId }) {
         peersCount={Object.keys(presence).length}
         activeFileLock={activeFileLock}
         currentUserId={user?.userId}
+      />
+
+      {/* ⌘K Command Palette */}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onExit={handleExitRoom}
+        settings={editorSettings}
+        onIncreaseFont={increaseFont}
+        onDecreaseFont={decreaseFont}
+        onToggleWordWrap={toggleWordWrap}
+        onToggleMinimap={toggleMinimap}
       />
     </div>
   );

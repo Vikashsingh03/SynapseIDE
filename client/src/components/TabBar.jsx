@@ -1,16 +1,41 @@
+import { useState } from 'react';
 import { useFiles } from '../contexts/FileContext';
+import { copyText } from '../utils/clipboard';
 import { getThemeClasses } from '../utils/theme';
-import { X, FileCode2, ChevronRight, Lock } from 'lucide-react';
+import { X, FileCode2, ChevronRight, Lock, Copy, Check, Download } from 'lucide-react';
 
 export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, currentUserId }) {
   const { files, openTabs, activeFileId, openTab, closeTab } = useFiles();
   const t = getThemeClasses(theme);
+  const [copied, setCopied] = useState(false);
 
   const tabFiles = openTabs
     .map(id => files.find(f => f.id === id))
     .filter(Boolean);
 
   const activeFile = files.find(f => f.id === activeFileId);
+
+  const handleCopyCode = async () => {
+    if (!activeFile) return;
+    const ok = await copyText(activeFile.content || '');
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!activeFile) return;
+    const blob = new Blob([activeFile.content || ''], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = activeFile.name || 'file.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   return (
     <>
@@ -72,6 +97,26 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
             <ChevronRight size={11} className="opacity-50" />
             <span className="syn-text-gradient font-semibold font-mono">{activeFile.name}</span>
           </>
+        )}
+
+        {/* Quick actions: copy + download active file */}
+        {activeFile && (
+          <span className="ml-auto flex items-center gap-0.5">
+            <button
+              onClick={handleCopyCode}
+              className={t.iconBtn + ' p-1.5!'}
+              title="Copy file code"
+            >
+              {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+            </button>
+            <button
+              onClick={handleDownload}
+              className={t.iconBtn + ' p-1.5!'}
+              title={`Download ${activeFile.name}`}
+            >
+              <Download size={13} />
+            </button>
+          </span>
         )}
       </div>
     </>
