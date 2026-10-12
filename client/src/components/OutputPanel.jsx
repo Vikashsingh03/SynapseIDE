@@ -12,8 +12,10 @@ import {
   MemoryStick,
   CircleDashed,
   Sparkles,
+  GitBranch,
 } from 'lucide-react';
 import TerminalPanel from './TerminalPanel';
+import GitPanel from './GitPanel';
 
 export default function OutputPanel({ theme, output, roomId }) {
   const [activeTab, setActiveTab] = useState('output');
@@ -115,7 +117,7 @@ export default function OutputPanel({ theme, output, roomId }) {
       {/* Header */}
       <div className="h-10 flex items-center justify-between pl-4 pr-2 border-b border-[#283348] bg-[#182131] shrink-0">
         <div className="flex gap-1 h-full items-end">
-          {['output', 'errors', 'terminal'].map((tab) => {
+          {['output', 'errors', 'terminal', 'git'].map((tab) => {
             const isActive = activeTab === tab && isOutputExpanded;
             return (
               <button
@@ -125,7 +127,7 @@ export default function OutputPanel({ theme, output, roomId }) {
                   isActive ? 'text-[#dce5f3]' : 'text-[#8290a8] hover:text-[#dce5f3]'
                 }`}
               >
-                {tab === 'output' ? <Terminal size={12} /> : tab === 'terminal' ? <SquareTerminal size={12} /> : <AlertCircle size={12} />}
+                {tab === 'output' ? <Terminal size={12} /> : tab === 'terminal' ? <SquareTerminal size={12} /> : tab === 'git' ? <GitBranch size={12} /> : <AlertCircle size={12} />}
                 {tab}
                 {tab === 'errors' && hasError && (
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -175,7 +177,12 @@ export default function OutputPanel({ theme, output, roomId }) {
           <TerminalPanel roomId={roomId} />
         </div>
       )}
-      {isOutputExpanded && activeTab !== 'terminal' && (
+      {isOutputExpanded && activeTab === 'git' && (
+        <div className="flex-1 min-h-0">
+          <GitPanel theme={theme} roomId={roomId} />
+        </div>
+      )}
+      {isOutputExpanded && activeTab !== 'terminal' && activeTab !== 'git' && (
         <div className="flex-1 overflow-auto font-mono text-xs custom-scrollbar min-h-0">
           {displayContent()}
         </div>
