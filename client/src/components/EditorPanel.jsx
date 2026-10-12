@@ -244,7 +244,6 @@ export default function EditorPanel({
   const monacoRef = useRef(null);
   const decorationsRef = useRef([]);
   const bindingRef = useRef(null);
-  const sharedTextRef = useRef(null);
 
   // ── Empty-file watermark: show a premium overlay when the file has no content ──
   const [isEmpty, setIsEmpty] = useState(
@@ -327,12 +326,6 @@ export default function EditorPanel({
     window.addEventListener('synapse:insert-snippet', onInsert);
     return () => window.removeEventListener('synapse:insert-snippet', onInsert);
   }, []);
-
-  // Keep sharedTextRef current so onMount can access the latest Y.Text
-  // without a stale-closure issue.
-  useEffect(() => {
-    sharedTextRef.current = sharedText;
-  }, [sharedText]);
 
   // ─── MonacoBinding ──────────────────────────────────────────────────────────
   //
@@ -512,24 +505,11 @@ export default function EditorPanel({
               registerSnippetUseCommand(editor);
             } catch {}
 
-            // If sharedText already arrived before the editor mounted, create
-            // the binding immediately here so we don't wait for a re-render.
-            // The binding useEffect will see bindingRef.current set and skip.
-            const currentSharedText = sharedTextRef.current;
-            if (currentSharedText) {
-              const model = editor.getModel();
-              if (model) {
-                if (bindingRef.current) {
-                  bindingRef.current.destroy();
-                }
-                bindingRef.current = new MonacoBinding(
-                  currentSharedText,
-                  model,
-                  new Set([editor])
-                );
-              }
-            }
-
+            // The binding is created ONLY by the binding useEffect below (it
+            // re-runs on the editorMountKey bump). Creating one here as well
+            // would risk two live MonacoBindings on the same Y.Text + model —
+            // each binding has its own mutex, so a double-bound pair
+            // echo-duplicates every keystroke (Enter included).
             // Bump the mount key so the binding useEffect re-evaluates with
             // the now-valid editorRef.current (handles the case where sharedText
             // arrives AFTER the editor mounts).

@@ -771,20 +771,10 @@ function createSocketServer(httpServer) {
 
       // P0-03: sender identity comes from the verified token only.
       const senderId = socket.data.user.userId;
-      const activeLock = roomLocks.get(activeRoomId)?.get(fileId);
-      if (activeLock && activeLock.userId !== senderId) {
-        socket.emit('lock-denied', {
-          fileId,
-          lockedBy: {
-            userId: activeLock.userId,
-            username: activeLock.username,
-            socketId: activeLock.socketId,
-            expiresAt: activeLock.expiresAt,
-          },
-        });
-        return;
-      }
-
+      // Google Docs mode: no exclusive edit locks — the Yjs CRDT merges
+      // concurrent edits. (Locks remain as presence hints only, via
+      // file-locks-updated.) Dropping a collaborator's keystrokes here would
+      // desync their doc from the shared one, so every code-change is applied.
       const nextState = applyDocumentUpdate(activeRoomId, fileId, changes);
       if (!nextState) {
         return;

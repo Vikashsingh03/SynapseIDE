@@ -124,9 +124,18 @@ function ensureRoomDocs(room, files = []) {
       return;
     }
 
-    const text = getSharedText(room.sharedDocs.get(file.id));
-    if (text.toString() !== (file.content ?? '')) {
-      room.sharedDocs.set(file.id, createSharedDoc(file.content ?? ''));
+    // The shared Y.Doc is the single source of truth for file content.
+    // NEVER rebuild it from the plain-text copy: a fresh Y.Doc gets a new
+    // clientID, so re-inserting the same text creates a concurrent history
+    // that CRDT-merges as duplicated content on every client (this was the
+    // "pressing Enter duplicates the whole file" bug — every sync-room-state
+    // with a slight mismatch forked the doc and doubled the text).
+    // Instead, sync the plain-text snapshot FROM the doc.
+    const doc = room.sharedDocs.get(file.id);
+    const docText = getSharedText(doc).toString();
+    if (docText !== (file.content ?? '')) {
+      file.content = docText;
+      file.updatedAt = Date.now();
     }
   });
 
