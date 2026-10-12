@@ -19,7 +19,8 @@ import {
   Copy,
   Share2,
   LogOut,
-  Command
+  Command,
+  ScanSearch
 } from 'lucide-react';
 
 export default function Toolbar({
@@ -34,7 +35,8 @@ export default function Toolbar({
   onExitRoom,
   onExit,
   currentUser,
-  onOpenPalette
+  onOpenPalette,
+  onOpenReview
 }) {
   const { activeFile, renameFile } = useFiles();
   const [isRunning, setIsRunning] = useState(false);
@@ -242,6 +244,16 @@ export default function Toolbar({
           >
             <Command size={13} className="text-violet-400" />
             <span className={t.kbd}>Ctrl K</span>
+          </button>
+
+          {/* Neura code review trigger */}
+          <button
+            onClick={onOpenReview}
+            title="Review code with Neura AI"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 hover:-translate-y-px active:translate-y-0 ${theme === 'dark' ? 'text-slate-300 hover:bg-white/[0.07]' : 'text-slate-600 hover:bg-white'}`}
+          >
+            <ScanSearch size={13} className="text-cyan-400" />
+            <span>Review</span>
           </button>
         </div>
       </div>

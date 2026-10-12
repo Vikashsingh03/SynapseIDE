@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useFiles } from '../contexts/FileContext';
+import { getLanguageByExtension } from '../utils/languageMap';
 import { getThemeClasses } from '../utils/theme';
 import {
   Terminal,
@@ -9,16 +11,38 @@ import {
   Zap,
   MemoryStick,
   CircleDashed,
+  Sparkles,
 } from 'lucide-react';
 
 export default function OutputPanel({ theme, output }) {
   const [activeTab, setActiveTab] = useState('output');
   const [isOutputExpanded, setIsOutputExpanded] = useState(true);
+  const { activeFile } = useFiles();
 
   const t = getThemeClasses(theme);
 
   const hasError = output?.stderr || output?.compile_output || output?.error;
   const isRunning = output?.running;
+
+  /** Sends the current error to Neura AI for a plain-words explanation. */
+  const handleExplainError = () => {
+    const errorText = output?.stderr || output?.compile_output || output?.error || '';
+    if (!errorText) return;
+    const lang = getLanguageByExtension(activeFile?.name || '');
+    const prompt = [
+      'My ' + lang.name + ' program failed with this error:',
+      '',
+      errorText,
+      '',
+      'Here is the code' + (activeFile?.name ? ' from ' + activeFile.name : '') + ':',
+      '```',
+      activeFile?.content || '',
+      '```',
+      '',
+      'Explain in simple words what went wrong and show me exactly how to fix it.',
+    ].join('\n');
+    window.dispatchEvent(new CustomEvent('synapse:ask-neura', { detail: { prompt } }));
+  };
 
   // The output terminal contents
   const displayContent = () => {
@@ -117,6 +141,16 @@ export default function OutputPanel({ theme, output }) {
           })}
         </div>
         <div className="flex items-center gap-2 text-[11px] font-mono">
+          {hasError && !isRunning && (
+            <button
+              onClick={handleExplainError}
+              title="Ask Neura AI to explain this error"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-sans font-semibold bg-linear-to-r from-violet-500/20 to-cyan-500/20 border border-violet-500/30 text-violet-300 hover:from-violet-500/35 hover:to-cyan-500/35 hover:-translate-y-px transition-all duration-200 cursor-pointer"
+            >
+              <Sparkles size={11} />
+              Explain with Neura
+            </button>
+          )}
           {output?.time && (
             <span className={`${t.chip} inline-flex items-center gap-1`}>
               <Zap size={10} className="text-amber-400" />

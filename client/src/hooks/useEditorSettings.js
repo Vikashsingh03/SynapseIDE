@@ -7,7 +7,17 @@ const DEFAULTS = {
   fontSize: 15,
   wordWrap: 'off', // 'off' | 'on'
   minimap: true,
+  editorTheme: 'auto', // 'auto' | 'dracula' | 'monokai' | 'night-owl' | 'github-dark'
 };
+
+/** Editor color themes available in the palette (auto = follow app theme). */
+export const EDITOR_THEMES = [
+  { id: 'auto', label: 'Auto (follow app)' },
+  { id: 'dracula', label: 'Dracula' },
+  { id: 'monokai', label: 'Monokai' },
+  { id: 'night-owl', label: 'Night Owl' },
+  { id: 'github-dark', label: 'GitHub Dark' },
+];
 
 const MIN_FONT = 11;
 const MAX_FONT = 28;
@@ -75,6 +85,18 @@ export function useEditorSettings() {
     });
   }, []);
 
+  const cycleEditorTheme = useCallback(() => {
+    setSettings((prev) => {
+      const ids = EDITOR_THEMES.map((x) => x.id);
+      const nextId = ids[(ids.indexOf(prev.editorTheme) + 1) % ids.length] || 'auto';
+      const next = { ...prev, editorTheme: nextId };
+      try {
+        writeStorage(STORAGE_KEY, next);
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
   return {
     settings,
     update,
@@ -82,5 +104,6 @@ export function useEditorSettings() {
     decreaseFont,
     toggleWordWrap,
     toggleMinimap,
+    cycleEditorTheme,
   };
 }

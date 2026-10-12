@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/auth');
 const { aiChatLimiter } = require('../middleware/rateLimits');
-const { requestGroqChat } = require('../services/groqService');
+const { requestAIChat } = require('../services/aiProvider');
 const Conversation = require('../models/Conversation');
 const AIMessage = require('../models/AIMessage');
 
@@ -243,7 +243,7 @@ router.post('/chat', aiChatLimiter, async (req, res) => {
       .sort({ createdAt: 1 })
       .select({ role: 1, content: 1, _id: 0 });
 
-    const reply = await requestGroqChat({
+    const reply = await requestAIChat({
       message: normalizedMessage,
       history: persistedHistory.length > 0 ? persistedHistory : history,
       context,

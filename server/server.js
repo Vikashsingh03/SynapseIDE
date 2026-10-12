@@ -1,3 +1,7 @@
+// Prefer IPv4 DNS results: on some networks (notably certain Indian ISPs)
+// IPv6 routes to Google APIs blackhole and hang, while IPv4 works fine.
+require('dns').setDefaultResultOrder('ipv4first');
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');

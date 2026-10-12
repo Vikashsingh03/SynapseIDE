@@ -10,6 +10,7 @@ import OutputPanel from '../components/OutputPanel';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import CommandPalette from '../components/CommandPalette';
+import CodeReviewModal from '../components/CodeReviewModal';
 import { useEditorSettings } from '../hooks/useEditorSettings';
 import { readStorage, writeStorage } from '../utils/storage';
 import { getThemeClasses } from '../utils/theme';
@@ -39,7 +40,26 @@ function EditorPage() {
     decreaseFont,
     toggleWordWrap,
     toggleMinimap,
+    cycleEditorTheme,
   } = useEditorSettings();
+
+  // ── Advanced pack: Neura code review modal + zen mode ──
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
+
+  useEffect(() => {
+    const openReview = () => setReviewOpen(true);
+    const toggleZen = () => setZenMode((v) => !v);
+    const cycleTheme = () => cycleEditorTheme();
+    window.addEventListener('synapse:review-code', openReview);
+    window.addEventListener('synapse:toggle-zen', toggleZen);
+    window.addEventListener('synapse:cycle-editor-theme', cycleTheme);
+    return () => {
+      window.removeEventListener('synapse:review-code', openReview);
+      window.removeEventListener('synapse:toggle-zen', toggleZen);
+      window.removeEventListener('synapse:cycle-editor-theme', cycleTheme);
+    };
+  }, [cycleEditorTheme]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -87,15 +107,18 @@ function EditorPage() {
             onExit={handleExit}
             currentUser={user}
             onOpenPalette={() => setPaletteOpen(true)}
+            onOpenReview={() => setReviewOpen(true)}
           />
         </div>
 
         {/* Main content area */}
         <div className="relative z-10 flex flex-1 overflow-hidden p-2.5 gap-2.5 min-h-0">
-          {/* Sidebar */}
-          <div className="animate-fade-up flex shrink-0 min-h-0" style={{ animationDelay: '60ms' }}>
-            <Sidebar theme={theme} />
-          </div>
+          {/* Sidebar — hidden in zen mode */}
+          {!zenMode && (
+            <div className="animate-fade-up flex shrink-0 min-h-0" style={{ animationDelay: '60ms' }}>
+              <Sidebar theme={theme} />
+            </div>
+          )}
 
           {/* Editor + Output */}
           <div
@@ -114,16 +137,20 @@ function EditorPage() {
             </div>
           </div>
 
-          {/* Neura AI Sidebar */}
-          <div className="animate-fade-up flex shrink-0 min-h-0" style={{ animationDelay: '180ms' }}>
-            <NeuraPanel theme={theme} />
-          </div>
+          {/* Neura AI Sidebar — hidden in zen mode */}
+          {!zenMode && (
+            <div className="animate-fade-up flex shrink-0 min-h-0" style={{ animationDelay: '180ms' }}>
+              <NeuraPanel theme={theme} />
+            </div>
+          )}
         </div>
 
-        {/* Status Bar */}
-        <div className="relative z-40 animate-fade-in" style={{ animationDelay: '240ms' }}>
-          <StatusBar theme={theme} peersCount={0} />
-        </div>
+        {/* Status Bar — hidden in zen mode */}
+        {!zenMode && (
+          <div className="relative z-40 animate-fade-in" style={{ animationDelay: '240ms' }}>
+            <StatusBar theme={theme} peersCount={0} />
+          </div>
+        )}
 
         {/* ⌘K Command Palette */}
         <CommandPalette
@@ -137,6 +164,14 @@ function EditorPage() {
           onDecreaseFont={decreaseFont}
           onToggleWordWrap={toggleWordWrap}
           onToggleMinimap={toggleMinimap}
+          onOpenReview={() => setReviewOpen(true)}
+        />
+
+        {/* Neura code review modal */}
+        <CodeReviewModal
+          open={reviewOpen}
+          onClose={() => setReviewOpen(false)}
+          theme={theme}
         />
       </div>
     </FileProvider>

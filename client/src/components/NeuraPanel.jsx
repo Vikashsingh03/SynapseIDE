@@ -402,6 +402,22 @@ export default function NeuraPanel({ theme }) {
   };
 
   // ─── Collapsed rail ────────────────────────────────────────────────
+  // External triggers (e.g. "Explain with Neura" from the output panel):
+  // open the panel and send the prompt as a chat message.
+  const handleSendRef = useRef(null);
+  handleSendRef.current = handleSend;
+  useEffect(() => {
+    const onAskNeura = (e) => {
+      const prompt = e?.detail?.prompt;
+      if (!prompt || typeof prompt !== 'string') return;
+      setIsOpen(true);
+      // Defer a tick so the panel opens before the message streams in.
+      setTimeout(() => handleSendRef.current?.(prompt), 60);
+    };
+    window.addEventListener('synapse:ask-neura', onAskNeura);
+    return () => window.removeEventListener('synapse:ask-neura', onAskNeura);
+  }, []);
+
   if (!isOpen) {
     return (
       <div className={`w-13 rounded-2xl border flex flex-col items-center py-3 shrink-0 shadow-xl ${theme === 'dark' ? 'syn-glass shadow-black/40' : 'bg-white/85 border-slate-200 shadow-slate-300/40 backdrop-blur-xl'}`}>

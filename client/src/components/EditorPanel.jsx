@@ -6,7 +6,107 @@ import { getMonacoLanguage } from '../utils/languageMap';
 import { getThemeClasses } from '../utils/theme';
 import { Loader2, Lock, FileCode2 } from 'lucide-react';
 
-
+/** Custom Monaco editor color themes (defined once per mount, idempotent). */
+function defineCustomEditorThemes(monaco) {
+  if (!monaco?.editor?.defineTheme) return;
+  const themes = {
+    dracula: {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '6272a4' },
+        { token: 'string', foreground: 'f1fa8c' },
+        { token: 'keyword', foreground: 'ff79c6' },
+        { token: 'number', foreground: 'bd93f9' },
+        { token: 'type', foreground: '8be9fd' },
+        { token: 'delimiter', foreground: 'f8f8f2' },
+      ],
+      colors: {
+        'editor.background': '#282a36',
+        'editor.foreground': '#f8f8f2',
+        'editor.lineHighlightBackground': '#44475a80',
+        'editorLineNumber.foreground': '#6272a4',
+        'editorLineNumber.activeForeground': '#f8f8f2',
+        'editorCursor.foreground': '#f8f8f2',
+        'editor.selectionBackground': '#44475a',
+        'editor.inactiveSelectionBackground': '#44475a80',
+      },
+    },
+    monokai: {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '75715e' },
+        { token: 'string', foreground: 'e6db74' },
+        { token: 'keyword', foreground: 'f92672' },
+        { token: 'number', foreground: 'ae81ff' },
+        { token: 'type', foreground: '66d9ef' },
+        { token: 'delimiter', foreground: 'f8f8f2' },
+      ],
+      colors: {
+        'editor.background': '#272822',
+        'editor.foreground': '#f8f8f2',
+        'editor.lineHighlightBackground': '#3e3d32',
+        'editorLineNumber.foreground': '#90908a',
+        'editorLineNumber.activeForeground': '#f8f8f2',
+        'editorCursor.foreground': '#f8f8f0',
+        'editor.selectionBackground': '#49483e',
+        'editor.inactiveSelectionBackground': '#49483e80',
+      },
+    },
+    'night-owl': {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '637777' },
+        { token: 'string', foreground: 'ecc48d' },
+        { token: 'keyword', foreground: 'c792ea' },
+        { token: 'number', foreground: 'f78c6c' },
+        { token: 'type', foreground: '7fdbca' },
+        { token: 'delimiter', foreground: 'd6deeb' },
+      ],
+      colors: {
+        'editor.background': '#011627',
+        'editor.foreground': '#d6deeb',
+        'editor.lineHighlightBackground': '#0b2942',
+        'editorLineNumber.foreground': '#4b6479',
+        'editorLineNumber.activeForeground': '#d6deeb',
+        'editorCursor.foreground': '#80a4c2',
+        'editor.selectionBackground': '#1d3b53',
+        'editor.inactiveSelectionBackground': '#1d3b5380',
+      },
+    },
+    'github-dark': {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '8b949e' },
+        { token: 'string', foreground: 'a5d6ff' },
+        { token: 'keyword', foreground: 'ff7b72' },
+        { token: 'number', foreground: '79c0ff' },
+        { token: 'type', foreground: 'ffa657' },
+        { token: 'delimiter', foreground: 'e6edf3' },
+      ],
+      colors: {
+        'editor.background': '#0d1117',
+        'editor.foreground': '#e6edf3',
+        'editor.lineHighlightBackground': '#161b22',
+        'editorLineNumber.foreground': '#6e7681',
+        'editorLineNumber.activeForeground': '#e6edf3',
+        'editorCursor.foreground': '#58a6ff',
+        'editor.selectionBackground': '#264f78',
+        'editor.inactiveSelectionBackground': '#264f7880',
+      },
+    },
+  };
+  for (const [name, def] of Object.entries(themes)) {
+    try {
+      monaco.editor.defineTheme(name, def);
+    } catch {
+      /* theme already defined — ignore */
+    }
+  }
+}
 
 function hexToRgba(color, alpha) {
   const normalized = color.replace('#', '');
@@ -173,7 +273,12 @@ export default function EditorPanel({
 
   const activeFileId = activeFileIdProp || activeFile?.id;
   const t = getThemeClasses(theme);
-  const monacoTheme = theme === 'dark' ? 'vs-dark' : 'vs';
+  const monacoTheme =
+    editorSettings?.editorTheme && editorSettings.editorTheme !== 'auto'
+      ? editorSettings.editorTheme
+      : theme === 'dark'
+        ? 'vs-dark'
+        : 'vs';
   const language = activeFile ? getMonacoLanguage(activeFile.name) : 'plaintext';
 
   // Keep sharedTextRef current so onMount can access the latest Y.Text
@@ -323,6 +428,9 @@ export default function EditorPanel({
           onMount={(editor, monaco) => {
             editorRef.current = editor;
             monacoRef.current = monaco;
+
+            // Register custom color themes (Dracula, Monokai, Night Owl, GitHub Dark)
+            defineCustomEditorThemes(monaco);
 
             // If sharedText already arrived before the editor mounted, create
             // the binding immediately here so we don't wait for a re-render.
