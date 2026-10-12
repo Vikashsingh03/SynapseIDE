@@ -9,8 +9,14 @@ function headers() {
   };
 }
 
-function qs(roomId) {
-  return roomId ? `?roomId=${encodeURIComponent(roomId)}` : '';
+function qs(roomId, extra = '') {
+  const params = new URLSearchParams();
+  if (roomId) params.set('roomId', roomId);
+  if (extra) {
+    for (const [k, v] of new URLSearchParams(extra)) params.set(k, v);
+  }
+  const str = params.toString();
+  return str ? `?${str}` : '';
 }
 
 export async function gitStatus(roomId) {
@@ -54,7 +60,7 @@ export async function gitCommit(roomId, message) {
 }
 
 export async function gitLog(roomId, limit = 20) {
-  const res = await fetch(`${API_BASE}/git/log${qs(roomId)}&limit=${limit}`, { headers: headers() });
+  const res = await fetch(`${API_BASE}/git/log${qs(roomId, `limit=${limit}`)}`, { headers: headers() });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Could not read git log.');
   return data.commits || [];
@@ -80,7 +86,7 @@ export async function gitPull(roomId) {
 
 export async function gitDiff(roomId, file) {
   const res = await fetch(
-    `${API_BASE}/git/diff${qs(roomId)}&file=${encodeURIComponent(file)}`,
+    `${API_BASE}/git/diff${qs(roomId, `file=${encodeURIComponent(file)}`)}`,
     { headers: headers() }
   );
   const data = await res.json().catch(() => ({}));

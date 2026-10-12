@@ -170,6 +170,7 @@ router.get('/log', async (req, res) => {
       '--pretty=format:%H%x1f%an%x1f%ad%x1f%s%x1e',
       '--date=relative',
     ]);
+    // No commits yet -> not an error, just empty
     if (!r.ok) return res.json({ commits: [] });
     const commits = r.stdout
       .split('\x1e')
