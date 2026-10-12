@@ -112,8 +112,9 @@ export default function OutputPanel({ theme, output, roomId }) {
     }
   };
 
+  const panelHeight = !isOutputExpanded ? 'h-10' : activeTab === 'git' ? 'h-[420px]' : 'h-64';
   return (
-    <div className={`border-t border-[#283348] flex flex-col transition-[height] duration-200 shrink-0 bg-[#121824] ${isOutputExpanded ? 'h-64' : 'h-10'}`}>
+    <div className={`border-t border-[#283348] flex flex-col transition-[height] duration-200 shrink-0 bg-[#121824] ${panelHeight}`}>
       {/* Header */}
       <div className="h-10 flex items-center justify-between pl-4 pr-2 border-b border-[#283348] bg-[#182131] shrink-0">
         <div className="flex gap-1 h-full items-end">
