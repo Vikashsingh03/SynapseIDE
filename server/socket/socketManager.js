@@ -11,6 +11,7 @@ const {
 } = require('./roomStore');
 const RoomModel = require('../models/Room');
 const MessageModel = require('../models/Message');
+const { registerTerminalHandlers } = require('./terminalManager');
 
 function normalizeRoomId(roomId) {
   return String(roomId || '').trim().toUpperCase();
@@ -264,6 +265,7 @@ function createSocketServer(httpServer) {
 
   io.on('connection', (socket) => {
     trackUserSocket(socket.data.user?.userId, socket.id);
+    registerTerminalHandlers(io, socket);
     // P0-03: never trust userId/username from the payload — identity always
     // comes from the verified JWT (socket.data.user).
     socket.on('join-room', async ({ roomId } = {}) => {
@@ -874,6 +876,7 @@ function createSocketServer(httpServer) {
     socket.on('disconnect', () => {
       const roomId = socket.data.roomId;
       untrackUserSocket(socket.data.user?.userId, socket.id);
+    registerTerminalHandlers(io, socket);
       releaseLocksForSocket(io, socket);
       if (!roomId) {
         return;

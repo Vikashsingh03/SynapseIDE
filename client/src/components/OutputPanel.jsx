@@ -4,6 +4,7 @@ import { getLanguageByExtension } from '../utils/languageMap';
 import { getThemeClasses } from '../utils/theme';
 import {
   Terminal,
+  SquareTerminal,
   AlertCircle,
   ChevronDown,
   Check,
@@ -12,6 +13,7 @@ import {
   CircleDashed,
   Sparkles,
 } from 'lucide-react';
+import TerminalPanel from './TerminalPanel';
 
 export default function OutputPanel({ theme, output }) {
   const [activeTab, setActiveTab] = useState('output');
@@ -113,7 +115,7 @@ export default function OutputPanel({ theme, output }) {
       {/* Header */}
       <div className="h-10 flex items-center justify-between pl-4 pr-2 border-b border-[#283348] bg-[#182131] shrink-0">
         <div className="flex gap-1 h-full items-end">
-          {['output', 'errors'].map((tab) => {
+          {['output', 'errors', 'terminal'].map((tab) => {
             const isActive = activeTab === tab && isOutputExpanded;
             return (
               <button
@@ -123,7 +125,7 @@ export default function OutputPanel({ theme, output }) {
                   isActive ? 'text-[#dce5f3]' : 'text-[#8290a8] hover:text-[#dce5f3]'
                 }`}
               >
-                {tab === 'output' ? <Terminal size={12} /> : <AlertCircle size={12} />}
+                {tab === 'output' ? <Terminal size={12} /> : tab === 'terminal' ? <SquareTerminal size={12} /> : <AlertCircle size={12} />}
                 {tab}
                 {tab === 'errors' && hasError && (
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -168,7 +170,12 @@ export default function OutputPanel({ theme, output }) {
         </div>
       </div>
 
-      {isOutputExpanded && (
+      {isOutputExpanded && activeTab === 'terminal' && (
+        <div className="flex-1 min-h-0">
+          <TerminalPanel />
+        </div>
+      )}
+      {isOutputExpanded && activeTab !== 'terminal' && (
         <div className="flex-1 overflow-auto font-mono text-xs custom-scrollbar min-h-0">
           {displayContent()}
         </div>
