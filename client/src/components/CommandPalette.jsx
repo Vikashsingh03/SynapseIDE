@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useFiles } from '../contexts/FileContext';
 import { copyText } from '../utils/clipboard';
 import { getThemeClasses } from '../utils/theme';
+import { exportCodeSnapshot } from '../utils/snapshot';
+import { EDITOR_THEMES } from '../hooks/useEditorSettings';
 import {
   Search,
   Play,
@@ -18,6 +20,10 @@ import {
   FileCode2,
   CornerDownLeft,
   Check,
+  ScanSearch,
+  Camera,
+  Palette,
+  Eye,
 } from 'lucide-react';
 
 /**
@@ -41,6 +47,7 @@ export default function CommandPalette({
   onDecreaseFont,
   onToggleWordWrap,
   onToggleMinimap,
+  onOpenReview,
 }) {
   const { files, activeFile, createFile, createFolder, openTab } = useFiles();
   const t = getThemeClasses(theme);
@@ -104,6 +111,19 @@ export default function CommandPalette({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  const [snapshotBusy, setSnapshotBusy] = useState(false);
+  const handleSnapshot = async () => {
+    if (!activeFile || snapshotBusy) return;
+    setSnapshotBusy(true);
+    try {
+      await exportCodeSnapshot({ code: activeFile.content || '', filename: activeFile.name || 'code.txt' });
+    } catch {
+      /* canvas unavailable — silently ignore */
+    } finally {
+      setSnapshotBusy(false);
+    }
+  };
+
   const fileItems = useMemo(() => {
     const q = query.trim().toLowerCase();
     return files
@@ -158,6 +178,34 @@ export default function CommandPalette({
         run: handleDownload,
       },
       {
+        key: 'review',
+        icon: ScanSearch,
+        label: 'Review code with Neura',
+        hint: 'AI',
+        run: () => onOpenReview?.(),
+      },
+      {
+        key: 'snapshot',
+        icon: Camera,
+        label: snapshotBusy ? 'Rendering snapshot…' : 'Export code snapshot (PNG)',
+        hint: '',
+        run: handleSnapshot,
+      },
+      {
+        key: 'editor-theme',
+        icon: Palette,
+        label: 'Cycle editor theme',
+        hint: EDITOR_THEMES.find((x) => x.id === settings?.editorTheme)?.label || 'Auto',
+        run: () => window.dispatchEvent(new CustomEvent('synapse:cycle-editor-theme')),
+      },
+      {
+        key: 'zen',
+        icon: Eye,
+        label: 'Toggle zen mode',
+        hint: 'focus',
+        run: () => window.dispatchEvent(new CustomEvent('synapse:toggle-zen')),
+      },
+      {
         key: 'font-up',
         icon: CaseSensitive,
         label: 'Increase font size',
@@ -205,7 +253,7 @@ export default function CommandPalette({
         : []),
     ];
     return all.filter((a) => !q || a.label.toLowerCase().includes(q));
-  }, [query, theme, settings, activeFile, copied, onToggleTheme, onExit, onIncreaseFont, onDecreaseFont, onToggleWordWrap, onToggleMinimap]);
+  }, [query, theme, settings, activeFile, copied, snapshotBusy, onToggleTheme, onExit, onIncreaseFont, onDecreaseFont, onToggleWordWrap, onToggleMinimap, onOpenReview]);
 
   const sections = useMemo(() => {
     const out = [];

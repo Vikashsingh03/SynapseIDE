@@ -20,6 +20,7 @@ import { RoomYjsManager } from '../services/yjsRoom';
 import { copyText } from '../utils/clipboard';
 import { readStorage, writeStorage } from '../utils/storage';
 import CommandPalette from '../components/CommandPalette';
+import CodeReviewModal from '../components/CodeReviewModal';
 import { useEditorSettings } from '../hooks/useEditorSettings';
 
 const FILE_LOCK_RENEW_INTERVAL_MS = 15000;
@@ -51,7 +52,26 @@ function RoomSession({ roomId }) {
     decreaseFont,
     toggleWordWrap,
     toggleMinimap,
+    cycleEditorTheme,
   } = useEditorSettings();
+
+  // ── Advanced pack: Neura code review modal + zen mode ──
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
+
+  useEffect(() => {
+    const openReview = () => setReviewOpen(true);
+    const toggleZen = () => setZenMode((v) => !v);
+    const cycleTheme = () => cycleEditorTheme();
+    window.addEventListener('synapse:review-code', openReview);
+    window.addEventListener('synapse:toggle-zen', toggleZen);
+    window.addEventListener('synapse:cycle-editor-theme', cycleTheme);
+    return () => {
+      window.removeEventListener('synapse:review-code', openReview);
+      window.removeEventListener('synapse:toggle-zen', toggleZen);
+      window.removeEventListener('synapse:cycle-editor-theme', cycleTheme);
+    };
+  }, [cycleEditorTheme]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -721,19 +741,22 @@ function RoomSession({ roomId }) {
         onSaveVersion={handleSaveVersion}
         currentUser={toolbarUser}
         onOpenPalette={() => setPaletteOpen(true)}
+        onOpenReview={() => setReviewOpen(true)}
       />
 
       <div className={`flex flex-1 overflow-hidden p-2.5 gap-2.5 ${theme === 'dark' ? 'bg-[#030509]' : 'bg-slate-200/60'}`}>
-        <Sidebar
-          theme={theme}
-          collaborators={Object.values(presence)}
-          chatMessages={chatMessages}
-          typingUsers={Object.values(typingUsers)}
-          getSocket={() => socketRef.current}
-          roomId={roomId}
-          currentUser={user}
-          fileLocks={fileLocks}
-        />
+        {!zenMode && (
+          <Sidebar
+            theme={theme}
+            collaborators={Object.values(presence)}
+            chatMessages={chatMessages}
+            typingUsers={Object.values(typingUsers)}
+            getSocket={() => socketRef.current}
+            roomId={roomId}
+            currentUser={user}
+            fileLocks={fileLocks}
+          />
+        )}
 
         <main className={`flex-1 min-w-0 flex flex-col ${t.editorBg} overflow-hidden rounded-2xl border shadow-lg ${theme === 'dark' ? 'border-white/10 shadow-black/60' : 'border-slate-300 shadow-slate-200/50'} relative transition-colors duration-300`}>
           <div className={`pointer-events-none absolute inset-x-0 top-0 h-px ${theme === 'dark' ? 'bg-linear-to-r from-transparent via-white/15 to-transparent' : 'bg-linear-to-r from-transparent via-slate-300 to-transparent'}`} />
@@ -757,15 +780,17 @@ function RoomSession({ roomId }) {
           <OutputPanel theme={theme} output={output} />
         </main>
 
-        <NeuraPanel theme={theme} />
+        {!zenMode && <NeuraPanel theme={theme} />}
       </div>
 
-      <StatusBar
-        theme={theme}
-        peersCount={Object.keys(presence).length}
-        activeFileLock={activeFileLock}
-        currentUserId={user?.userId}
-      />
+      {!zenMode && (
+        <StatusBar
+          theme={theme}
+          peersCount={Object.keys(presence).length}
+          activeFileLock={activeFileLock}
+          currentUserId={user?.userId}
+        />
+      )}
 
       {/* ⌘K Command Palette */}
       <CommandPalette
@@ -779,6 +804,14 @@ function RoomSession({ roomId }) {
         onDecreaseFont={decreaseFont}
         onToggleWordWrap={toggleWordWrap}
         onToggleMinimap={toggleMinimap}
+        onOpenReview={() => setReviewOpen(true)}
+      />
+
+      {/* Neura code review modal */}
+      <CodeReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        theme={theme}
       />
     </div>
   );
