@@ -775,7 +775,7 @@ function RoomSession({ roomId }) {
             lockNotice={lockNotice}
           />
 
-          <OutputPanel theme={theme} output={output} />
+          <OutputPanel theme={theme} output={output} roomId={roomId} />
         </main>
 
         {!zenMode && <NeuraPanel theme={theme} />}
@@ -802,7 +802,7 @@ function RoomSession({ roomId }) {
         </button>
       )}
       {voiceOpen && (
-        <div className="fixed inset-0 z-70 md:inset-auto md:right-2 md:top-16 md:bottom-2 md:w-95 md:rounded-xl md:overflow-hidden md:border md:border-[#283348] md:shadow-[0_18px_54px_rgba(0,0,0,0.5)]">
+        <div className="fixed inset-0 z-[70] md:inset-auto md:right-2 md:top-16 md:bottom-2 md:w-[380px] md:rounded-xl md:overflow-hidden md:border md:border-[#283348] md:shadow-[0_18px_54px_rgba(0,0,0,0.5)]">
           <div
             className="absolute inset-0 bg-black/60 md:hidden"
             onClick={() => setVoiceOpen(false)}

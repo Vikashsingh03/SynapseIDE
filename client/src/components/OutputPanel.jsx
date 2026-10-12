@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import TerminalPanel from './TerminalPanel';
 
-export default function OutputPanel({ theme, output }) {
+export default function OutputPanel({ theme, output, roomId }) {
   const [activeTab, setActiveTab] = useState('output');
   const [isOutputExpanded, setIsOutputExpanded] = useState(true);
   const { activeFile } = useFiles();
@@ -172,7 +172,7 @@ export default function OutputPanel({ theme, output }) {
 
       {isOutputExpanded && activeTab === 'terminal' && (
         <div className="flex-1 min-h-0">
-          <TerminalPanel />
+          <TerminalPanel roomId={roomId} />
         </div>
       )}
       {isOutputExpanded && activeTab !== 'terminal' && (
