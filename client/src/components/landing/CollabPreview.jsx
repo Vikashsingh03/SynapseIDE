@@ -16,7 +16,7 @@ export default function CollabPreview() {
         </div>
 
         <div className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-[28px] border border-white/10 bg-[#0a1019]/85 shadow-[0_34px_90px_-24px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-          <div className="flex items-center gap-6 border-b border-white/[0.06] bg-[#161b22] px-6 py-4">
+          <div className="flex items-center gap-6 border-b border-white/6 bg-[#161b22] px-6 py-4">
             <div className="flex gap-2">
               <div className="h-3 w-3 rounded-full bg-red-500/80" />
               <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
@@ -32,11 +32,11 @@ export default function CollabPreview() {
           </div>
 
           <div className="flex h-[440px] overflow-hidden bg-[#0d1117] font-mono text-sm leading-7">
-            <div className="hidden w-48 flex-shrink-0 flex-col gap-2 border-r border-white/[0.06] bg-[#010409] px-5 py-6 sm:flex md:w-56">
+            <div className="hidden w-48 flex-shrink-0 flex-col gap-2 border-r border-white/6 bg-[#010409] px-5 py-6 sm:flex md:w-56">
               <span className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-600">Explorer</span>
               <div className="cursor-pointer rounded-lg bg-blue-500/[0.12] px-3 py-2 text-xs text-blue-400">server.js</div>
-              <div className="cursor-pointer rounded-lg px-3 py-2 text-xs text-gray-500 hover:bg-white/[0.03] hover:text-gray-300">index.html</div>
-              <div className="cursor-pointer rounded-lg px-3 py-2 text-xs text-gray-500 hover:bg-white/[0.03] hover:text-gray-300">styles.css</div>
+              <div className="cursor-pointer rounded-lg px-3 py-2 text-xs text-gray-500 hover:bg-white/3 hover:text-gray-300">index.html</div>
+              <div className="cursor-pointer rounded-lg px-3 py-2 text-xs text-gray-500 hover:bg-white/3 hover:text-gray-300">styles.css</div>
             </div>
 
             <div className="relative flex-1 overflow-hidden px-8 py-8 md:px-10">
@@ -73,19 +73,19 @@ export default function CollabPreview() {
               </pre>
             </div>
 
-            <div className="hidden w-[18rem] flex-shrink-0 flex-col gap-4 border-l border-white/[0.06] bg-[#0a0d14] px-6 py-7 lg:flex">
-              <div className="flex items-center gap-2 border-b border-white/[0.06] pb-4">
+            <div className="hidden w-[18rem] flex-shrink-0 flex-col gap-4 border-l border-white/6 bg-[#0a0d14] px-6 py-7 lg:flex">
+              <div className="flex items-center gap-2 border-b border-white/6 pb-4">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-purple-400" />
                 <span className="text-xs font-semibold text-purple-300">Synapse AI</span>
               </div>
-              <div className="rounded-2xl border border-purple-500/[0.15] bg-purple-500/[0.08] p-5 text-[12px] leading-6 text-gray-300">
+              <div className="rounded-2xl border border-purple-500/[0.15] bg-purple-500/8 p-5 text-[12px] leading-6 text-gray-300">
                 <span className="mb-2 block font-bold text-purple-400">Suggestion</span>
                 Standard Express setup detected. Want me to scaffold a Dockerfile and <code className="text-sky-300">.env</code> template?
               </div>
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 text-[12px] leading-6 text-gray-400">
+              <div className="rounded-2xl border border-white/8 bg-white/3 p-5 text-[12px] leading-6 text-gray-400">
                 AI can explain diffs, suggest test cases, and generate follow-up tasks for the room.
               </div>
-              <div className="mt-auto flex h-11 items-center rounded-xl border border-white/[0.07] bg-black/40 px-4">
+              <div className="mt-auto flex h-11 items-center rounded-xl border border-white/7 bg-black/40 px-4">
                 <span className="text-[11px] text-gray-600">Ask AI...</span>
               </div>
             </div>

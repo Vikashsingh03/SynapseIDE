@@ -21,7 +21,7 @@ export default function CTAAndFooter() {
           <div className="h-[420px] w-[720px] rounded-full bg-blue-600/10 blur-[120px]" />
         </div>
 
-        <div className="relative z-10s mx-auto flex w-full max-w-4xl flex-col items-center rounded-[30px] border border-white/[0.07] bg-white/[0.03] px-8 py-12 text-center backdrop-blur-sm md:px-12 md:py-14">
+        <div className="relative z-10s mx-auto flex w-full max-w-4xl flex-col items-center rounded-[30px] border border-white/7 bg-white/3 px-8 py-12 text-center backdrop-blur-sm md:px-12 md:py-14">
           <p className="mb-6 text-xs font-bold uppercase tracking-[0.18em] text-blue-300" style={{ marginTop: '20px' }}>Get Started Today</p>
           <h2
             className="mb-6 text-4xl font-black leading-tight text-white md:text-6xl"
@@ -43,7 +43,7 @@ export default function CTAAndFooter() {
             </Link>
             <button
               onClick={handleReserveRoom}
-              className="inline-flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.04] px-8 py-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08] sm:min-w-[210px] sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/4 px-8 py-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-1 hover:border-white/20 hover:bg-white/8 sm:min-w-[210px] sm:w-auto"
             >
               Reserve a Room
             </button>
@@ -51,7 +51,7 @@ export default function CTAAndFooter() {
         </div>
       </section>
 
-      <footer className="w-full border-t border-white/[0.06] bg-black/60 backdrop-blur-sm">
+      <footer className="w-full border-t border-white/6 bg-black/60 backdrop-blur-sm">
         <div className="mx-auto w-full px-8 py-16 md:px-16 lg:px-20">
           <div className="flex flex-col justify-between gap-12 md:flex-row md:items-start">
             <div className="max-w-sm md:pr-8">
@@ -88,7 +88,7 @@ export default function CTAAndFooter() {
             </div>
           </div>
 
-          <div className="mt-14 flex flex-col gap-3 border-t border-white/[0.05] pt-8 text-xs text-gray-600 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-14 flex flex-col gap-3 border-t border-white/5 pt-8 text-xs text-gray-600 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-left">© {new Date().getFullYear()} Synapse IDE. All rights reserved.</p>
             <p className="flex items-center gap-1.5 sm:ml-auto">
               Crafted with <Heart size={11} className="text-red-400" /> by the Synapse Team

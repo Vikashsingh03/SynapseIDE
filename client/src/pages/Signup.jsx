@@ -16,7 +16,8 @@ import {
   Sparkles,
   UserPlus,
 } from 'lucide-react';
-import SynapseInteractiveBackground from '../components/SynapseInteractiveBackground';
+import { getThemeClasses } from '../utils/theme';
+import { readStorage } from '../utils/storage';
 import SynapseLogo from '../components/SynapseLogo';
 
 const HIGHLIGHTS = [
@@ -37,68 +38,64 @@ const HIGHLIGHTS = [
   },
 ];
 
-function BrandPanel() {
+function BrandPanel({ t }) {
   return (
-    <aside className="hidden lg:flex w-[46%] flex-col justify-between p-12 border-r border-white/[0.07] bg-white/1.5 backdrop-blur-sm relative overflow-hidden">
-      <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-violet-600/20 blur-[100px] animate-aurora" />
-
-      <Link to="/" className="flex items-center gap-3 group w-fit relative">
-        <div className="w-11 h-11 rounded-2xl bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_0_28px_rgba(139,92,246,0.45)] group-hover:scale-105 transition-transform duration-200">
-          <SynapseLogo size={24} color="#ffffff" nodeColor="#ffffff" />
-        </div>
-        <span className="font-display text-xl font-bold tracking-tight text-white uppercase">
-          Synapse
-        </span>
-      </Link>
+    <aside className={`hidden lg:flex w-[44%] flex-col justify-between p-12 border-r ${t.border} bg-(--paper-2) relative overflow-hidden`}>
+      <div className="syn-paper-grid pointer-events-none absolute inset-0" aria-hidden="true" />
+      <div className="relative">
+        <Link to="/" className="flex items-center gap-2.5 w-fit">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-(--red)">
+            <SynapseLogo size={20} color="#ffffff" nodeColor="#ffffff" />
+          </span>
+          <span className="text-lg font-extrabold tracking-tight text-(--ink)">
+            Synapse
+          </span>
+        </Link>
+      </div>
 
       <div className="relative">
-        <p className="syn-eyebrow mb-5">Realtime collaborative IDE</p>
-        <h1 className="font-display text-5xl font-bold tracking-tight text-white leading-[1.08] mb-5">
+        <p className={`${t.eyebrow} mb-4 text-(--blue)`}>Realtime collaborative IDE</p>
+        <h1 className="text-5xl font-extrabold tracking-[-0.04em] text-(--ink) leading-[1.02] mb-5">
           Your multiplayer
           <br />
-          <span className="syn-text-gradient-animated">code editor.</span>
+          code{' '}
+          <span className="syn-outline-word">editor.</span>
         </h1>
-        <p className="text-slate-400 text-lg leading-relaxed max-w-md mb-10">
+        <p className={`text-[15px] leading-8 max-w-md mb-9 ${t.textSecondary}`}>
           Create a free account and start coding with your team in seconds —
           no setup, no config.
         </p>
 
-        <div className="space-y-5">
-          {HIGHLIGHTS.map((item, i) => (
-            <div
-              key={item.title}
-              className="flex items-start gap-4 animate-fade-up"
-              style={{ animationDelay: `${i * 110}ms` }}
-            >
-              <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/25 flex items-center justify-center shrink-0">
-                <item.icon size={18} className="text-violet-300" />
+        <div className="space-y-4">
+          {HIGHLIGHTS.map((item) => (
+            <div key={item.title} className={`flex items-start gap-3.5 rounded-lg border bg-(--panel) p-3.5 shadow-[4px_4px_0_var(--ink)] ${t.border}`}>
+              <div className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 bg-(--paper-2) ${t.border}`}>
+                <item.icon size={16} className="text-(--ink)" />
               </div>
               <div>
-                <p className="text-white font-semibold text-[15px]">{item.title}</p>
-                <p className="text-slate-500 text-sm mt-0.5">{item.desc}</p>
+                <p className={`font-extrabold text-sm ${t.textPrimary}`}>{item.title}</p>
+                <p className={`text-[13px] mt-0.5 ${t.textMuted2}`}>{item.desc}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* floating mock card */}
-      <div className="relative">
-        <div className="syn-glass rounded-2xl p-5 max-w-sm animate-float shadow-[0_24px_60px_-20px_rgba(0,0,0,0.7)]">
-          <div className="flex items-center gap-1.5 mb-4">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400/70" />
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/70" />
-            <span className="ml-2 font-mono text-[11px] text-slate-500">room · 2 peers online</span>
+      <div className="relative rounded-xl border border-[#283348] bg-[#121824] p-5 max-w-sm shadow-[0_18px_54px_rgba(20,21,20,0.25)]">
+        <div className="flex items-center gap-1.5 mb-4">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#3a4356]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#3a4356]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#3a4356]" />
+          <span className="ml-2 font-mono text-[11px] text-[#8290a8]">room · 2 peers online</span>
+        </div>
+        <div className="font-mono text-xs leading-6 text-[#dce5f3]">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-6 h-6 rounded-full bg-[#3a4356] flex items-center justify-center text-[10px] font-bold text-[#dce5f3]">A</span>
+            <span className="text-[#8290a8] text-[11px]">Aarav joined the room</span>
+            <span className="ml-auto rounded-[5px] bg-[#d9ff3f] px-1.5 py-0.5 text-[9px] font-bold text-[#10140b]">LIVE</span>
           </div>
-          <div className="font-mono text-[12.5px] leading-6">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-6 h-6 rounded-full bg-linear-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-[10px] font-bold text-white">A</span>
-              <span className="text-slate-400 text-[11px]">Aarav joined the room</span>
-            </div>
-            <p><span className="text-violet-400">const</span> <span className="text-slate-200">synapse</span> <span className="text-slate-500">=</span> <span className="text-amber-300">"realtime"</span><span className="text-slate-400">;</span></p>
-            <p className="relative"><span className="text-slate-600">// Neura AI is reviewing…</span><span className="absolute -right-1 top-1 w-[2px] h-4 bg-violet-400 animate-blink" /></p>
-          </div>
+          <p><span className="text-[#70a5ff]">const</span> <span className="text-[#dce5f3]">synapse</span> <span className="text-[#70a5ff]">=</span> <span className="text-[#ff997c]">"realtime"</span><span className="text-[#dce5f3]">;</span></p>
+          <p><span className="text-[#8290a8]">// Neura AI is reviewing…</span></p>
         </div>
       </div>
     </aside>
@@ -107,34 +104,34 @@ function BrandPanel() {
 
 function FieldError({ message }) {
   if (!message) return null;
-  return <p className="text-xs text-red-400 mt-1.5 animate-fade-in">{message}</p>;
+  return <p className="text-xs font-semibold text-(--red) mt-1.5 animate-fade-in">{message}</p>;
 }
 
-function PasswordField({ id, label, placeholder, value, onChange, show, setShow, error, autoComplete }) {
+function PasswordField({ id, label, placeholder, value, onChange, show, setShow, error, autoComplete, t }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-[13px] font-medium text-slate-400 mb-2">
+      <label htmlFor={id} className={`block text-[13px] font-bold mb-2 ${t.textSecondary}`}>
         {label}
       </label>
-      <div className={`flex items-center gap-3 rounded-xl syn-input px-4 h-13 ${error ? 'border-red-500/50!' : ''}`}>
-        <Lock size={18} className="text-slate-500 shrink-0" />
+      <div className={`flex items-center gap-3 rounded-lg bg-(--panel) border px-3.5 h-11 transition-colors focus-within:border-(--blue) hover:border-(--ink)/40 ${t.border} ${error ? 'border-(--red)' : ''}`}>
+        <Lock size={16} className={`shrink-0 ${t.textMuted2}`} />
         <input
           id={id}
           type={show ? 'text' : 'password'}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          className="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-slate-100 placeholder:text-slate-600"
+          className="flex-1 min-w-0 bg-transparent outline-none text-sm font-semibold text-(--ink) placeholder:text-(--muted) placeholder:font-normal"
           autoComplete={autoComplete}
         />
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="text-slate-500 hover:text-slate-300 transition-colors p-1 -m-1"
+          className={`${t.textMuted2} hover:text-(--ink) transition-colors p-1 -m-1`}
           tabIndex={-1}
           aria-label={show ? 'Hide password' : 'Show password'}
         >
-          {show ? <EyeOff size={18} /> : <Eye size={18} />}
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
       <FieldError message={error} />
@@ -144,6 +141,8 @@ function PasswordField({ id, label, placeholder, value, onChange, show, setShow,
 
 export default function Signup() {
   const { completeSignup } = useAuth();
+  const [theme] = useState(() => readStorage('synapse-theme') || 'dark');
+  const t = getThemeClasses(theme);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -160,9 +159,9 @@ export default function Signup() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    document.body.style.backgroundColor = '#05070d';
+    document.body.style.backgroundColor = theme === 'dark' ? '#111310' : '#f3f1eb';
     return () => { document.body.style.backgroundColor = ''; };
-  }, []);
+  }, [theme]);
 
   function validateCredentials() {
     const newErrors = {};
@@ -270,74 +269,71 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-void text-slate-200 syn-noise relative overflow-hidden">
-      <SynapseInteractiveBackground />
-
-      {/* aurora orbs */}
-      <div className="pointer-events-none fixed inset-0 z-1">
-        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-violet-600/25 blur-[120px] animate-aurora" />
-        <div className="absolute -bottom-40 -right-24 h-112 w-md rounded-full bg-indigo-600/20 blur-[130px] animate-aurora" style={{ animationDelay: '-8s' }} />
-        <div className="absolute top-1/3 left-1/2 h-72 w-72 rounded-full bg-cyan-500/10 blur-[110px] animate-aurora" style={{ animationDelay: '-14s' }} />
-      </div>
-
-      <div className="relative z-10 flex min-h-screen">
-        <BrandPanel />
+    <div className={`${t.page} syn-grain min-h-screen`} data-theme={theme}>
+      <div className="flex min-h-screen">
+        <BrandPanel t={t} />
 
         {/* form side */}
         <main className="flex-1 flex items-center justify-center p-6 sm:p-10">
-          <div className="w-full max-w-107.5 animate-scale-in">
+          <div className="w-full max-w-md animate-fade-up">
             <Link to="/" className="lg:hidden flex items-center justify-center gap-2.5 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_0_24px_rgba(139,92,246,0.4)]">
-                <SynapseLogo size={22} color="#ffffff" nodeColor="#ffffff" />
-              </div>
-              <span className="font-display text-lg font-bold tracking-tight text-white uppercase">Synapse</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-(--red) shadow-[3px_3px_0_var(--ink)]">
+                <SynapseLogo size={20} color="#ffffff" nodeColor="#ffffff" />
+              </span>
+              <span className="text-lg font-extrabold tracking-tight text-(--ink)">Synapse</span>
             </Link>
 
-            <div className="syn-glass rounded-3xl p-8 sm:p-10 shadow-[0_32px_80px_-24px_rgba(0,0,0,0.8)]">
-              <div className="text-center mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/25 flex items-center justify-center mx-auto mb-5">
-                  {otpStep ? <KeyRound size={22} className="text-violet-300" /> : <UserPlus size={22} className="text-violet-300" />}
+            <div className={`${t.card} p-8 relative overflow-hidden`}>
+              {/* brand accent bar */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-(--red)" aria-hidden="true" />
+
+              <div className="mb-7">
+                <div className={`w-11 h-11 rounded-lg border bg-(--panel) flex items-center justify-center mb-4 shadow-[4px_4px_0_var(--ink)] ${t.border}`}>
+                  {otpStep ? <KeyRound size={18} className="text-(--ink)" /> : <UserPlus size={18} className="text-(--ink)" />}
                 </div>
-                <h1 className="font-display text-[28px] font-bold tracking-tight text-white mb-2">
+                <p className={`${t.eyebrow} mb-2 text-(--blue)`}>
+                  {otpStep ? 'Step 02 — Verify' : 'Step 01 — Create'}
+                </p>
+                <h1 className="text-3xl font-extrabold tracking-[-0.03em] text-(--ink) mb-1.5">
                   {otpStep ? 'Verify your email' : 'Create your account'}
                 </h1>
-                <p className="text-sm text-slate-400 leading-relaxed">
+                <p className={`text-sm leading-relaxed ${t.textSecondary}`}>
                   {otpStep
-                    ? <>Enter the 6-digit code sent to <span className="text-slate-200 font-medium">{formData.email}</span></>
+                    ? <>Enter the 6-digit code sent to <span className={`font-bold ${t.textPrimary}`}>{formData.email}</span></>
                     : 'Start coding collaboratively in seconds'}
                 </p>
               </div>
 
               {statusMessage && (
-                <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-sky-500/10 border border-sky-500/25 text-sky-300 text-[13px] mb-6 animate-fade-in">
-                  <Mail size={16} className="shrink-0" />
+                <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-lg bg-(--blue)/7 border border-(--blue)/30 text-(--blue) text-[13px] font-semibold mb-5 animate-fade-in">
+                  <Mail size={15} className="shrink-0" />
                   <span>{statusMessage}</span>
                 </div>
               )}
 
               {serverError && (
-                <div key={serverError} className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-[13px] mb-6 animate-[authShake_0.4s_ease-out]">
-                  <AlertCircle size={16} className="shrink-0" />
+                <div key={serverError} className="flex items-center gap-2.5 px-3.5 py-3 rounded-lg bg-(--red)/7 border border-(--red)/30 text-(--red) text-[13px] font-semibold mb-5 animate-fade-in">
+                  <AlertCircle size={15} className="shrink-0" />
                   <span>{serverError}</span>
                 </div>
               )}
 
-              <form onSubmit={otpStep ? handleVerifyOtp : handleRequestOtp} className="flex flex-col gap-5" noValidate>
+              <form onSubmit={otpStep ? handleVerifyOtp : handleRequestOtp} className="flex flex-col gap-4" noValidate>
                 {!otpStep ? (
                   <>
                     <div>
-                      <label htmlFor="signup-name" className="block text-[13px] font-medium text-slate-400 mb-2">
+                      <label htmlFor="signup-name" className={`block text-[13px] font-bold mb-2 ${t.textSecondary}`}>
                         Username
                       </label>
-                      <div className={`flex items-center gap-3 rounded-xl syn-input px-4 h-13 ${errors.name ? 'border-red-500/50!' : ''}`}>
-                        <User size={18} className="text-slate-500 shrink-0" />
+                      <div className={`flex items-center gap-3 rounded-lg bg-(--panel) border px-3.5 h-11 transition-colors focus-within:border-(--blue) hover:border-(--ink)/40 ${t.border} ${errors.name ? 'border-(--red)' : ''}`}>
+                        <User size={16} className={`shrink-0 ${t.textMuted2}`} />
                         <input
                           id="signup-name"
                           type="text"
                           placeholder="Your username"
                           value={formData.name}
                           onChange={handleChange('name')}
-                          className="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-slate-100 placeholder:text-slate-600"
+                          className="flex-1 min-w-0 bg-transparent outline-none text-sm font-semibold text-(--ink) placeholder:text-(--muted) placeholder:font-normal"
                           autoComplete="username"
                           autoFocus
                         />
@@ -346,18 +342,18 @@ export default function Signup() {
                     </div>
 
                     <div>
-                      <label htmlFor="signup-email" className="block text-[13px] font-medium text-slate-400 mb-2">
+                      <label htmlFor="signup-email" className={`block text-[13px] font-bold mb-2 ${t.textSecondary}`}>
                         Email address
                       </label>
-                      <div className={`flex items-center gap-3 rounded-xl syn-input px-4 h-13 ${errors.email ? 'border-red-500/50!' : ''}`}>
-                        <Mail size={18} className="text-slate-500 shrink-0" />
+                      <div className={`flex items-center gap-3 rounded-lg bg-(--panel) border px-3.5 h-11 transition-colors focus-within:border-(--blue) hover:border-(--ink)/40 ${t.border} ${errors.email ? 'border-(--red)' : ''}`}>
+                        <Mail size={16} className={`shrink-0 ${t.textMuted2}`} />
                         <input
                           id="signup-email"
                           type="email"
                           placeholder="you@example.com"
                           value={formData.email}
                           onChange={handleChange('email')}
-                          className="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-slate-100 placeholder:text-slate-600"
+                          className="flex-1 min-w-0 bg-transparent outline-none text-sm font-semibold text-(--ink) placeholder:text-(--muted) placeholder:font-normal"
                           autoComplete="email"
                         />
                       </div>
@@ -374,6 +370,7 @@ export default function Signup() {
                       setShow={setShowPassword}
                       error={errors.password}
                       autoComplete="new-password"
+                      t={t}
                     />
 
                     <PasswordField
@@ -386,18 +383,19 @@ export default function Signup() {
                       setShow={setShowConfirm}
                       error={errors.confirmPassword}
                       autoComplete="new-password"
+                      t={t}
                     />
 
-                    <button type="submit" className="syn-btn-primary w-full h-13 rounded-xl text-[15px] mt-1" disabled={isLoading}>
+                    <button type="submit" className={`${t.btnAccent} group w-full h-12 mt-1 text-[15px]`} disabled={isLoading}>
                       {isLoading ? (
                         <span className="flex items-center gap-2.5">
-                          <span className="w-4.5 h-4.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                          <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                           Sending OTP...
                         </span>
                       ) : (
                         <span className="flex items-center gap-2">
                           Send OTP
-                          <ArrowRight size={18} />
+                          <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
                         </span>
                       )}
                     </button>
@@ -405,11 +403,11 @@ export default function Signup() {
                 ) : (
                   <>
                     <div>
-                      <label htmlFor="signup-otp" className="block text-[13px] font-medium text-slate-400 mb-2">
+                      <label htmlFor="signup-otp" className={`block text-[13px] font-bold mb-2 ${t.textSecondary}`}>
                         Email OTP
                       </label>
-                      <div className={`flex items-center gap-3 rounded-xl syn-input px-4 h-13 ${errors.otp ? 'border-red-500/50!' : ''}`}>
-                        <KeyRound size={18} className="text-slate-500 shrink-0" />
+                      <div className={`flex items-center gap-3 rounded-lg bg-(--panel) border px-3.5 h-11 transition-colors focus-within:border-(--blue) hover:border-(--ink)/40 ${t.border} ${errors.otp ? 'border-(--red)' : ''}`}>
+                        <KeyRound size={16} className={`shrink-0 ${t.textMuted2}`} />
                         <input
                           id="signup-otp"
                           type="text"
@@ -425,33 +423,33 @@ export default function Signup() {
                             if (serverError) setServerError('');
                             if (statusMessage) setStatusMessage('');
                           }}
-                          className="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-slate-100 placeholder:text-slate-600 font-mono tracking-[0.3em]"
+                          className="flex-1 min-w-0 bg-transparent outline-none text-sm font-bold text-(--ink) placeholder:text-(--muted) placeholder:font-normal font-mono tracking-[0.3em]"
                           autoComplete="one-time-code"
                           autoFocus
                         />
                       </div>
                       <FieldError message={errors.otp} />
-                      <p className="text-xs text-slate-600 mt-2">
+                      <p className={`font-mono text-[11px] mt-2 ${t.textMuted2}`}>
                         We only create your account after the OTP is verified.
                       </p>
                     </div>
 
-                    <button type="submit" className="syn-btn-primary w-full h-13 rounded-xl text-[15px] mt-1" disabled={isLoading}>
+                    <button type="submit" className={`${t.btnAccent} group w-full h-12 mt-1 text-[15px]`} disabled={isLoading}>
                       {isLoading ? (
                         <span className="flex items-center gap-2.5">
-                          <span className="w-4.5 h-4.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                          <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                           Verifying OTP...
                         </span>
                       ) : (
                         <span className="flex items-center gap-2">
                           Verify and Create Account
-                          <ArrowRight size={18} />
+                          <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
                         </span>
                       )}
                     </button>
 
                     <div className="flex items-center justify-between">
-                      <button type="button" onClick={handleResendOtp} disabled={isLoading} className="text-[13px] font-medium text-violet-400 hover:text-violet-300 disabled:opacity-50 transition-colors">
+                      <button type="button" onClick={handleResendOtp} disabled={isLoading} className="text-[13px] font-bold text-(--red) disabled:opacity-50 transition-opacity hover:underline">
                         Resend OTP
                       </button>
                       <button
@@ -464,7 +462,7 @@ export default function Signup() {
                           setStatusMessage('');
                         }}
                         disabled={isLoading}
-                        className="text-[13px] font-medium text-violet-400 hover:text-violet-300 disabled:opacity-50 transition-colors"
+                        className="text-[13px] font-bold text-(--red) disabled:opacity-50 transition-opacity hover:underline"
                       >
                         Edit details
                       </button>
@@ -473,15 +471,15 @@ export default function Signup() {
                 )}
               </form>
 
-              <div className="text-center mt-7 pt-6 border-t border-white/[0.07] text-[13px] text-slate-500">
+              <div className={`text-center mt-6 pt-5 border-t ${t.divider} text-[13px] ${t.textMuted2}`}>
                 Already have an account?{' '}
-                <Link to="/login" className="text-violet-400 hover:text-violet-300 font-semibold transition-colors">
+                <Link to="/login" className="text-(--red) font-extrabold hover:underline">
                   Sign in
                 </Link>
               </div>
             </div>
 
-            <p className="text-center text-[11px] text-slate-600 mt-6 tracking-wide">
+            <p className={`text-center font-mono text-[11px] mt-5 ${t.textMuted2}`}>
               {otpStep
                 ? 'Use a Gmail app password on the server to deliver OTP emails reliably.'
                 : 'By creating an account, you agree to our Terms of Service'}

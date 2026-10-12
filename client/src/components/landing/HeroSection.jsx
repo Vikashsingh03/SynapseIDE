@@ -19,7 +19,7 @@ export default function HeroSection() {
       <div className="absolute left-1/2 top-0 -z-10 h-[500px] w-[920px] -translate-x-1/2 rounded-full bg-blue-600/15 blur-[150px]" />
 
       <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-16 text-center lg:gap-15">
-        <div className="inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.06] px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-blue-300 shadow-[0_12px_40px_-22px_rgba(59,130,246,0.8)]" style={{ marginTop: '40px' }}>
+        <div className="inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/6 px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-blue-300 shadow-[0_12px_40px_-22px_rgba(59,130,246,0.8)]" style={{ marginTop: '40px' }}>
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500" />
@@ -57,7 +57,7 @@ export default function HeroSection() {
 
               <button
                 onClick={handleCreateRoom}
-                className="group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] px-8 py-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08] sm:min-w-[210px] sm:w-auto"
+                className="group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl border border-white/12 bg-white/4 px-8 py-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-1 hover:border-white/20 hover:bg-white/8 sm:min-w-[210px] sm:w-auto"
               >
                 <Users size={18} className="text-gray-300 transition-colors group-hover:text-cyan-300" />
                 Create a Room
@@ -84,7 +84,7 @@ export default function HeroSection() {
                       <span className="h-3 w-3 rounded-full bg-amber-400/90" />
                       <span className="h-3 w-3 rounded-full bg-emerald-400/90" />
                     </div>
-                    <div className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400">
+                    <div className="rounded-full border border-white/8 bg-white/4 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400">
                       room / pair-session.tsx
                     </div>
                   </div>
@@ -110,13 +110,13 @@ export default function HeroSection() {
 
                 <div className="flex flex-col justify-between p-8 sm:p-10">
                   <div className="space-y-5 text-left">
-                    <div className="rounded-2xl border border-cyan-400/12 bg-cyan-400/[0.05] p-7">
+                    <div className="rounded-2xl border border-cyan-400/12 bg-cyan-400/5 p-7">
                       <p className="mb-2 text-sm font-semibold text-white">Presence that feels instant</p>
                       <p className="text-sm leading-7 text-gray-300">
                         Shared cursors, synced files, and execution results stay lined up so your team can move as one.
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-7">
+                    <div className="rounded-2xl border border-white/8 bg-white/3 p-7">
                       <p className="mb-2 text-sm font-semibold text-white">AI that understands the session</p>
                       <p className="text-sm leading-7 text-gray-300">
                         Ask questions in-context and get answers grounded in the code already open in the room.
@@ -125,11 +125,11 @@ export default function HeroSection() {
                   </div>
 
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-left">
+                    <div className="rounded-2xl border border-white/8 bg-white/3 p-6 text-left">
                       <p className="text-2xl font-bold text-white">50ms</p>
                       <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">Realtime sync target</p>
                     </div>
-                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-left">
+                    <div className="rounded-2xl border border-white/8 bg-white/3 p-6 text-left">
                       <p className="text-2xl font-bold text-white">1 tab</p>
                       <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">Code, run, collaborate</p>
                     </div>

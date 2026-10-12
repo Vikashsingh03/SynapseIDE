@@ -14,7 +14,7 @@ export default function AIAssistantShowcase() {
       <div className="pointer-events-none absolute right-[-100px] top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-purple-600/10 blur-[130px]" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-16 lg:flex-row lg:items-stretch lg:gap-14">
-        <div className="flex flex-1 rounded-[28px] border border-white/[0.07] bg-white/[0.03] p-8 text-center backdrop-blur-sm lg:p-10 lg:text-left">
+        <div className="flex flex-1 rounded-[28px] border border-white/7 bg-white/3 p-8 text-center backdrop-blur-sm lg:p-10 lg:text-left">
           <div className="my-auto">
             <p className="mb-5 text-xs font-bold uppercase tracking-[0.18em] text-purple-300">AI-Powered</p>
             <h2
@@ -32,7 +32,7 @@ export default function AIAssistantShowcase() {
 
             <ul className="inline-block w-full max-w-md space-y-4 text-left lg:max-w-none">
               {AI_FEATURES.map((feat) => (
-                <li key={feat.label} className="flex items-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-4 text-gray-300">
+                <li key={feat.label} className="flex items-center gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-4 text-gray-300">
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/10 text-purple-400">
                     <feat.icon size={18} />
                   </div>
@@ -46,8 +46,8 @@ export default function AIAssistantShowcase() {
         <div className="relative w-full max-w-lg flex-1">
           <div className="pointer-events-none absolute -inset-px rounded-[28px] bg-gradient-to-br from-purple-500/30 to-blue-500/10 opacity-60 blur-sm" />
 
-          <div className="relative overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#0f1119] shadow-2xl">
-            <div className="flex items-center gap-3 border-b border-white/[0.07] bg-white/[0.02] px-6 py-5">
+          <div className="relative overflow-hidden rounded-[28px] border border-white/8 bg-[#0f1119] shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-white/7 bg-white/2 px-6 py-5">
               <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-purple-500/20">
                 <Wand2 size={15} className="text-purple-400" />
               </div>
@@ -58,22 +58,22 @@ export default function AIAssistantShowcase() {
             </div>
 
             <div className="flex flex-col gap-5 p-6 text-sm">
-              <div className="self-end max-w-[85%] rounded-2xl rounded-tr-sm border border-white/[0.08] bg-white/[0.06] px-5 py-4 leading-7 text-gray-300">
+              <div className="self-end max-w-[85%] rounded-2xl rounded-tr-sm border border-white/8 bg-white/6 px-5 py-4 leading-7 text-gray-300">
                 What does the <code className="rounded bg-blue-500/10 px-1.5 py-0.5 text-xs text-blue-300">reduce()</code> call on line 42 do?
               </div>
 
-              <div className="self-start max-w-[90%] rounded-2xl rounded-tl-sm border border-purple-500/[0.15] bg-purple-500/[0.08] px-5 py-4 leading-7 text-gray-300">
+              <div className="self-start max-w-[90%] rounded-2xl rounded-tl-sm border border-purple-500/[0.15] bg-purple-500/8 px-5 py-4 leading-7 text-gray-300">
                 It folds the <span className="font-medium text-purple-300">prices</span> array into a running total. Each iteration adds the current price to an accumulator, ultimately returning the cart&apos;s grand total.
                 <br />
                 <br />
                 Want me to rewrite it with a <span className="font-medium text-purple-300">for...of</span> loop for clarity?
               </div>
 
-              <div className="self-end max-w-[85%] rounded-2xl rounded-tr-sm border border-white/[0.08] bg-white/[0.06] px-5 py-4 leading-7 text-gray-300">
+              <div className="self-end max-w-[85%] rounded-2xl rounded-tr-sm border border-white/8 bg-white/6 px-5 py-4 leading-7 text-gray-300">
                 Yes, and flag any edge cases.
               </div>
 
-              <div className="self-start max-w-[90%] rounded-2xl rounded-tl-sm border border-purple-500/[0.15] bg-purple-500/[0.08] px-5 py-4 leading-7 text-gray-300">
+              <div className="self-start max-w-[90%] rounded-2xl rounded-tl-sm border border-purple-500/[0.15] bg-purple-500/8 px-5 py-4 leading-7 text-gray-300">
                 <pre className="mb-3 overflow-x-auto rounded-xl bg-black/40 p-4 font-mono text-xs leading-5 text-purple-200">
 {`let total = 0;
 for (const price of prices) {
@@ -86,7 +86,7 @@ for (const price of prices) {
             </div>
 
             <div className="px-6 pb-6">
-              <div className="flex items-center justify-between rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-4 text-sm text-gray-500">
+              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/4 px-5 py-4 text-sm text-gray-500">
                 <span>Ask about this file...</span>
                 <kbd className="rounded border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-gray-600">Ctrl K</kbd>
               </div>

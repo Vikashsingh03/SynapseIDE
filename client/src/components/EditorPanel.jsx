@@ -138,9 +138,8 @@ function ensurePresenceStyle(userId, cursorColor) {
   style.textContent = `
     /* Colored cursor line — full height of the line */
     .presence-cursor-${safeId} {
-      border-left: 3px solid ${cursorColor} !important;
-      margin-left: -2px;
-      box-shadow: 0 0 6px 1px ${hexToRgba(cursorColor, 0.55)};
+      border-left: 2px solid ${cursorColor} !important;
+      margin-left: -1px;
       pointer-events: none;
       position: relative;
     }
@@ -149,25 +148,24 @@ function ensurePresenceStyle(userId, cursorColor) {
       content: "";
       position: absolute;
       top: 0;
-      left: -5px;
-      width: 8px;
-      height: 8px;
+      left: -4px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: ${cursorColor};
-      box-shadow: 0 0 5px 1px ${hexToRgba(cursorColor, 0.7)};
       pointer-events: none;
       z-index: 100;
     }
     /* Selection highlight */
     .presence-selection-${safeId} {
-      background: ${hexToRgba(cursorColor, 0.2)} !important;
+      background: ${hexToRgba(cursorColor, 0.18)} !important;
       border-radius: 2px;
     }
   `;
   document.head.appendChild(style);
 }
 
-/** Animated "who is typing" bar */
+/** "Who is editing" indicator bar */
 function EditingIndicatorBar({ editingUsers = {}, activeFileId, theme }) {
   const editors = Object.values(editingUsers).filter(
     (u) => !activeFileId || u.fileId === activeFileId
@@ -176,29 +174,18 @@ function EditingIndicatorBar({ editingUsers = {}, activeFileId, theme }) {
 
   return (
     <div
-      className={`flex items-center gap-2 px-4 py-1.5 border-b text-xs animate-fade-in shrink-0 overflow-x-auto scrollbar-hide ${
-        theme === 'dark'
-          ? 'bg-violet-500/6 border-violet-500/20 text-slate-300'
-          : 'bg-violet-50 border-violet-200 text-slate-600'
-      }`}
+      className="flex items-center gap-2.5 px-4 py-1.5 border-b border-[#283348] text-xs animate-fade-in shrink-0 overflow-x-auto bg-[#182131] text-[#a8aba3]"
     >
       <span className="flex items-center gap-1.5 shrink-0">
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-400" />
-        </span>
-        <span className={`font-bold uppercase tracking-[0.14em] text-[10px] ${theme === 'dark' ? 'text-violet-300' : 'text-violet-600'}`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        <span className="font-mono font-semibold uppercase tracking-[0.14em] text-[10px]">
           Live
         </span>
       </span>
       {editors.map((u) => (
         <span
           key={u.userId}
-          className="inline-flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-0.5 border text-[11px] font-medium shrink-0 animate-scale-in"
-          style={{
-            background: hexToRgba(u.cursorColor || '#888', 0.1),
-            borderColor: hexToRgba(u.cursorColor || '#888', 0.35),
-          }}
+          className="inline-flex items-center gap-1.5 rounded-md pl-1 pr-2.5 py-0.5 border border-[#283348] bg-white/3 text-[11px] font-medium shrink-0 animate-fade-in"
         >
           <span
             className="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] font-bold text-white shrink-0"
@@ -206,10 +193,10 @@ function EditingIndicatorBar({ editingUsers = {}, activeFileId, theme }) {
           >
             {(u.username || 'S').charAt(0).toUpperCase()}
           </span>
-          <span style={{ color: u.cursorColor || '#ccc' }} className="font-semibold">
+          <span className="text-[#dce5f3]">
             {u.username || 'Someone'}
           </span>
-          <span className="opacity-60">is editing</span>
+          <span className="text-[#8290a8]">is editing</span>
         </span>
       ))}
     </div>
@@ -227,20 +214,12 @@ function FileLockBanner({ activeFileLock, isReadOnly, lockNotice, theme }) {
 
   return (
     <div
-      className={`flex items-center gap-2.5 px-4 py-2 border-b text-xs animate-fade-in shrink-0 ${
-        isReadOnly
-          ? theme === 'dark'
-            ? 'bg-amber-500/8 border-amber-500/25 text-amber-200'
-            : 'bg-amber-50 border-amber-200 text-amber-700'
-          : theme === 'dark'
-            ? 'bg-indigo-500/8 border-indigo-500/25 text-indigo-200'
-            : 'bg-indigo-50 border-indigo-200 text-indigo-700'
+      className={`flex items-center gap-2.5 px-4 py-2 border-b border-[#283348] bg-[#182131] text-xs animate-fade-in shrink-0 ${
+        isReadOnly ? 'text-amber-200' : 'text-[#70a5ff]'
       }`}
     >
-      <span className={`p-1 rounded-md ${isReadOnly ? 'bg-amber-500/15' : 'bg-indigo-500/15'}`}>
-        <Lock size={12} />
-      </span>
-      <span className="font-bold uppercase tracking-[0.12em] text-[10px]">{isReadOnly ? 'Locked' : 'Lock'}</span>
+      <Lock size={12} className="shrink-0" />
+      <span className="font-mono font-semibold uppercase tracking-[0.12em] text-[10px]">{isReadOnly ? 'Locked' : 'Lock'}</span>
       <span className="opacity-90">{message}</span>
     </div>
   );
@@ -266,6 +245,25 @@ export default function EditorPanel({
   const decorationsRef = useRef([]);
   const bindingRef = useRef(null);
   const sharedTextRef = useRef(null);
+
+  // ── Empty-file watermark: show a premium overlay when the file has no content ──
+  const [isEmpty, setIsEmpty] = useState(
+    () => !(activeFile?.content && activeFile.content.trim())
+  );
+  useEffect(() => {
+    // Reset on file switch; check initial content (non-Yjs path)
+    if (!sharedText) {
+      setIsEmpty(!(activeFile?.content && activeFile.content.trim()));
+    }
+  }, [activeFile?.id, sharedText]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // Observe Yjs shared text so remote edits also dismiss the watermark
+    if (!sharedText) return;
+    const update = () => setIsEmpty(sharedText.toString().trim().length === 0);
+    update();
+    sharedText.observe(update);
+    return () => sharedText.unobserve(update);
+  }, [sharedText]);
 
   // Bumped every time onMount fires — this is what lets the binding
   // effect re-run AFTER the editor reference is set.
@@ -393,12 +391,12 @@ export default function EditorPanel({
   if (!activeFile) {
     return (
       <div className={`flex-1 flex items-center justify-center ${t.editorBg}`}>
-        <div className="text-center animate-fade-up px-6">
-          <div className={`mx-auto mb-4 w-14 h-14 rounded-2xl flex items-center justify-center ${theme === 'dark' ? 'bg-violet-500/10 border border-violet-500/20' : 'bg-violet-50 border border-violet-200'}`}>
-            <FileCode2 size={24} className="text-violet-400" />
-          </div>
-          <p className={`text-base font-semibold font-display ${t.textPrimary}`}>No file open</p>
-          <p className={`text-sm mt-1 ${t.textMuted}`}>Create a new file or open one from the sidebar</p>
+        <div className="flex flex-col items-center gap-3 text-center animate-fade-in px-6">
+          <span className="w-10 h-10 rounded-md border border-[#283348] flex items-center justify-center">
+            <FileCode2 size={16} className="text-[#8290a8]" />
+          </span>
+          <p className="text-[15px] font-extrabold text-[#dce5f3]">No file open</p>
+          <p className="text-xs text-[#8290a8] font-mono">Create a new file or open one from the sidebar</p>
         </div>
       </div>
     );
@@ -410,7 +408,32 @@ export default function EditorPanel({
       <EditingIndicatorBar editingUsers={editingUsers} activeFileId={activeFileId} theme={theme} />
       <FileLockBanner activeFileLock={activeFileLock} isReadOnly={isReadOnly} lockNotice={lockNotice} theme={theme} />
 
-      <div style={{ flex: 1, overflow: 'hidden' }} className="min-h-0">
+      <div style={{ flex: 1, overflow: 'hidden' }} className="min-h-0 relative">
+        {/* ── Empty-file watermark ── */}
+        {isEmpty && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none animate-fade-in">
+            <div className="flex flex-col items-center gap-4 text-center px-6 max-w-sm">
+              <span className="w-14 h-14 rounded-2xl bg-[#ff4d35] flex items-center justify-center shadow-[6px_6px_0_rgba(0,0,0,0.4)]">
+                <FileCode2 size={24} className="text-white" />
+              </span>
+              <div>
+                <p className="text-lg font-extrabold tracking-tight text-[#dce5f3]">
+                  Start typing
+                </p>
+                <p className="text-xs text-[#8290a8] font-mono mt-1.5 leading-5">
+                  Your code appears here.<br />Collaborators see every keystroke live.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="rounded-md border border-[#283348] bg-[#182131] px-2 py-1 font-mono text-[10px] text-[#8290a8]">Ctrl K</span>
+                <span className="text-[10px] text-[#5a6a85] font-mono">command palette</span>
+                <span className="text-[#283348]">·</span>
+                <span className="rounded-md border border-[#283348] bg-[#182131] px-2 py-1 font-mono text-[10px] text-[#8290a8]">Ctrl ⏎</span>
+                <span className="text-[10px] text-[#5a6a85] font-mono">run code</span>
+              </div>
+            </div>
+          </div>
+        )}
         <Editor
           key={activeFile.id}
           height="100%"
@@ -418,6 +441,7 @@ export default function EditorPanel({
           theme={monacoTheme}
           defaultValue={sharedText ? '' : activeFile.content}
           onChange={(value) => {
+            setIsEmpty(!(value && value.trim()));
             if (!sharedText && activeFileId && updateContent) {
               updateContent(activeFileId, value || '', { updatedAt: Date.now() });
             }
@@ -467,8 +491,8 @@ export default function EditorPanel({
           }}
           loading={
             <div className={`flex items-center justify-center h-full gap-2.5 ${t.textMuted}`}>
-              <Loader2 size={20} className="animate-spin text-violet-400" />
-              <span className="text-sm">Loading editor…</span>
+              <Loader2 size={18} className="animate-spin" />
+              <span className="text-sm">Loading editor</span>
             </div>
           }
           options={{

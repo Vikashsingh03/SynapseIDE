@@ -1,6 +1,7 @@
+// Editorial v3: solid ink/red mark — no gradients, no glow.
 export default function SynapseLogo({
   size = 100,
-  color = '#3b82f6',
+  color = '#ff4d35',
   nodeColor = '#ffffff',
   className = '',
 }) {
@@ -12,7 +13,6 @@ export default function SynapseLogo({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      style={{ filter: 'drop-shadow(0 0 10px rgba(139, 92, 246, 0.45))' }}
       aria-label="Synapse Logo"
       role="img"
     >

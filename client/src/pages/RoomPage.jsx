@@ -686,19 +686,18 @@ function RoomSession({ roomId }) {
       : user;
   }, [presence, user]);
 
+  const t = getThemeClasses(theme);
+
   if (loadingRoom) {
     return (
-      <div className="min-h-screen bg-void text-slate-200 syn-noise relative overflow-hidden flex flex-col items-center justify-center gap-6 p-6">
-        <div className="pointer-events-none fixed inset-0">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full bg-violet-600/20 blur-[120px] animate-aurora" />
+      <div className={`min-h-screen ${t.page} flex flex-col items-center justify-center gap-5 p-6`}>
+        <div className={`w-12 h-12 rounded-lg border ${t.border} flex items-center justify-center`}>
+          <Loader2 size={22} className={`animate-spin ${t.textMuted}`} />
         </div>
-        <div className="relative w-16 h-16 rounded-3xl bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.5)] animate-float">
-          <Loader2 size={28} className="text-white animate-spin" />
-        </div>
-        <div className="relative text-center animate-fade-up">
-          <p className="font-display text-xl font-bold text-white mb-2">Connecting to room</p>
-          <p className="font-mono text-sm text-violet-300 tracking-[0.25em]">{roomId}</p>
-          <p className="text-xs text-slate-500 mt-3">Syncing shared documents…</p>
+        <div className="text-center">
+          <p className={`text-lg font-semibold tracking-tight ${t.textPrimary} mb-1.5`}>Connecting to room</p>
+          <p className={`font-mono text-sm ${t.textMuted} tracking-[0.2em]`}>{roomId}</p>
+          <p className={`text-xs ${t.textMuted2} mt-2.5`}>Syncing shared documents…</p>
         </div>
       </div>
     );
@@ -706,17 +705,14 @@ function RoomSession({ roomId }) {
 
   if (error && !roomReady) {
     return (
-      <div className="min-h-screen bg-void text-slate-200 syn-noise relative overflow-hidden flex items-center justify-center p-6">
-        <div className="pointer-events-none fixed inset-0">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full bg-red-600/10 blur-[120px]" />
-        </div>
-        <div className="relative syn-glass rounded-3xl p-10 w-full max-w-md text-center animate-scale-in shadow-[0_32px_80px_-24px_rgba(0,0,0,0.8)]">
-          <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/25 flex items-center justify-center mx-auto mb-6">
-            <AlertTriangle size={26} className="text-red-400" />
+      <div className={`min-h-screen ${t.page} flex items-center justify-center p-6`}>
+        <div className={`${t.modalCard} p-8 text-center`}>
+          <div className="w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/25 flex items-center justify-center mx-auto mb-5">
+            <AlertTriangle size={24} className="text-red-400" />
           </div>
-          <h1 className="font-display text-2xl font-bold text-white mb-3">Unable to join room</h1>
-          <p className="text-sm text-slate-400 leading-relaxed mb-8">{error}</p>
-          <button className="syn-btn-primary rounded-xl px-6 py-3 text-sm w-full" onClick={() => navigate('/join-room')}>
+          <h1 className={`text-lg font-semibold tracking-tight ${t.textPrimary} mb-2`}>Unable to join room</h1>
+          <p className={`text-sm ${t.textSecondary} leading-relaxed mb-6`}>{error}</p>
+          <button className={`${t.btnPrimary} w-full`} onClick={() => navigate('/join-room')}>
             <ArrowLeft size={16} />
             Return to join room
           </button>
@@ -725,10 +721,8 @@ function RoomSession({ roomId }) {
     );
   }
 
-  const t = getThemeClasses(theme);
-
   return (
-    <div className={`flex flex-col h-screen ${t.bg} ${t.text} font-sans select-none overflow-hidden transition-colors duration-300`} data-theme={theme}>
+    <div className={`flex flex-col h-screen ${t.page} font-sans select-none overflow-hidden`} data-theme={theme}>
       <Toolbar
         theme={theme}
         onToggleTheme={toggleTheme}
@@ -744,7 +738,7 @@ function RoomSession({ roomId }) {
         onOpenReview={() => setReviewOpen(true)}
       />
 
-      <div className={`flex flex-1 overflow-hidden p-2.5 gap-2.5 ${theme === 'dark' ? 'bg-[#030509]' : 'bg-slate-200/60'}`}>
+      <div className="flex flex-1 overflow-hidden p-2 gap-2 min-h-0">
         {!zenMode && (
           <Sidebar
             theme={theme}
@@ -758,8 +752,7 @@ function RoomSession({ roomId }) {
           />
         )}
 
-        <main className={`flex-1 min-w-0 flex flex-col ${t.editorBg} overflow-hidden rounded-2xl border shadow-lg ${theme === 'dark' ? 'border-white/10 shadow-black/60' : 'border-slate-300 shadow-slate-200/50'} relative transition-colors duration-300`}>
-          <div className={`pointer-events-none absolute inset-x-0 top-0 h-px ${theme === 'dark' ? 'bg-linear-to-r from-transparent via-white/15 to-transparent' : 'bg-linear-to-r from-transparent via-slate-300 to-transparent'}`} />
+        <main className="flex-1 min-w-0 flex flex-col bg-[#121824] overflow-hidden rounded-xl border border-[#2b3546] min-h-0">
           <TabBar theme={theme} roomId={roomId} fileLocks={fileLocks} currentUserId={user?.userId} />
 
           <EditorPanel
@@ -792,7 +785,7 @@ function RoomSession({ roomId }) {
         />
       )}
 
-      {/* ⌘K Command Palette */}
+      {/* Command Palette */}
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}

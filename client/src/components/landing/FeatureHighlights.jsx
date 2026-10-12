@@ -64,7 +64,7 @@ export default function FeatureHighlights() {
           {FEATURE_DATA.map((feature) => (
             <div
               key={feature.title}
-              className={`group relative flex w-full min-h-[250px] flex-col items-center justify-center overflow-hidden rounded-[24px] border border-white/[0.08] bg-white/[0.04] px-8 py-8 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:bg-white/[0.07] ${feature.hoverBorder}`}
+              className={`group relative flex w-full min-h-[250px] flex-col items-center justify-center overflow-hidden rounded-[24px] border border-white/8 bg-white/4 px-8 py-8 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:bg-white/7 ${feature.hoverBorder}`}
             >
               <div
                 className={`pointer-events-none absolute top-0 left-0 h-36 w-36 -translate-x-8 -translate-y-8 rounded-full bg-gradient-to-br ${feature.accent} blur-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100`}

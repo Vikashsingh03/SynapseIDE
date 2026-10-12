@@ -57,7 +57,7 @@ export default function HowItWorks() {
           {STEPS.map((step, index) => (
             <div
               key={index}
-              className="group relative z-10 flex flex-col items-center rounded-[26px] border border-white/[0.07] bg-white/[0.03] px-8 py-12 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:border-white/[0.12] hover:bg-white/[0.05]"
+              className="group relative z-10 flex flex-col items-center rounded-[26px] border border-white/7 bg-white/3 px-8 py-12 text-center backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:border-white/[0.12] hover:bg-white/5"
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '1 1 300px', maxWidth: '400px' }}
             >
               <div className={`relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br shadow-xl transition-transform duration-500 group-hover:-translate-y-2 group-hover:scale-105 ${step.gradient} ${step.shadow}`} style={{ marginTop: '20px', marginBottom: '10px' }}>

@@ -1,90 +1,101 @@
 /**
- * Synapse premium theme tokens ("Obsidian Pulse").
+ * Synapse theme tokens ("Editorial" v3) — replicates the v2 demo.
+ * Warm paper background, ink text, red/blue/acid accents,
+ * hard-offset neo-brutalist shadows. Light + dark via tokens.
  * Every key returns a complete Tailwind class string for the active theme.
- * Legacy keys are preserved so old components keep working.
  */
 export function getThemeClasses(theme) {
   const dark = theme === 'dark';
 
   return {
     /* ── legacy keys (kept for compatibility) ── */
-    bg: dark ? 'bg-[#050508]' : 'bg-slate-50',
+    bg: dark ? 'bg-[#111310]' : 'bg-[#f3f1eb]',
     header: dark
-      ? 'bg-[#0a0a14]/75 backdrop-blur-xl border-b border-white/[0.07]'
-      : 'bg-white/80 backdrop-blur-xl border-b border-slate-200',
-    sidebar: dark ? 'bg-white/[0.02] border-r border-white/[0.07]' : 'bg-slate-100 border-r border-slate-200',
-    border: dark ? 'border-white/10' : 'border-slate-200',
-    text: dark ? 'text-slate-300' : 'text-slate-600',
-    textMuted: dark ? 'text-slate-500' : 'text-slate-400',
-    tabActive: dark
-      ? 'bg-white/[0.07] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-      : 'bg-white text-slate-900 shadow-sm',
+      ? 'bg-[#111310]/90 backdrop-blur-md border-b border-[#343730]'
+      : 'bg-[#f3f1eb]/90 backdrop-blur-md border-b border-[#d6d4cc]',
+    sidebar: dark
+      ? 'bg-[#171916] border-r border-[#343730]'
+      : 'bg-[#faf9f5] border-r border-[#d6d4cc]',
+    border: dark ? 'border-[#343730]' : 'border-[#d6d4cc]',
+    text: dark ? 'text-[#a8aba3]' : 'text-[#60635d]',
+    textMuted: dark ? 'text-[#6b6e66]' : 'text-[#8a8d85]',
+    tabActive: dark ? 'text-[#f3f2ec]' : 'text-[#141514]',
     tabInactive: dark
-      ? 'text-slate-500 hover:bg-white/5 hover:text-slate-300'
-      : 'text-slate-400 hover:bg-slate-200/70 hover:text-slate-600',
-    editorBg: dark ? 'bg-[#050508]' : 'bg-white',
-    consoleHeader: dark ? 'bg-white/[0.03] border-b border-white/[0.07]' : 'bg-slate-100 border-b border-slate-200',
+      ? 'text-[#6b6e66] hover:text-[#a8aba3]'
+      : 'text-[#8a8d85] hover:text-[#60635d]',
+    // Editor is ALWAYS dark (like the v2 demo's IDE mockup)
+    editorBg: 'bg-[#121824]',
+    consoleHeader: 'bg-[#182131] border-b border-[#283348]',
 
-    /* ── premium tokens ── */
-    page: dark ? 'bg-[#050508] text-slate-200' : 'bg-[#f4f5fa] text-slate-700',
-
-    glass: dark ? 'syn-glass' : 'syn-glass',
+    /* ── editorial tokens ── */
+    page: dark ? 'bg-[#111310] text-[#a8aba3]' : 'bg-[#f3f1eb] text-[#60635d]',
 
     card: dark
-      ? 'bg-white/[0.03] border border-white/[0.08] rounded-2xl'
-      : 'bg-white border border-slate-200/90 rounded-2xl shadow-[0_10px_36px_-16px_rgba(15,23,42,0.14)]',
+      ? 'bg-[#1b1d19] border border-[#343730] rounded-lg shadow-[0_8px_26px_rgba(0,0,0,0.28)]'
+      : 'bg-white border border-[#d6d4cc] rounded-lg shadow-[0_8px_26px_rgba(20,21,20,0.08)]',
 
-    cardHover: 'syn-card-hover',
+    cardHover: dark ? 'hover:border-[#4a4d44]' : 'hover:border-[#b9b7ad]',
 
-    textPrimary: dark ? 'text-slate-100' : 'text-slate-900',
-    textSecondary: dark ? 'text-slate-400' : 'text-slate-500',
-    textMuted2: dark ? 'text-slate-600' : 'text-slate-400',
+    textPrimary: dark ? 'text-[#f3f2ec]' : 'text-[#141514]',
+    textSecondary: dark ? 'text-[#a8aba3]' : 'text-[#60635d]',
+    textMuted2: dark ? 'text-[#6b6e66]' : 'text-[#8a8d85]',
 
-    textGradient: 'syn-text-gradient',
-    eyebrow: 'syn-eyebrow',
-    divider: 'syn-divider',
+    eyebrow:
+      'font-mono text-[11px] font-semibold uppercase tracking-[0.08em] ' +
+      (dark ? 'text-[#8a8d85]' : 'text-[#8a8d85]'),
+    divider: dark ? 'border-[#343730]' : 'border-[#d6d4cc]',
 
     input: dark
-      ? 'syn-input rounded-xl'
-      : 'syn-input rounded-xl',
+      ? 'w-full rounded-lg bg-[#171916] border border-[#343730] px-3 py-2 text-sm text-[#f3f2ec] placeholder:text-[#6b6e66] outline-none focus:border-[#1557ff] transition-colors'
+      : 'w-full rounded-lg bg-white border border-[#d6d4cc] px-3 py-2 text-sm text-[#141514] placeholder:text-[#8a8d85] outline-none focus:border-[#1557ff] transition-colors',
 
-    btnPrimary:
-      'syn-btn-primary rounded-xl px-5 py-3 text-sm font-semibold',
+    // Primary: solid ink (light) / paper (dark) — v2 demo style
+    btnPrimary: dark
+      ? 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-extrabold text-[#111310] bg-[#f3f2ec] border border-[#f3f2ec] hover:-translate-y-px transition-all duration-200 cursor-pointer'
+      : 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-extrabold text-[#faf9f5] bg-[#141514] border border-[#141514] hover:-translate-y-px transition-all duration-200 cursor-pointer',
+
+    // Accent CTA: red with hard offset shadow (v2 signature)
+    btnAccent:
+      'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-extrabold text-white bg-[#ff4d35] border border-[#141514] shadow-[4px_4px_0_#141514] hover:shadow-[6px_6px_0_#141514] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0_#141514] transition-all duration-200 cursor-pointer',
 
     btnSecondary: dark
-      ? 'inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-slate-200 bg-white/[0.05] border border-white/10 hover:bg-white/[0.09] hover:border-white/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 cursor-pointer'
-      : 'inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 cursor-pointer shadow-sm',
+      ? 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold text-[#a8aba3] bg-transparent border border-[#343730] hover:text-[#f3f2ec] hover:border-[#4a4d44] transition-colors cursor-pointer'
+      : 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold text-[#60635d] bg-transparent border border-[#d6d4cc] hover:text-[#141514] hover:border-[#b9b7ad] transition-colors cursor-pointer',
 
     btnGhost: dark
-      ? 'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] active:scale-[0.98] transition-all duration-200 cursor-pointer'
-      : 'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-[0.98] transition-all duration-200 cursor-pointer',
+      ? 'inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#a8aba3] hover:text-[#f3f2ec] hover:bg-white/5 transition-colors cursor-pointer'
+      : 'inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#60635d] hover:text-[#141514] hover:bg-black/4 transition-colors cursor-pointer',
 
     btnDanger: dark
-      ? 'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500 hover:text-white hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer'
-      : 'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-red-600 bg-red-50 border border-red-200 hover:bg-red-600 hover:text-white hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer',
+      ? 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold text-[#ff8a75] bg-[#ff4d35]/10 border border-[#ff4d35]/30 hover:bg-[#ff4d35] hover:text-white transition-colors cursor-pointer'
+      : 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold text-[#d93824] bg-[#ff4d35]/7 border border-[#ff4d35]/25 hover:bg-[#ff4d35] hover:text-white transition-colors cursor-pointer',
+
+    // RUN button: acid lime, mono (v2 signature) — with signature glow
+    btnRun:
+      'inline-flex items-center justify-center gap-2 rounded-[5px] px-3 py-1.5 font-mono text-[11px] font-bold text-[#10140b] bg-[#d9ff3f] border border-[#1e2411] shadow-[0_0_18px_rgba(217,255,63,0.35)] hover:shadow-[0_0_26px_rgba(217,255,63,0.5)] hover:brightness-105 active:brightness-95 transition-all cursor-pointer',
 
     badge: dark
-      ? 'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold bg-violet-500/10 border border-violet-500/25 text-violet-300'
-      : 'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold bg-violet-50 border border-violet-200 text-violet-700',
+      ? 'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold bg-white/6 border border-[#343730] text-[#a8aba3]'
+      : 'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold bg-black/4 border border-[#d6d4cc] text-[#60635d]',
 
     chip: dark
-      ? 'rounded-md px-2 py-0.5 text-[11px] font-mono bg-white/[0.06] border border-white/10 text-slate-400'
-      : 'rounded-md px-2 py-0.5 text-[11px] font-mono bg-slate-100 border border-slate-200 text-slate-500',
+      ? 'rounded px-1.5 py-0.5 font-mono text-[11px] bg-white/6 border border-[#343730] text-[#a8aba3]'
+      : 'rounded px-1.5 py-0.5 font-mono text-[11px] bg-black/4 border border-[#d6d4cc] text-[#60635d]',
 
     iconBtn: dark
-      ? 'p-2 rounded-lg text-slate-500 hover:text-slate-100 hover:bg-white/[0.07] active:scale-95 transition-all duration-150 cursor-pointer'
-      : 'p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all duration-150 cursor-pointer',
+      ? 'p-2 rounded-lg text-[#6b6e66] hover:text-[#f3f2ec] hover:bg-white/6 transition-colors cursor-pointer'
+      : 'p-2 rounded-lg text-[#8a8d85] hover:text-[#141514] hover:bg-black/5 transition-colors cursor-pointer',
 
     liveDot: 'relative flex h-2 w-2',
 
     kbd: dark
-      ? 'rounded border border-white/10 bg-white/[0.05] px-1.5 py-0.5 text-[10px] font-mono text-slate-400'
-      : 'rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-mono text-slate-500',
+      ? 'rounded-[7px] border border-[#343730] bg-white/4 px-1.5 py-0.5 font-mono text-[10px] text-[#8a8d85]'
+      : 'rounded-[7px] border border-[#d6d4cc] bg-black/3 px-1.5 py-0.5 font-mono text-[10px] text-[#8a8d85]',
 
     modalOverlay:
-      'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in',
+      'fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/55 backdrop-blur-[5px] animate-fade-in',
     modalCard: dark
-      ? 'syn-glass-strong rounded-2xl p-8 w-full max-w-md shadow-[0_32px_80px_-16px_rgba(0,0,0,0.8)] animate-scale-in'
-      : 'bg-white rounded-2xl p-8 w-full max-w-md shadow-[0_32px_80px_-16px_rgba(15,23,42,0.3)] border border-slate-200 animate-scale-in',
+      ? 'bg-[#1b1d19] rounded-xl w-full max-w-md border border-[#343730] shadow-[0_30px_90px_rgba(0,0,0,0.5)] animate-spring-in'
+      : 'bg-white rounded-xl w-full max-w-md border border-[#d6d4cc] shadow-[0_30px_90px_rgba(20,21,20,0.2)] animate-spring-in',
   };
 }

@@ -50,9 +50,7 @@ function CodeBlock({ inline, className, children, theme }) {
 
   if (inline) {
     return (
-      <code className={`select-text px-1.5 py-0.5 rounded-md font-mono text-[11px] ${
-        theme === 'dark' ? 'bg-violet-500/15 text-violet-200' : 'bg-violet-50 text-violet-700'
-      }`}>
+      <code className="select-text px-1.5 py-0.5 rounded-md font-mono text-[11px] border bg-(--ink)/5 text-(--ink) border-(--line)">
         {children}
       </code>
     );
@@ -72,20 +70,16 @@ function CodeBlock({ inline, className, children, theme }) {
   };
 
   return (
-    <div className={`my-3 overflow-hidden rounded-xl border ${
-      theme === 'dark' ? 'border-white/10 bg-[#0a0a15]' : 'border-slate-200 bg-slate-50'
-    }`}>
-      <div className={`flex items-center justify-between px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] border-b ${
-        theme === 'dark' ? 'border-white/[0.07] bg-white/3 text-slate-400' : 'border-slate-200 bg-slate-100 text-slate-500'
-      }`}>
+    <div className="my-3 overflow-hidden rounded-lg border border-(--line) bg-(--paper)">
+      <div className="flex items-center justify-between px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] border-b border-(--line) text-(--muted)">
         <span className="font-mono">{language}</span>
         <button
           type="button"
           onClick={handleCopy}
-          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 normal-case tracking-normal transition-all cursor-pointer ${
+          className={`inline-flex items-center gap-1 rounded-md px-2 py-1 normal-case tracking-normal transition-colors cursor-pointer ${
             copied
-              ? 'text-emerald-400'
-              : theme === 'dark' ? 'text-slate-400 hover:bg-white/10 hover:text-slate-200' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+              ? 'text-emerald-600'
+              : 'text-(--muted) hover:bg-(--ink)/5 hover:text-(--ink)'
           }`}
           title="Copy code"
         >
@@ -94,9 +88,7 @@ function CodeBlock({ inline, className, children, theme }) {
         </button>
       </div>
       <pre className="overflow-x-auto p-3.5 custom-scrollbar select-text">
-        <code className={`font-mono text-[11.5px] leading-6 select-text ${
-          theme === 'dark' ? 'text-slate-200' : 'text-slate-800'
-        }`}>
+        <code className="font-mono text-[11.5px] leading-6 select-text text-(--ink)">
           {code}
         </code>
       </pre>
@@ -139,7 +131,7 @@ const QUICK_ACTIONS = [
   { label: 'Refactor', prompt: 'Refactor the current code', Icon: Code2, primary: false },
 ];
 
-export default function NeuraPanel({ theme }) {
+export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
   const { files, activeFile } = useFiles();
   const t = getThemeClasses(theme);
   const panelRef = useRef(null);
@@ -147,6 +139,15 @@ export default function NeuraPanel({ theme }) {
   const hasLoadedRef = useRef(false);
   const messagesEndRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
+  const actuallyOpen = forceOpen || isOpen;
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      setIsOpen(false);
+    }
+  };
   const [panelWidth, setPanelWidth] = useState(() => {
     const savedWidth = Number(readStorage(PANEL_WIDTH_KEY));
     if (Number.isFinite(savedWidth) && savedWidth >= MIN_PANEL_WIDTH && savedWidth <= MAX_PANEL_WIDTH) {
@@ -277,11 +278,11 @@ export default function NeuraPanel({ theme }) {
   };
 
   useEffect(() => {
-    if (!isOpen || hasLoadedRef.current) return;
+    if (!actuallyOpen || hasLoadedRef.current) return;
 
     hasLoadedRef.current = true;
     loadConversationList();
-  }, [isOpen]);
+  }, [actuallyOpen]);
 
   const handleLoadConversation = async (conversationId) => {
     if (!conversationId || conversationId === activeConversationId) return;
@@ -418,18 +419,17 @@ export default function NeuraPanel({ theme }) {
     return () => window.removeEventListener('synapse:ask-neura', onAskNeura);
   }, []);
 
-  if (!isOpen) {
+  if (!actuallyOpen) {
     return (
-      <div className={`w-13 rounded-2xl border flex flex-col items-center py-3 shrink-0 shadow-xl ${theme === 'dark' ? 'syn-glass shadow-black/40' : 'bg-white/85 border-slate-200 shadow-slate-300/40 backdrop-blur-xl'}`}>
+      <div className="w-12 rounded-lg border flex flex-col items-center py-3 shrink-0 bg-(--paper-2) border-(--line)">
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center justify-center w-9 h-9 rounded-xl bg-linear-to-br from-violet-500 via-indigo-500 to-cyan-500 shadow-[0_0_18px_rgba(139,92,246,0.55)] hover:shadow-[0_0_28px_rgba(139,92,246,0.8)] hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+          className="flex items-center justify-center w-9 h-9 rounded-md border transition-colors duration-150 cursor-pointer bg-(--blue)/10 border-(--blue)/30 text-(--blue) hover:bg-(--blue)/20"
           title="Open Neura AI Assistant"
         >
-          <Sparkles className="w-4.5 h-4.5 text-white" />
-          <span className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 group-hover:animate-ping" />
+          <Sparkles size={16} />
         </button>
-        <span className={`mt-2 text-[8px] font-bold uppercase tracking-[0.14em] ${t.textMuted} [writing-mode:vertical-rl]`}>
+        <span className="mt-2 font-mono text-[8px] font-bold uppercase tracking-[0.14em] text-(--muted) [writing-mode:vertical-rl]">
           Neura
         </span>
       </div>
@@ -439,34 +439,34 @@ export default function NeuraPanel({ theme }) {
   return (
     <aside
       ref={panelRef}
-      style={{ width: `${panelWidth}px` }}
-      className={`relative flex flex-col transition-[width] duration-200 shrink-0 rounded-2xl overflow-hidden shadow-2xl min-w-0 border animate-fade-in ${
-        theme === 'dark' ? 'syn-glass-strong shadow-black/50' : 'bg-white/90 border-slate-200 shadow-slate-300/40 backdrop-blur-xl'
-      }`}
+      style={forceOpen ? undefined : { width: `${panelWidth}px` }}
+      className={`relative flex flex-col shrink-0 rounded-lg overflow-hidden min-w-0 border animate-fade-in bg-(--paper-2) border-(--line) ${forceOpen ? 'w-full h-full rounded-none' : 'transition-[width] duration-200'}`}
     >
-      <button
-        type="button"
-        aria-label="Resize Neura panel"
-        onPointerDown={startResizing}
-        className="absolute left-0 top-0 z-20 h-full w-3 -translate-x-1/2 cursor-col-resize hover:bg-violet-500/20 transition-colors"
-      >
-        <span className="sr-only">Resize</span>
-      </button>
+      {!forceOpen && (
+        <button
+          type="button"
+          aria-label="Resize Neura panel"
+          onPointerDown={startResizing}
+          className="absolute left-0 top-0 z-20 h-full w-1.5 -translate-x-1/2 cursor-col-resize transition-colors hover:bg-(--ink)/8"
+        >
+          <span className="sr-only">Resize</span>
+        </button>
+      )}
 
       <div className="flex flex-col w-full h-full relative min-h-0">
         {/* Header */}
-        <header className={`px-4 py-3 border-b ${t.border} flex items-center justify-between shrink-0 ${theme === 'dark' ? 'bg-white/2' : 'bg-slate-50/60'}`}>
+        <header className={`px-4 py-3 border-b ${t.border} flex items-center justify-between shrink-0`}>
           <div className="flex items-center gap-2.5">
-            <span className="relative flex w-8 h-8 rounded-xl bg-linear-to-br from-violet-500 via-indigo-500 to-cyan-500 items-center justify-center shadow-[0_0_16px_rgba(139,92,246,0.5)]">
-              <Sparkles className="w-4 h-4 text-white" />
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 rounded-full shadow-[0_0_6px_rgba(52,211,153,0.8)]" style={{ borderColor: theme === 'dark' ? '#0d0d17' : '#fff' }} />
+            <span className="relative flex w-8 h-8 rounded-md border items-center justify-center bg-(--blue)/10 border-(--blue)/30">
+              <Sparkles size={15} className="text-(--blue)" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 rounded-full border-(--paper-2)" />
             </span>
             <div>
-              <h2 className={`text-sm font-bold font-display tracking-tight ${t.textPrimary}`}>
-                Neura <span className="syn-text-gradient">AI</span>
+              <h2 className={`text-sm font-extrabold ${t.textPrimary}`}>
+                Neura AI
               </h2>
-              <p className={`text-[10px] ${t.textMuted} flex items-center gap-1`}>
-                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+              <p className={`font-mono text-[10px] ${t.textMuted} flex items-center gap-1`}>
+                <span className="w-1 h-1 rounded-full bg-emerald-500" />
                 Online
               </p>
             </div>
@@ -482,7 +482,7 @@ export default function NeuraPanel({ theme }) {
               {isCreatingConversation ? <LoaderCircle className="w-4 h-4 animate-spin" /> : <MessageSquarePlus className="w-4 h-4" />}
             </button>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
               className={t.iconBtn + ' p-1.5!'}
               title="Close Panel"
             >
@@ -492,18 +492,16 @@ export default function NeuraPanel({ theme }) {
         </header>
 
         {/* Quick actions */}
-        <div className={`flex items-center gap-1.5 px-3 py-2.5 border-b ${t.border} overflow-x-auto scrollbar-hide shrink-0`}>
+        <div className={`flex items-center gap-1.5 px-3 py-2.5 border-b ${t.border} overflow-x-auto shrink-0`}>
           {QUICK_ACTIONS.map(({ label, prompt, Icon, primary }) => (
             <button
               key={label}
               onClick={() => handleSend(prompt)}
               disabled={isSending}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer hover:-translate-y-px active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none border ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[11px] font-bold whitespace-nowrap transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:pointer-events-none border ${
                 primary
-                  ? 'bg-violet-500/15 text-violet-300 border-violet-500/30 hover:bg-violet-500/25 hover:shadow-[0_4px_16px_-4px_rgba(139,92,246,0.6)]'
-                  : theme === 'dark'
-                    ? 'bg-white/4 text-slate-300 border-white/10 hover:bg-white/8 hover:border-white/20'
-                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                  ? 'bg-(--blue)/10 text-(--blue) border-(--blue)/30 hover:bg-(--blue)/15'
+                  : 'bg-(--ink)/3 text-(--muted) border-(--line) hover:bg-(--ink)/6 hover:text-(--ink)'
               }`}
             >
               <Icon size={12} />
@@ -513,16 +511,18 @@ export default function NeuraPanel({ theme }) {
         </div>
 
         {/* Chat / History tabs */}
-        <div className={`flex px-4 gap-5 text-[10px] font-bold uppercase tracking-[0.16em] border-b ${t.border} shrink-0 ${t.textMuted}`}>
+        <div className={`flex px-4 gap-5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] border-b ${t.border} shrink-0 ${t.textMuted}`}>
           {['chat', 'history'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`relative py-2.5 transition-colors cursor-pointer ${activeTab === tab ? 'text-violet-400' : 'hover:text-slate-300'}`}
+              className={`relative py-2.5 transition-colors cursor-pointer ${
+                activeTab === tab ? 'text-(--ink)' : 'hover:text-(--muted)'
+              }`}
             >
               {tab}
               {activeTab === tab && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-linear-to-r from-violet-500 to-cyan-400" />
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-(--blue)" />
               )}
             </button>
           ))}
@@ -533,27 +533,25 @@ export default function NeuraPanel({ theme }) {
           {activeTab === 'chat' ? (
             <>
               {isLoadingConversation ? (
-                <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-[11px] mx-auto mt-4 animate-fade-in ${t.card}`}>
-                  <LoaderCircle size={13} className="animate-spin text-violet-400" />
+                <div className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-[11px] mx-auto mt-4 animate-fade-in ${t.card}`}>
+                  <LoaderCircle size={13} className="animate-spin" />
                   <span className={t.textMuted}>Loading conversation…</span>
                 </div>
               ) : messages.map((msg) => {
                 const timeStr = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                 const isUser = msg.role === 'user';
                 return (
-                  <div key={msg._id} className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} animate-fade-up w-full`}>
-                    <div className={`flex items-center gap-1.5 mb-1.5 px-0.5 text-[9px] font-bold uppercase tracking-[0.12em] ${t.textMuted}`}>
-                      {!isUser && <Sparkles size={9} className="text-violet-400" />}
+                  <div key={msg._id} className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} animate-fade-in w-full`}>
+                    <div className="flex items-center gap-1.5 mb-1.5 px-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--muted)">
+                      {!isUser && <Sparkles size={9} className="text-(--blue)" />}
                       <span>{isUser ? 'You' : 'Neura AI'}</span>
                       {timeStr && <span className="normal-case font-medium opacity-70">{timeStr}</span>}
                     </div>
 
-                    <div className={`max-w-[92%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed shadow-md wrap-break-word overflow-hidden transition-all duration-200 ${
+                    <div className={`max-w-[92%] px-4 py-3 rounded-lg text-[13px] leading-relaxed wrap-break-word overflow-hidden border ${
                       isUser
-                        ? 'bg-linear-to-br from-violet-600 to-indigo-600 text-white rounded-br-md shadow-[0_8px_24px_-8px_rgba(139,92,246,0.6)]'
-                        : theme === 'dark'
-                          ? 'syn-glass text-slate-200 rounded-bl-md'
-                          : 'bg-white text-slate-700 border border-slate-200 rounded-bl-md shadow-sm'
+                        ? 'bg-(--ink) text-(--paper) border-(--ink)'
+                        : 'bg-(--paper) text-(--ink) border-(--line)'
                     }`}>
                       {isUser ? (
                         <div className="whitespace-pre-wrap select-text">{msg.content}</div>
@@ -562,9 +560,7 @@ export default function NeuraPanel({ theme }) {
                       )}
 
                       {msg.role === 'assistant' && msg._id === 'welcome' && (activeFile || files.length > 0) && (
-                        <div className={`mt-3 px-2.5 py-1.5 rounded-lg border font-mono text-[10px] flex items-center justify-between gap-2 ${
-                          theme === 'dark' ? 'bg-black/30 border-violet-500/20 text-violet-300' : 'bg-violet-50 border-violet-200 text-violet-600'
-                        }`}>
+                        <div className="mt-3 px-2.5 py-1.5 rounded-md border font-mono text-[10px] flex items-center justify-between gap-2 bg-(--ink)/3 border-(--line) text-(--muted)">
                           <span className="truncate">Context: {activeFile ? activeFile.name : 'Workspace'}</span>
                           <Terminal size={11} className="shrink-0 opacity-60" />
                         </div>
@@ -574,7 +570,7 @@ export default function NeuraPanel({ theme }) {
                     {msg.role === 'assistant' && msg._id !== 'welcome' && (
                       <button
                         onClick={() => copyText(msg.content)}
-                        className={`mt-1.5 ml-1 p-1.5 rounded-lg opacity-0 hover:opacity-100 focus:opacity-100 transition-all cursor-pointer ${t.textMuted} hover:text-violet-300 ${theme === 'dark' ? 'hover:bg-white/6' : 'hover:bg-slate-100'}`}
+                        className="mt-1.5 ml-1 p-1.5 rounded-md opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer text-(--muted) hover:bg-(--ink)/6 hover:text-(--ink)"
                         title="Copy response"
                       >
                         <Copy size={12} />
@@ -585,23 +581,23 @@ export default function NeuraPanel({ theme }) {
               })}
 
               {isSending && (
-                <div className="flex flex-col items-start animate-fade-up w-full">
-                  <div className={`flex items-center gap-1.5 mb-1.5 text-[9px] font-bold uppercase tracking-[0.12em] ${t.textMuted}`}>
-                    <Sparkles size={9} className="text-violet-400" />
+                <div className="flex flex-col items-start animate-fade-in w-full">
+                  <div className="flex items-center gap-1.5 mb-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--muted)">
+                    <Sparkles size={9} className="text-(--blue)" />
                     <span>Neura AI</span>
                   </div>
-                  <div className={`px-5 py-4 rounded-2xl rounded-bl-md border ${theme === 'dark' ? 'syn-glass' : 'bg-white border-slate-200 shadow-sm'}`}>
+                  <div className="px-5 py-4 rounded-lg border border-(--line) bg-(--paper)">
                     <span className="flex gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-violet-400 animate-typing" />
-                      <span className="w-2 h-2 rounded-full bg-violet-400 animate-typing" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 rounded-full bg-violet-400 animate-typing" style={{ animationDelay: '300ms' }} />
+                      <span className="w-2 h-2 rounded-full bg-(--blue) animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-(--blue) animate-pulse" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 rounded-full bg-(--blue) animate-pulse" style={{ animationDelay: '300ms' }} />
                     </span>
                   </div>
                 </div>
               )}
 
               {error && (
-                <div className="text-[11px] rounded-xl border px-3.5 py-2.5 border-rose-500/30 text-rose-300 bg-rose-500/10 animate-fade-in">
+                <div className="text-[11px] rounded-lg border px-3.5 py-2.5 animate-fade-in border-(--red)/30 text-(--red) bg-(--red)/7">
                   {error}
                 </div>
               )}
@@ -612,27 +608,25 @@ export default function NeuraPanel({ theme }) {
             <div className="space-y-1.5">
               {isLoadingHistory ? (
                 <div className={`flex items-center justify-center gap-2 py-8 text-[11px] ${t.textMuted}`}>
-                  <LoaderCircle size={14} className="animate-spin text-violet-400" />
+                  <LoaderCircle size={14} className="animate-spin" />
                   <span>Loading chats…</span>
                 </div>
               ) : conversations.length > 0 ? (
-                conversations.map((item, i) => {
+                conversations.map((item) => {
                   const isActive = item._id === activeConversationId;
                   return (
-                    <div key={item._id} className="relative group/item animate-fade-up" style={{ animationDelay: `${i * 40}ms` }}>
+                    <div key={item._id} className="relative group/item animate-fade-in">
                       <button
                         onClick={() => handleLoadConversation(item._id)}
-                        className={`w-full flex items-center justify-between pl-3 pr-10 py-2.5 rounded-xl text-left transition-all duration-200 cursor-pointer border ${
+                        className={`w-full flex items-center justify-between pl-3 pr-10 py-2.5 rounded-md text-left transition-colors duration-150 cursor-pointer border ${
                           isActive
-                            ? 'bg-violet-500/12 border-violet-500/30 shadow-[0_4px_16px_-6px_rgba(139,92,246,0.5)]'
-                            : theme === 'dark'
-                              ? 'hover:bg-white/5 border-transparent hover:border-white/10'
-                              : 'hover:bg-slate-100 border-transparent'
+                            ? 'bg-(--blue)/8 border-(--blue)/30'
+                            : 'border-transparent hover:bg-(--ink)/4'
                         }`}
                       >
                         <span className="flex items-center gap-2.5 truncate">
-                          <History size={13} className={isActive ? 'text-violet-400 shrink-0' : `${t.textMuted} shrink-0`} />
-                          <span className={`text-[13px] truncate ${isActive ? 'text-violet-200 font-semibold' : t.textSecondary}`}>
+                          <History size={13} className={isActive ? 'text-(--blue) shrink-0' : 'text-(--muted) shrink-0'} />
+                          <span className={`text-[13px] truncate ${isActive ? t.textPrimary + ' font-medium' : t.textSecondary}`}>
                             {item.title}
                           </span>
                         </span>
@@ -643,7 +637,7 @@ export default function NeuraPanel({ theme }) {
 
                       <button
                         onClick={(e) => deleteHistoryItem(e, item._id)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 opacity-0 group-hover/item:opacity-100 hover:bg-rose-500/15 text-slate-500 hover:text-rose-400 rounded-lg transition-all cursor-pointer z-10"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 opacity-0 group-hover/item:opacity-100 rounded-md transition-colors cursor-pointer z-10 hover:bg-(--red)/10 text-(--muted) hover:text-(--red)"
                         title="Delete chat"
                       >
                         <Trash2 size={13} />
@@ -652,7 +646,7 @@ export default function NeuraPanel({ theme }) {
                   );
                 })
               ) : (
-                <div className={`flex flex-col items-center justify-center py-12 gap-2 opacity-60 animate-fade-in ${t.textMuted}`}>
+                <div className={`flex flex-col items-center justify-center py-12 gap-2 animate-fade-in ${t.textMuted}`}>
                   <History size={30} />
                   <p className="text-xs">No chat history yet</p>
                 </div>
@@ -663,7 +657,7 @@ export default function NeuraPanel({ theme }) {
 
         {/* Footer input */}
         {activeTab === 'chat' && (
-          <footer className={`p-3.5 border-t ${t.border} shrink-0 ${theme === 'dark' ? 'bg-white/2' : 'bg-slate-50/70'}`}>
+          <footer className={`p-3.5 border-t ${t.border} shrink-0`}>
             <div className="relative">
               <textarea
                 value={inputValue}
@@ -677,13 +671,13 @@ export default function NeuraPanel({ theme }) {
                 maxLength={4000}
                 placeholder="Ask Neura anything…"
                 rows={3}
-                className={`${t.input} w-full min-h-22 p-3 pr-12 text-[13px] resize-none syn-focus-ring leading-relaxed`}
+                className={`${t.input} w-full min-h-22 p-3 pr-12 text-[13px] resize-none leading-relaxed`}
               />
 
               <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1">
                 <button
                   onClick={() => setInputValue('')}
-                  className={`p-2 rounded-lg transition-all cursor-pointer ${t.textMuted} ${theme === 'dark' ? 'hover:bg-white/[0.07] hover:text-rose-300' : 'hover:bg-slate-200 hover:text-rose-500'}`}
+                  className="p-2 rounded-md transition-colors cursor-pointer text-(--muted) hover:bg-(--ink)/6 hover:text-(--red)"
                   title="Clear input"
                 >
                   <Eraser size={14} />
@@ -691,11 +685,7 @@ export default function NeuraPanel({ theme }) {
                 <button
                   onClick={() => handleSend()}
                   disabled={!inputValue.trim() || isSending}
-                  className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 ${
-                    inputValue.trim() && !isSending
-                      ? 'bg-linear-to-br from-violet-500 to-indigo-600 text-white shadow-[0_6px_20px_-4px_rgba(139,92,246,0.7)] hover:shadow-[0_8px_28px_-4px_rgba(139,92,246,0.9)] hover:scale-105 active:scale-95 cursor-pointer'
-                      : theme === 'dark' ? 'bg-white/5 text-slate-600 cursor-not-allowed' : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
+                  className={inputValue.trim() && !isSending ? `${t.btnPrimary} w-9! h-9! p-0! px-0!` : 'flex items-center justify-center w-9 h-9 rounded-lg bg-(--ink)/10 text-(--muted) cursor-not-allowed'}
                   title="Send"
                 >
                   {isSending ? <LoaderCircle size={15} className="animate-spin" /> : <Send size={15} />}
@@ -705,7 +695,7 @@ export default function NeuraPanel({ theme }) {
 
             <div className={`mt-2.5 flex items-center justify-between text-[10px] ${t.textMuted}`}>
               <span className="flex items-center gap-1.5 truncate">
-                <Check size={11} className="text-emerald-400 shrink-0" />
+                <Check size={11} className="text-emerald-500 shrink-0" />
                 <span className="truncate font-mono">Context: {activeFile ? activeFile.name : 'Workspace'}</span>
               </span>
               <span className="font-mono tabular-nums shrink-0 ml-2">{inputValue.trim().length}/4000</span>

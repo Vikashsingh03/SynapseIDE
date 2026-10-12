@@ -49,6 +49,7 @@ export default function Toolbar({
   const showRoomControls = Boolean(roomId || onCopyInvite);
   const avatarColor = getAvatarColor(currentUser, currentUser?.cursorColor || currentUser?.avatarColor);
   const avatarStyle = getAvatarStyle(currentUser, avatarColor);
+  const dark = theme === 'dark';
 
   const handleRun = useCallback(async () => {
     if (!activeFile || isRunning) return;
@@ -120,58 +121,78 @@ export default function Toolbar({
     }
   };
 
+  // Paper-style cluster buttons (theme-aware via CSS vars)
+  const clusterBtn = dark
+    ? 'text-(--muted) hover:text-(--ink) hover:bg-white/6'
+    : 'text-(--muted) hover:text-(--ink) hover:bg-black/5';
+
   return (
-    <header className={`h-14 border-b ${t.border} flex items-center justify-between pl-3 pr-4 ${t.header} relative z-50 shrink-0`}>
+    <header className={`h-14 flex items-center justify-between pl-3 pr-4 ${t.header} relative z-50 shrink-0`}>
       {/* Left: brand + run controls */}
       <div className="flex items-center flex-1 min-w-0 gap-3">
         <div className="flex items-center shrink-0">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <span className="flex w-8 h-8 rounded-xl bg-linear-to-br from-violet-500 via-indigo-500 to-cyan-500 items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.45)] group-hover:shadow-[0_0_28px_rgba(139,92,246,0.65)] group-hover:scale-105 transition-all duration-200">
+          <Link to="/" className="flex items-center gap-2.5">
+            <span className="flex w-8 h-8 rounded-md bg-(--red) items-center justify-center">
               <SynapseLogo size={16} color="#ffffff" nodeColor="#ffffff" />
             </span>
-            <span className={`font-display font-bold uppercase tracking-tight text-[15px] ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+            <span className={`font-bold tracking-tight text-[15px] ${t.textPrimary}`}>
               Synapse
             </span>
           </Link>
           <Link
             to="/dashboard"
-            className={`hidden md:inline-flex ml-5 items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-all duration-200 hover:-translate-y-px ${theme === 'dark' ? 'bg-white/4 hover:bg-white/8 text-slate-300 border-white/10' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-200'}`}
+            className={`hidden md:inline-flex ml-5 items-center gap-1.5 px-3 py-1.5 rounded-md border ${t.border} text-[11px] font-medium transition-colors ${clusterBtn}`}
           >
             <LayoutGrid size={12} />
             Dashboard
           </Link>
         </div>
 
-        {/* Run control cluster */}
-        <div className={`hidden md:flex items-center gap-1.5 p-1 rounded-xl border ${theme === 'dark' ? 'bg-white/3 border-white/[0.07]' : 'bg-slate-100/70 border-slate-200'}`}>
-          {/* Run Button */}
+        {/* Mobile RUN button — compact acid */}
+        <button
+          onClick={handleRun}
+          disabled={isRunning || !activeFile}
+          aria-label="Run code"
+          className={`${t.btnRun} md:hidden disabled:opacity-50 disabled:pointer-events-none ml-1`}
+        >
+          {isRunning ? (
+            <span className="w-3.5 h-3.5 border-2 rounded-full animate-spin border-[#10140b]/30 border-t-[#10140b]" />
+          ) : (
+            <Play size={12} className="fill-current" />
+          )}
+          <span>{isRunning ? 'RUN…' : 'RUN'}</span>
+        </button>
+
+        {/* Run control cluster — desktop */}
+        <div className={`hidden md:flex items-center gap-1 p-1 rounded-lg border ${t.border}`}>
+          {/* Run Button — acid lime, mono (v3 signature) */}
           <button
             onClick={handleRun}
             disabled={isRunning || !activeFile}
-            className="group flex items-center gap-2 pl-3 pr-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-linear-to-br from-emerald-500 to-teal-600 shadow-[0_6px_20px_-4px_rgba(16,185,129,0.6)] hover:shadow-[0_8px_28px_-4px_rgba(16,185,129,0.8)] hover:-translate-y-px active:translate-y-0 active:scale-[0.97] transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            className={`${t.btnRun} disabled:opacity-50 disabled:pointer-events-none`}
           >
             {isRunning ? (
-              <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              <span className="w-3.5 h-3.5 border-2 rounded-full animate-spin border-[#10140b]/30 border-t-[#10140b]" />
             ) : (
-              <Play size={13} className="fill-white group-hover:scale-125 transition-transform" />
+              <Play size={12} className="fill-current" />
             )}
-            <span>{isRunning ? 'Running…' : 'Run'}</span>
+            <span>{isRunning ? 'RUNNING…' : 'RUN'}</span>
           </button>
 
           {/* Save Version Button */}
           {onSaveVersion && (
             <button
               onClick={handleSave}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 hover:-translate-y-px active:translate-y-0 ${theme === 'dark' ? 'text-slate-300 hover:bg-white/[0.07]' : 'text-slate-600 hover:bg-white'}`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${clusterBtn}`}
             >
               {saveStatus === 'saving' ? (
-                <span className="w-3.5 h-3.5 border-2 border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
+                <span className={`w-3.5 h-3.5 border-2 rounded-full animate-spin ${dark ? 'border-zinc-500 border-t-zinc-200' : 'border-zinc-300 border-t-zinc-700'}`} />
               ) : saveStatus === 'saved' ? (
-                <Check size={14} className="text-emerald-400" />
+                <Check size={14} className="text-emerald-500" />
               ) : (
-                <CloudUpload size={14} className="text-violet-400" />
+                <CloudUpload size={14} />
               )}
-              <span className={saveStatus === 'saved' ? 'text-emerald-400' : ''}>
+              <span className={saveStatus === 'saved' ? 'text-emerald-500' : ''}>
                 {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : 'Save'}
               </span>
             </button>
@@ -179,11 +200,11 @@ export default function Toolbar({
 
           {/* Language dropdown */}
           <div className="relative group">
-            <button className={`flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 ${theme === 'dark' ? 'text-slate-300 hover:bg-white/[0.07]' : 'text-slate-600 hover:bg-white'}`}>
+            <button className={`flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${clusterBtn}`}>
               <span className="font-mono">{currentLang.name}</span>
-              <ChevronDown size={12} className={`${t.textMuted} group-hover:rotate-180 transition-transform duration-200`} />
+              <ChevronDown size={12} className={t.textMuted} />
             </button>
-            <div className="absolute top-full left-0 mt-2 w-44 syn-glass-strong rounded-xl p-1.5 shadow-2xl opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-200 z-60">
+            <div className={`${t.card} absolute top-full left-0 mt-2 w-44 p-1.5 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-150 z-60`}>
               {LANGUAGES.map(lang => (
                 <button
                   key={lang.id}
@@ -195,10 +216,14 @@ export default function Toolbar({
                       renameFile(activeFile.id, newName);
                     }
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors duration-150 ${lang.id === currentLang.id ? 'bg-violet-500/15 text-violet-300' : theme === 'dark' ? 'text-slate-300 hover:bg-white/6' : 'text-slate-600 hover:bg-slate-100'}`}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs cursor-pointer transition-colors ${
+                    lang.id === currentLang.id
+                      ? 'bg-(--blue)/10 text-(--blue)'
+                      : clusterBtn
+                  }`}
                 >
                   <span className="font-mono">{lang.name}</span>
-                  {lang.id === currentLang.id && <Check size={12} className="text-violet-400" />}
+                  {lang.id === currentLang.id && <Check size={12} />}
                 </button>
               ))}
             </div>
@@ -208,16 +233,20 @@ export default function Toolbar({
           <div className="relative">
             <button
               onClick={() => setIsStdinOpen(!isStdinOpen)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 ${isStdinOpen ? 'bg-violet-500/15 text-violet-300 border border-violet-500/30' : theme === 'dark' ? 'text-slate-300 hover:bg-white/[0.07] border border-transparent' : 'text-slate-600 hover:bg-white border border-transparent'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors border ${
+                isStdinOpen
+                  ? 'bg-(--blue)/10 text-(--blue) border-(--blue)/30'
+                  : `border-transparent ${clusterBtn}`
+              }`}
             >
               <Keyboard size={13} />
               <span className="font-mono">stdin</span>
             </button>
 
             {isStdinOpen && (
-              <div className="absolute top-full left-0 mt-2 w-80 syn-glass-strong rounded-2xl shadow-2xl p-4 flex flex-col gap-3 animate-scale-in z-60">
-                <div className={`flex justify-between items-center text-[10px] font-bold ${t.textMuted} uppercase tracking-[0.14em]`}>
-                  Standard Input
+              <div className={`${t.card} absolute top-full left-0 mt-2 w-80 p-4 flex flex-col gap-3 animate-fade-in z-60`}>
+                <div className="flex justify-between items-center">
+                  <span className={t.eyebrow}>Standard Input</span>
                   <button onClick={() => setIsStdinOpen(false)} className={t.iconBtn + ' p-1!'} title="Close">
                     <X size={13} />
                   </button>
@@ -227,7 +256,7 @@ export default function Toolbar({
                   value={stdinValue}
                   onChange={(e) => setStdinValue(e.target.value)}
                   placeholder="Enter program input here…"
-                  className={`${t.input} w-full h-32 p-3 text-xs font-mono resize-none syn-focus-ring`}
+                  className={`${t.input} w-full h-32 p-3 text-xs font-mono resize-none`}
                 />
                 {stdinValue && (
                   <p className={`text-[10px] ${t.textMuted}`}>Will be piped to your program on Run.</p>
@@ -240,9 +269,9 @@ export default function Toolbar({
           <button
             onClick={onOpenPalette}
             title="Command palette (Ctrl+K or Ctrl+Shift+P)"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 hover:-translate-y-px active:translate-y-0 ${theme === 'dark' ? 'text-slate-300 hover:bg-white/[0.07]' : 'text-slate-600 hover:bg-white'}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${clusterBtn}`}
           >
-            <Command size={13} className="text-violet-400" />
+            <Command size={13} />
             <span className={t.kbd}>Ctrl K</span>
           </button>
 
@@ -250,9 +279,9 @@ export default function Toolbar({
           <button
             onClick={onOpenReview}
             title="Review code with Neura AI"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 hover:-translate-y-px active:translate-y-0 ${theme === 'dark' ? 'text-slate-300 hover:bg-white/[0.07]' : 'text-slate-600 hover:bg-white'}`}
+            className={`${t.btnSecondary} px-3! py-1.5! text-xs!`}
           >
-            <ScanSearch size={13} className="text-cyan-400" />
+            <ScanSearch size={13} />
             <span>Review</span>
           </button>
         </div>
@@ -269,9 +298,9 @@ export default function Toolbar({
         </button>
 
         {showRoomControls && (
-          <div className={`hidden lg:flex items-center gap-2.5 pl-3.5 pr-2 py-1.5 rounded-xl border ${theme === 'dark' ? 'bg-white/3 border-white/8' : 'bg-slate-100 border-slate-200'}`}>
+          <div className={`hidden lg:flex items-center gap-2.5 pl-3.5 pr-2 py-1.5 rounded-lg border ${t.border}`}>
             <div className="flex flex-col items-start leading-tight">
-              <span className={`text-[11px] font-bold ${t.textPrimary} truncate max-w-37.5 tracking-wide`}>
+              <span className={`text-[11px] font-semibold ${t.textPrimary} truncate max-w-37.5 tracking-wide`}>
                 {roomName || 'Untitled Project'}
               </span>
               <span className={`text-[10px] ${t.textMuted} font-mono`}>
@@ -283,14 +312,14 @@ export default function Toolbar({
               className={`${t.iconBtn} p-1.5!`}
               title="Copy invite link"
             >
-              {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+              {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
             </button>
           </div>
         )}
         {showRoomControls && (
           <button
             onClick={onCopyInvite}
-            className="hidden sm:inline-flex items-center gap-1.5 pl-3 pr-4 py-2 rounded-xl text-xs font-semibold text-white bg-linear-to-br from-violet-500 to-indigo-600 shadow-[0_6px_20px_-4px_rgba(139,92,246,0.6)] hover:shadow-[0_8px_28px_-4px_rgba(139,92,246,0.8)] hover:-translate-y-px active:translate-y-0 active:scale-[0.97] transition-all duration-200 cursor-pointer"
+            className={`${t.btnSecondary} px-3! py-1.5! text-xs! hidden sm:inline-flex`}
           >
             <Share2 size={13} />
             Invite
@@ -299,7 +328,7 @@ export default function Toolbar({
         {(showRoomControls || onExit) && (
           <button
             onClick={showRoomControls ? onExitRoom : onExit}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer hover:-translate-y-px active:translate-y-0 border ${theme === 'dark' ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/25 text-red-300' : 'bg-red-50 hover:bg-red-100 border-red-200 text-red-600'}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer border bg-(--red)/7 hover:bg-(--red)/[0.14] border-(--red)/25 text-(--red)"
             title="Exit session"
             type="button"
           >
@@ -308,7 +337,7 @@ export default function Toolbar({
           </button>
         )}
         <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold ring-2 ring-violet-500/30 select-none cursor-default hover:ring-violet-500/60 hover:scale-105 transition-all duration-200"
+          className={`w-8 h-8 rounded-full border ${t.border} flex items-center justify-center text-[11px] font-bold select-none cursor-default`}
           style={avatarStyle}
           title={currentUser?.username || currentUser?.name || 'You'}
         >

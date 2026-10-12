@@ -303,29 +303,29 @@ export default function CommandPalette({
 
   return (
     <div
-      className="fixed inset-0 z-200 flex justify-center px-4 pt-[16vh] bg-black/60 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-100 flex justify-center px-4 pt-[16vh] bg-black/60 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl h-fit syn-glass-strong rounded-2xl overflow-hidden shadow-[0_32px_90px_-16px_rgba(0,0,0,0.85)] animate-scale-in"
+        className="w-full max-w-xl h-fit rounded-xl border border-(--line) overflow-hidden shadow-[0_30px_90px_rgba(20,21,20,0.25)] animate-spring-in bg-(--paper-2)"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search input */}
         <div className={`flex items-center gap-3 px-5 py-4 border-b ${t.border}`}>
-          <Search size={17} className="text-violet-400 shrink-0" />
+          <Search size={17} className={`${t.textMuted} shrink-0`} />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onInputKeyDown}
             placeholder="Type a command or search files…"
-            className="flex-1 bg-transparent outline-none text-sm text-slate-100 placeholder:text-slate-600"
+            className={`flex-1 bg-transparent outline-none text-sm ${t.textPrimary} placeholder:${t.textMuted}`}
           />
           <span className={t.kbd}>esc</span>
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="max-h-[46vh] overflow-y-auto p-2">
+        <div ref={listRef} className="max-h-[46vh] overflow-y-auto p-2 custom-scrollbar">
           {flat.length === 0 && (
             <p className={`text-center text-sm ${t.textMuted} py-8`}>
               No results for “{query}”
@@ -333,9 +333,7 @@ export default function CommandPalette({
           )}
           {sections.map((section) => (
             <div key={section.title} className="mb-1">
-              <p
-                className={`px-3 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-[0.18em] ${t.textMuted}`}
-              >
+              <p className={`px-3 pt-2.5 pb-1 ${t.eyebrow}`}>
                 {section.title}
               </p>
               {section.items.map((item) => {
@@ -349,31 +347,27 @@ export default function CommandPalette({
                     data-idx={myIdx}
                     onClick={() => runAndClose(item.run)}
                     onMouseEnter={() => setSelected(myIdx)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm cursor-pointer transition-colors duration-100 ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left text-sm cursor-pointer transition-colors duration-150 ${
                       isSel
-                        ? theme === 'dark'
-                          ? 'bg-violet-500/[0.14] text-white'
-                          : 'bg-violet-50 text-slate-900'
-                        : t.textSecondary
+                        ? 'bg-(--blue)/8 text-(--ink)'
+                        : 'text-(--muted)'
                     }`}
                   >
                     <span
-                      className={`p-1.5 rounded-lg shrink-0 ${
+                      className={`p-1.5 rounded-md shrink-0 border ${
                         isSel
-                          ? 'bg-violet-500/20 text-violet-300'
-                          : theme === 'dark'
-                            ? 'bg-white/5 text-slate-500'
-                            : 'bg-slate-100 text-slate-400'
+                          ? 'bg-(--blue)/10 border-(--blue)/30 text-(--blue)'
+                          : 'bg-(--ink)/3 border-(--line) text-(--muted)'
                       }`}
                     >
                       <Icon size={14} />
                     </span>
-                    <span className="flex-1 truncate font-medium">{item.label}</span>
+                    <span className="flex-1 truncate font-bold">{item.label}</span>
                     {item.hint && (
-                      <span className={`${t.kbd} shrink-0`}>{item.hint}</span>
+                      <span className={`${t.kbd} shrink-0 font-mono`}>{item.hint}</span>
                     )}
                     {isSel && (
-                      <CornerDownLeft size={13} className="text-violet-400 shrink-0" />
+                      <CornerDownLeft size={13} className="text-(--muted) shrink-0" />
                     )}
                   </button>
                 );

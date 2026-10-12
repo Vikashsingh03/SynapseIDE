@@ -7,55 +7,30 @@ import {
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
-// VS Code-style file icon mapping
-function getFileIcon(name, isActive, mutedClass) {
+// Editorial v3: file-type icons stay distinct (Lucide), monochrome with
+// the v3 blue accent on the active file.
+function getFileIcon(name, isActive) {
   const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
-  const activeColor = 'text-violet-400';
 
   const iconMap = {
-    // JavaScript / TypeScript
-    js:   { Icon: Braces,    color: 'text-yellow-400' },
-    jsx:  { Icon: Braces,    color: 'text-sky-400' },
-    ts:   { Icon: Braces,    color: 'text-blue-400' },
-    tsx:  { Icon: Braces,    color: 'text-blue-400' },
-    // Python
-    py:   { Icon: Hash,      color: 'text-green-400' },
-    // Web
-    html: { Icon: Code,      color: 'text-orange-400' },
-    css:  { Icon: FileType,  color: 'text-blue-400' },
-    scss: { Icon: FileType,  color: 'text-pink-400' },
-    // Data
-    json: { Icon: FileJson,  color: 'text-yellow-500' },
-    xml:  { Icon: FileCode,  color: 'text-orange-300' },
-    yaml: { Icon: FileText,  color: 'text-red-300' },
-    yml:  { Icon: FileText,  color: 'text-red-300' },
-    env:  { Icon: Settings,  color: 'text-yellow-600' },
-    // Java / C
-    java: { Icon: FileCode,  color: 'text-red-400' },
-    cpp:  { Icon: FileCode,  color: 'text-blue-500' },
-    c:    { Icon: FileCode,  color: 'text-blue-400' },
-    h:    { Icon: FileCode,  color: 'text-purple-400' },
-    // Shell
-    sh:   { Icon: Terminal,  color: 'text-green-500' },
-    bat:  { Icon: Terminal,  color: 'text-green-400' },
-    // Markdown / Text
-    md:   { Icon: FileText,  color: 'text-sky-300' },
-    txt:  { Icon: FileText,  color: 'text-slate-400' },
-    // Images
-    png:  { Icon: Image,     color: 'text-emerald-400' },
-    jpg:  { Icon: Image,     color: 'text-emerald-400' },
-    svg:  { Icon: Image,     color: 'text-amber-400' },
-    // Database
-    sql:  { Icon: Database,  color: 'text-blue-300' },
-    db:   { Icon: Database,  color: 'text-slate-400' },
+    js: Braces, jsx: Braces, ts: Braces, tsx: Braces,
+    py: Hash,
+    html: Code, css: FileType, scss: FileType,
+    json: FileJson, xml: FileCode, yaml: FileText, yml: FileText, env: Settings,
+    java: FileCode, cpp: FileCode, c: FileCode, h: FileCode,
+    sh: Terminal, bat: Terminal,
+    md: FileText, txt: FileText,
+    png: Image, jpg: Image, svg: Image,
+    sql: Database, db: Database,
   };
 
-  const match = iconMap[ext];
-  if (match) {
-    const { Icon, color } = match;
-    return <Icon size={14} className={`shrink-0 ${isActive ? activeColor : color}`} />;
-  }
-  return <File size={14} className={`shrink-0 ${isActive ? activeColor : mutedClass}`} />;
+  const Icon = iconMap[ext] || File;
+  return (
+    <Icon
+      size={14}
+      className={`shrink-0 ${isActive ? 'text-(--blue)' : 'text-(--muted)'}`}
+    />
+  );
 }
 
 export default function FileTreeItem({
@@ -193,9 +168,9 @@ export default function FileTreeItem({
     }
   };
 
-  // VS Code-style indent guides
+  // Neutral indent guides (v3 hairline)
   const indentGuides = [];
-  const guideColor = theme === 'dark' ? 'rgba(139,92,246,0.14)' : 'rgba(0,0,0,0.08)';
+  const guideColor = 'var(--line)';
   for (let i = 0; i < depth; i++) {
     indentGuides.push(
       <div
@@ -210,28 +185,24 @@ export default function FileTreeItem({
     );
   }
 
-  // Determine background state
+  // Determine background state — v3: red inset indicator for the active file
   let stateClass = '';
   if (isDropTarget) {
-    stateClass = 'bg-violet-500/20 ring-1 ring-violet-500/50 ring-inset';
+    stateClass = 'bg-(--blue)/10 ring-1 ring-inset ring-(--blue)/40';
   } else if (isActive) {
-    stateClass = theme === 'dark'
-      ? 'bg-violet-500/[0.14] text-violet-200 shadow-[inset_2px_0_0_0_#8b5cf6]'
-      : 'bg-violet-50 text-violet-700 shadow-[inset_2px_0_0_0_#8b5cf6]';
+    stateClass = 'bg-(--blue)/8 text-(--ink) shadow-[inset_2px_0_0_0_var(--red)]';
   } else if (isSelected) {
-    stateClass = theme === 'dark'
-      ? 'bg-white/[0.06] text-slate-100'
-      : 'bg-slate-200/70 text-slate-800';
+    stateClass = 'bg-(--ink)/5 text-(--ink)';
   }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative flex items-center justify-between group text-[13px] cursor-pointer select-none rounded-lg mx-1.5 my-px
-        transition-all duration-150
+      className={`relative flex items-center justify-between group text-[13px] cursor-pointer select-none rounded-md mx-1 my-px
+        transition-colors duration-150
         ${stateClass}
-        ${!isActive && !isSelected && !isDropTarget ? `${t.text} hover:bg-white/4 hover:text-violet-300` : ''}
+        ${!isActive && !isSelected && !isDropTarget ? 'text-(--muted) hover:bg-(--ink)/4' : ''}
         ${isDragging ? 'z-10' : ''}
       `}
       onClick={handleClick}
@@ -241,19 +212,19 @@ export default function FileTreeItem({
       {...attributes}
       {...listeners}
     >
-      {/* VS Code indent guide lines */}
+      {/* Indent guide lines */}
       {depth > 0 && indentGuides}
 
       {/* Content with proper indentation */}
       <div
-        className="flex items-center gap-1.5 py-1.25 pr-3 truncate min-w-0 flex-1"
+        className="flex items-center gap-1.5 py-1 pr-3 truncate min-w-0 flex-1"
         style={{ paddingLeft: `${depth * 16 + 10}px` }}
       >
         {/* Folder chevron or spacer */}
         {isFolder ? (
           <ChevronRight
             size={12}
-            className={`shrink-0 transition-transform duration-150 ${item.isOpen ? 'rotate-90 text-violet-400' : ''} ${t.textMuted}`}
+            className={`shrink-0 transition-transform duration-150 ${item.isOpen ? 'rotate-90' : ''} ${t.textMuted}`}
           />
         ) : (
           <span className="w-3 shrink-0" />
@@ -261,26 +232,28 @@ export default function FileTreeItem({
 
         {confirmDelete ? (
           <div className="flex items-center justify-between w-full animate-fade-in">
-            <span className="text-rose-400 font-semibold text-[11px]">Delete this {isFolder ? 'folder' : 'file'}?</span>
-            <div className="flex gap-2 ml-2">
+            <span className={`font-medium text-[11px] text-(--muted)`}>
+              Delete this {isFolder ? 'folder' : 'file'}?
+            </span>
+            <div className="flex gap-1.5 ml-2">
               <button
-                className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white text-[11px] font-bold cursor-pointer transition-colors"
+                className="px-2 py-0.5 rounded-md text-[11px] font-bold cursor-pointer transition-colors border bg-(--red)/10 text-(--red) border-(--red)/30 hover:bg-(--red) hover:text-white"
                 onPointerDown={(e) => {
                   e.stopPropagation();
                   onDeleteFile(item.id);
                   setConfirmDelete(false);
                 }}
               >
-                Yes
+                Delete
               </button>
               <button
-                className={`${t.textMuted} px-2 py-0.5 rounded-md hover:bg-white/10 text-[11px] cursor-pointer transition-colors`}
+                className="text-(--muted) px-2 py-0.5 rounded-md hover:bg-(--ink)/6 text-[11px] cursor-pointer transition-colors"
                 onPointerDown={(e) => {
                   e.stopPropagation();
                   setConfirmDelete(false);
                 }}
               >
-                No
+                Cancel
               </button>
             </div>
           </div>
@@ -289,10 +262,10 @@ export default function FileTreeItem({
             {/* File/Folder icon */}
             {isFolder ? (
               item.isOpen
-                ? <FolderOpen size={15} className={`shrink-0 ${isActive ? 'text-violet-300' : 'text-amber-400/80'}`} />
-                : <Folder size={15} className={`shrink-0 ${isActive ? 'text-violet-300' : 'text-amber-400/60'}`} />
+                ? <FolderOpen size={15} className={`shrink-0 ${isActive ? 'text-(--blue)' : 'text-(--muted)'}`} />
+                : <Folder size={15} className={`shrink-0 ${isActive ? 'text-(--blue)' : 'text-(--muted)'}`} />
             ) : (
-              getFileIcon(item.name, isActive, t.textMuted)
+              getFileIcon(item.name, isActive)
             )}
 
             {/* Name or rename input */}
@@ -306,11 +279,7 @@ export default function FileTreeItem({
                 onBlur={() => setTimeout(commitRename, 50)}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
-                className={`flex-1 min-w-0 text-[13px] outline-none py-0.5 px-1.5 rounded-lg syn-focus-ring ${
-                  theme === 'dark'
-                    ? 'bg-[#141422] text-violet-200 border border-violet-500/50'
-                    : 'bg-white text-violet-700 border border-violet-500/50'
-                }`}
+                className="flex-1 min-w-0 text-[13px] outline-none py-0.5 px-1.5 rounded-md border bg-(--paper) text-(--ink) border-(--blue)/60"
               />
             ) : (
               <span
@@ -324,10 +293,14 @@ export default function FileTreeItem({
             {/* Lock indicator */}
             {!isFolder && !isRenaming && fileLock && (
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold shrink-0 border ${
+                className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-semibold shrink-0 border ${
                   isLockedByOther
-                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/25'
-                    : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
+                    ? theme === 'dark'
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/25'
+                      : 'bg-amber-50 text-amber-600 border-amber-200'
+                    : theme === 'dark'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+                      : 'bg-emerald-50 text-emerald-600 border-emerald-200'
                 }`}
                 title={isLockedByOther ? `${fileLock.username || 'Someone'} is editing` : 'You are editing'}
               >
@@ -343,7 +316,7 @@ export default function FileTreeItem({
       {!isRenaming && !confirmDelete && (
         <div className="flex items-center gap-0.5 shrink-0 pr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           <button
-            className="p-1 rounded-md text-slate-500 hover:text-violet-400 hover:bg-violet-500/10 cursor-pointer transition-colors"
+            className="p-1 rounded-md cursor-pointer transition-colors text-(--muted) hover:text-(--ink) hover:bg-(--ink)/6"
             onClick={(e) => {
               e.stopPropagation();
               startRenaming();
@@ -354,7 +327,7 @@ export default function FileTreeItem({
             <Pencil size={12} />
           </button>
           <button
-            className="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer transition-colors"
+            className="p-1 rounded-md cursor-pointer transition-colors text-(--muted) hover:text-(--red) hover:bg-(--ink)/6"
             onClick={(e) => {
               e.stopPropagation();
               setConfirmDelete(true);

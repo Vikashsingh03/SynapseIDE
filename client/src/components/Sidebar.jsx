@@ -82,34 +82,31 @@ function ContextMenu({ x, y, items, onClose, theme }) {
   return (
     <div
       ref={menuRef}
-      className={`fixed z-9999 py-1.5 min-w-50 rounded-xl shadow-2xl border animate-scale-in ${
-        theme === 'dark'
-          ? 'syn-glass-strong'
-          : 'bg-white/95 border-slate-200 shadow-slate-300/50'
-      }`}
+      className="fixed z-100 py-1 min-w-52 rounded-lg border border-(--line) bg-(--paper-2) shadow-[0_8px_24px_rgba(0,0,0,0.35)] animate-fade-in"
       style={{ left: x, top: y }}
     >
       {items.map((item, i) => {
         if (item.type === 'separator') {
-          return <div key={i} className="my-1.5 syn-divider opacity-60" />;
+          return <div key={i} className="my-1 border-t border-(--line)" />;
         }
+        const isDelete = item.label === 'Delete';
         return (
           <button
             key={i}
-            className={`w-full flex items-center gap-3 px-3.5 py-2 text-xs text-left transition-all duration-150 cursor-pointer ${
-              theme === 'dark'
-                ? 'text-slate-300 hover:bg-violet-500/15 hover:text-violet-200'
-                : 'text-slate-700 hover:bg-violet-50 hover:text-violet-700'
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-left transition-colors duration-150 cursor-pointer ${
+              isDelete
+                ? 'text-(--ink) hover:bg-(--red)/10 hover:text-(--red)'
+                : 'text-(--ink) hover:bg-(--ink)/5'
             }`}
             onClick={() => {
               item.action();
               onClose();
             }}
           >
-            {item.icon && <item.icon size={14} className={item.iconColor || ''} />}
-            <span className="flex-1 font-medium">{item.label}</span>
+            {item.icon && <item.icon size={14} className="shrink-0 opacity-70" />}
+            <span className="flex-1 font-bold">{item.label}</span>
             {item.shortcut && (
-              <span className={`text-[10px] font-mono ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+              <span className="font-mono text-[10px] text-(--muted)">
                 {item.shortcut}
               </span>
             )}
@@ -261,13 +258,11 @@ export default function Sidebar({
       menuItems.push({
         label: 'New File',
         icon: FilePlus,
-        iconColor: 'text-violet-400',
         action: () => startCreate('file', item.id),
       });
       menuItems.push({
         label: 'New Folder',
         icon: FolderPlus,
-        iconColor: 'text-amber-400',
         action: () => startCreate('folder', item.id),
       });
       menuItems.push({ type: 'separator' });
@@ -276,14 +271,12 @@ export default function Sidebar({
     menuItems.push({
       label: 'Rename',
       icon: Pencil,
-      iconColor: 'text-violet-400',
       shortcut: 'F2',
       action: () => setRenameTargetId(item.id),
     });
     menuItems.push({
       label: 'Delete',
       icon: Trash2,
-      iconColor: 'text-rose-400',
       shortcut: 'Del',
       action: () => deleteFile(item.id),
     });
@@ -294,13 +287,11 @@ export default function Sidebar({
       menuItems.push({
         label: 'New File Here',
         icon: FilePlus,
-        iconColor: 'text-violet-400',
         action: () => startCreate('file', item.id),
       });
       menuItems.push({
         label: 'New Folder Here',
         icon: FolderPlus,
-        iconColor: 'text-amber-400',
         action: () => startCreate('folder', item.id),
       });
       menuItems.push({ type: 'separator' });
@@ -479,13 +470,11 @@ export default function Sidebar({
       {
         label: 'New File',
         icon: FilePlus,
-        iconColor: 'text-violet-400',
         action: () => startCreate('file', null),
       },
       {
         label: 'New Folder',
         icon: FolderPlus,
-        iconColor: 'text-amber-400',
         action: () => startCreate('folder', null),
       },
     ];
@@ -528,45 +517,43 @@ export default function Sidebar({
   return (
     <>
       {/* Activity Bar */}
-      <nav className={`w-13 rounded-2xl border flex flex-col items-center py-3 gap-1.5 shrink-0 overflow-hidden shadow-xl ${theme === 'dark' ? 'syn-glass shadow-black/40' : 'bg-white/85 border-slate-200 shadow-slate-300/40 backdrop-blur-xl'}`}>
+      <nav className="w-12 rounded-lg border flex flex-col items-center py-2.5 gap-1 shrink-0 bg-(--paper-2) border-(--line)">
         {activityTypes.map((type) => {
           const isActive = activeSidebar === type;
           return (
             <button
               key={type}
               onClick={() => handleSidebarToggle(type)}
-              className={`relative p-2.5 rounded-xl transition-all duration-200 cursor-pointer group ${
+              className={`relative p-2 rounded-md transition-colors duration-150 cursor-pointer ${
                 isActive
-                  ? 'text-violet-400 bg-violet-500/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-                  : theme === 'dark'
-                    ? 'text-slate-500 hover:text-slate-200 hover:bg-white/6'
-                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                  ? 'text-(--blue) bg-(--blue)/10'
+                  : 'text-(--muted) hover:text-(--ink) hover:bg-(--ink)/5'
               }`}
               title={type.charAt(0).toUpperCase() + type.slice(1)}
             >
               {isActive && (
-                <span className="absolute left-2.25 top-1/2 -translate-y-1/2 w-0.75 h-6 rounded-full bg-linear-to-b from-violet-400 to-cyan-400 shadow-[0_0_8px_rgba(139,92,246,0.8)]" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-(--red)" />
               )}
-              {type === 'explorer' && <Files size={19} className="group-hover:scale-110 transition-transform" />}
-              {type === 'search' && <Search size={19} className="group-hover:scale-110 transition-transform" />}
+              {type === 'explorer' && <Files size={18} />}
+              {type === 'search' && <Search size={18} />}
               {type === 'users' && (
                 <span className="relative inline-flex">
-                  <Users size={19} className="group-hover:scale-110 transition-transform" />
+                  <Users size={18} />
                   {hasNewUser && (
-                    <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 ${theme === 'dark' ? 'border-[#0d1117]' : 'border-white'} shadow-[0_0_6px_rgba(52,211,153,0.8)] z-10 animate-pulse`} />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border border-(--paper-2)" />
                   )}
                 </span>
               )}
               {type === 'chat' && (
                 <span className="relative inline-flex">
-                  <MessageSquare size={19} className="group-hover:scale-110 transition-transform" />
+                  <MessageSquare size={18} />
                   {hasUnreadMention && (
-                    <span className={`absolute -top-2 -left-2 w-5 h-5 bg-linear-to-br from-violet-500 to-indigo-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 ${theme === 'dark' ? 'border-white/20' : 'border-violet-100'} shadow-[0_0_10px_rgba(139,92,246,0.7)] animate-pulse z-20`}>
+                    <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 bg-(--blue) text-white font-mono text-[10px] font-bold rounded-full flex items-center justify-center">
                       @
                     </span>
                   )}
                   {hasUnreadMsgs && (
-                    <span className={`absolute -top-1 -right-1 min-w-4.5 h-4.5 px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 ${theme === 'dark' ? 'border-[#0d1117]' : 'border-white'} shadow-sm z-10`}>
+                    <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-(--red) text-white font-mono text-[10px] font-bold rounded-full flex items-center justify-center">
                       {unreadMessages > 9 ? '9+' : unreadMessages}
                     </span>
                   )}
@@ -576,39 +563,39 @@ export default function Sidebar({
           );
         })}
         <div className="flex-1" />
-        <div className={`w-6 h-px ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'}`} />
-        <div className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-emerald-500'} animate-pulse`} title="Connected" />
+        <div className="w-6 h-px bg-(--line)" />
+        <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5" title="Connected" />
       </nav>
 
       {/* Primary Sidebar */}
       {activeSidebar && (
         <aside
           style={{ width: `${sidebarWidth}px` }}
-          className={`relative rounded-2xl border shadow-xl flex flex-col transition-[width] duration-200 shrink-0 overflow-hidden min-w-0 animate-fade-in ${theme === 'dark' ? 'syn-glass shadow-black/40' : 'bg-white/85 border-slate-200 shadow-slate-300/40 backdrop-blur-xl'}`}
+          className="relative rounded-lg border flex flex-col transition-[width] duration-200 shrink-0 overflow-hidden min-w-0 animate-fade-in bg-(--paper-2) border-(--line)"
         >
           <button
             type="button"
             aria-label="Resize sidebar"
             onPointerDown={startResizing}
-            className="absolute right-0 top-0 z-20 h-full w-3 translate-x-1/2 cursor-col-resize hover:bg-violet-500/20 transition-colors"
+            className="absolute right-0 top-0 z-20 h-full w-1.5 cursor-col-resize transition-colors hover:bg-(--ink)/8"
           >
             <span className="sr-only">Resize</span>
           </button>
 
           {/* Panel header */}
           <div className={`px-4 py-3 flex justify-between items-center shrink-0 border-b ${t.border}`}>
-            <span className={`text-[10px] font-bold ${t.textMuted} uppercase tracking-[0.18em]`}>
+            <span className={t.eyebrow}>
               {activeSidebar === 'explorer' && "Explorer"}
               {activeSidebar === 'search' && "Search"}
               {activeSidebar === 'users' && "Collaborators"}
               {activeSidebar === 'chat' && "Room Chat"}
             </span>
             {activeSidebar === 'explorer' && (
-              <div className="flex gap-1">
-                <button className={t.iconBtn + ' p-1.5!'} title="New File" onClick={handleCreateFile}>
+              <div className="flex gap-0.5">
+                <button className={t.iconBtn} title="New File" onClick={handleCreateFile}>
                   <FilePlus size={15} />
                 </button>
-                <button className={t.iconBtn + ' p-1.5!'} title="New Folder" onClick={handleCreateFolder}>
+                <button className={t.iconBtn} title="New Folder" onClick={handleCreateFolder}>
                   <FolderPlus size={15} />
                 </button>
               </div>
@@ -622,10 +609,10 @@ export default function Sidebar({
                 onClick={handleExplorerBgClick}
                 onContextMenu={handleExplorerContextMenu}
               >
-                <div className={`flex items-center gap-1.5 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] ${t.textMuted} cursor-default select-none`}>
-                  <ChevronRight size={13} className="rotate-90 text-violet-400" />
+                <div className={`flex items-center gap-1.5 px-4 py-2 cursor-default select-none ${t.eyebrow}`}>
+                  <ChevronRight size={13} className="rotate-90" />
                   <span>Project Files</span>
-                  <span className={`${t.chip} ml-auto text-[9px]!`}>{files.filter(f => f.type === 'file').length}</span>
+                  <span className={`${t.chip} ml-auto`}>{files.filter(f => f.type === 'file').length}</span>
                 </div>
 
                 <DndContext
@@ -644,13 +631,13 @@ export default function Sidebar({
                           return (
                             <div
                               key="__creating__"
-                              className={`relative flex items-center gap-2 py-1.5 rounded-lg mx-1.5 animate-fade-in ${theme === 'dark' ? 'bg-violet-500/10 ring-1 ring-violet-500/30' : 'bg-violet-50 ring-1 ring-violet-300'}`}
+                              className="relative flex items-center gap-2 py-1 rounded-md mx-1 animate-fade-in border bg-(--paper) border-(--blue)/50"
                               style={{ paddingLeft: `${inputDepth * 16 + 12}px` }}
                               onClick={(e) => e.stopPropagation()}
                             >
                               {creatingType === 'folder'
-                                ? <FolderPlus size={15} className="text-amber-400/90 shrink-0" />
-                                : <FileCode size={15} className="text-violet-400 shrink-0" />
+                                ? <FolderPlus size={15} className="text-(--muted) shrink-0" />
+                                : <FileCode size={15} className="text-(--blue) shrink-0" />
                               }
                               <input
                                 ref={createInputRef}
@@ -663,8 +650,8 @@ export default function Sidebar({
                                   if (e.key === 'Escape') { e.preventDefault(); cancelCreate(); }
                                 }}
                                 onBlur={() => setTimeout(() => commitCreate(), 50)}
-                                placeholder={creatingType === 'folder' ? "folder name…" : "filename.ext"}
-                                className={`flex-1 min-w-0 text-[13px] outline-none py-1 px-2 rounded-lg font-mono syn-focus-ring ${theme === 'dark' ? 'bg-[#12121f] text-violet-200 border border-violet-500/40' : 'bg-white text-violet-700 border border-violet-300'}`}
+                                placeholder={creatingType === 'folder' ? "Folder name" : "filename.ext"}
+                                className="flex-1 min-w-0 text-[13px] outline-none py-1 px-2 rounded-md font-mono border bg-(--paper) text-(--ink) border-(--blue)/50"
                               />
                             </div>
                           );
@@ -701,14 +688,10 @@ export default function Sidebar({
                   </SortableContext>
                   <DragOverlay dropAnimation={null}>
                     {draggedItem ? (
-                      <div className={`text-xs flex items-center gap-2 px-4 py-2 rounded-xl shadow-2xl border animate-scale-in ${
-                        theme === 'dark'
-                          ? 'syn-glass-strong text-slate-200'
-                          : 'bg-white border-violet-200 text-slate-700'
-                      }`}>
+                      <div className="text-xs flex items-center gap-2 px-3 py-2 rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.35)] border animate-fade-in bg-(--paper-2) border-(--line) text-(--ink)">
                         {draggedItem.type === 'folder'
-                          ? <FolderPlus size={14} className="text-amber-400" />
-                          : <FileCode size={14} className="text-violet-400" />
+                          ? <FolderPlus size={14} className="text-(--muted)" />
+                          : <FileCode size={14} className="text-(--blue)" />
                         }
                         <span className="font-mono">{draggedItem.name}</span>
                       </div>
@@ -724,18 +707,18 @@ export default function Sidebar({
             {activeSidebar === 'search' && (
               <div className="flex flex-col h-full">
                 <div className="px-4 py-3 shrink-0">
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200 focus-within:border-violet-500/50 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.12)] ${theme === 'dark' ? 'bg-white/4 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-(--line) bg-(--paper) transition-colors duration-150 focus-within:border-(--blue)/60">
                     <Search size={14} className={t.textMuted} />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search codebase…"
-                      className={`w-full bg-transparent text-xs outline-none ${t.textPrimary} placeholder:${t.textMuted}`}
+                      placeholder="Search codebase"
+                      className={`w-full bg-transparent text-[13px] outline-none ${t.textPrimary} placeholder:${t.textMuted}`}
                       autoFocus
                     />
                     {searchQuery && (
-                      <button onClick={() => setSearchQuery('')} className={`${t.textMuted} hover:text-rose-400 transition-colors cursor-pointer`}>
+                      <button onClick={() => setSearchQuery('')} className="text-(--muted) hover:text-(--red) transition-colors cursor-pointer">
                         <X size={14} />
                       </button>
                     )}
@@ -744,40 +727,43 @@ export default function Sidebar({
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar px-3 pb-3">
                   {!searchQuery.trim() ? (
-                    <div className={`flex flex-col items-center gap-2 text-xs ${t.textMuted} text-center py-10 animate-fade-in`}>
-                      <FolderSearch size={28} className="opacity-40" />
-                      <span>Type to search across all files</span>
+                    <div className="flex flex-col items-center gap-3 text-center py-10 animate-fade-in">
+                      <span className="w-10 h-10 rounded-md border border-(--line) flex items-center justify-center">
+                        <FolderSearch size={16} className={t.textMuted} />
+                      </span>
+                      <p className={`text-[15px] font-extrabold ${t.textPrimary}`}>Search files</p>
+                      <p className={`text-xs font-mono ${t.textMuted}`}>Type to search across all files</p>
                     </div>
                   ) : searchResults.length === 0 ? (
                     <div className={`text-xs ${t.textMuted} text-center py-10 animate-fade-in`}>
-                      No results for <span className="font-mono text-violet-400">"{searchQuery}"</span>
+                      No results for <span className="font-mono font-bold">"{searchQuery}"</span>
                     </div>
                   ) : (
                     <div className="space-y-4 animate-fade-in">
-                      <div className="text-[10px] font-bold text-violet-400 uppercase tracking-[0.14em] px-1">
+                      <div className={`font-mono text-[10px] font-bold uppercase tracking-[0.14em] px-1 ${t.textMuted}`}>
                         {searchResults.reduce((acc, curr) => acc + curr.matches.length, 0)} results · {searchResults.length} files
                       </div>
                       {searchResults.map(({ file, matches }) => (
                         <div key={file.id} className="flex flex-col">
                           <button
-                            className={`flex items-center gap-2 px-2 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-colors ${t.text} hover:text-violet-300 ${theme === 'dark' ? 'hover:bg-white/4' : 'hover:bg-slate-100'}`}
+                            className={`flex items-center gap-2 px-2 py-1.5 text-xs font-bold rounded-md cursor-pointer transition-colors ${t.text} hover:bg-(--ink)/4`}
                             onClick={() => openTab(file.id)}
                           >
                             <ChevronDown size={13} className={t.textMuted} />
-                            <FileCode size={13} className={activeFileId === file.id ? 'text-violet-400' : t.textMuted} />
+                            <FileCode size={13} className="text-(--blue)" />
                             <span className="truncate font-mono">{file.name}</span>
                           </button>
                           <div className="flex flex-col pl-5 mt-0.5">
                             {matches.map((match, i) => (
                               <button
                                 key={i}
-                                className={`group flex items-start gap-2.5 px-2 py-1 cursor-pointer rounded-lg transition-colors text-left ${theme === 'dark' ? 'hover:bg-violet-500/10' : 'hover:bg-violet-50'}`}
+                                className="group flex items-start gap-2.5 px-2 py-1 cursor-pointer rounded-md transition-colors text-left hover:bg-(--ink)/4"
                                 onClick={() => jumpToFileLine(file.id, match.lineNumber)}
                               >
-                                <span className={`text-[11px] tabular-nums shrink-0 mt-px font-mono ${t.textMuted} group-hover:text-violet-400 transition-colors`}>
+                                <span className="text-[11px] tabular-nums shrink-0 mt-px font-mono text-(--muted) group-hover:text-(--blue) transition-colors">
                                   {match.lineNumber}
                                 </span>
-                                <span className={`font-mono text-[11px] truncate ${theme === 'dark' ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-600 group-hover:text-slate-900'} transition-colors`}>
+                                <span className="font-mono text-[11px] truncate text-(--muted)">
                                   {match.content}
                                 </span>
                               </button>
@@ -792,32 +778,31 @@ export default function Sidebar({
             )}
 
             {activeSidebar === 'users' && (
-              <div className="px-2.5 space-y-1 py-2">
-                {collaborators.map((user, i) => {
+              <div className="px-2.5 space-y-0.5 py-2">
+                {collaborators.map((user) => {
                   const isOnline = user.status !== 'offline';
                   const userGlyph = getUserInitial(user);
                   const avatarStyle = getAvatarStyle(user, user.cursorColor || user.color);
                   return (
                     <div
                       key={user.userId || user.id}
-                      style={{ animationDelay: `${i * 50}ms` }}
-                      className={`animate-fade-up flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all duration-200 hover:-translate-y-px ${theme === 'dark' ? 'hover:bg-white/5' : 'hover:bg-slate-100'}`}
+                      className="flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors duration-150 hover:bg-(--ink)/4"
                     >
                       <div className="relative shrink-0">
                         <div
-                          className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shadow-md ring-2 ring-white/10"
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold border border-white/10"
                           style={avatarStyle}
                         >
                           {userGlyph}
                         </div>
-                        <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 ${theme === 'dark' ? 'border-[#0d1117]' : 'border-white'} ${isOnline ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]' : 'bg-slate-500'}`} />
+                        <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-(--paper-2) ${isOnline ? 'bg-emerald-500' : 'bg-zinc-500'}`} />
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className={`text-xs font-semibold ${t.textPrimary} truncate`}>
-                          {user.username || user.name} {user.isYou && <span className="text-violet-400 font-medium">(You)</span>}
+                        <span className={`text-[13px] font-bold ${t.textPrimary} truncate`}>
+                          {user.username || user.name} {user.isYou && <span className="font-mono font-medium text-(--blue)">(You)</span>}
                         </span>
-                        <span className={`text-[10px] ${t.textMuted} flex items-center gap-1`}>
-                          <span className={`w-1 h-1 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                        <span className={`font-mono text-[11px] ${t.textMuted} flex items-center gap-1.5`}>
+                          <span className={`w-1 h-1 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-zinc-500'}`} />
                           {isOnline ? 'Online' : 'Offline'}
                         </span>
                       </div>
@@ -825,9 +810,12 @@ export default function Sidebar({
                   );
                 })}
                 {collaborators.length === 0 && (
-                  <div className={`flex flex-col items-center gap-2 text-xs ${t.textMuted} text-center py-10 animate-fade-in`}>
-                    <Users size={26} className="opacity-40" />
-                    <span>No peers connected yet.<br />Share the invite link!</span>
+                  <div className="flex flex-col items-center gap-3 text-center py-10 animate-fade-in">
+                    <span className="w-10 h-10 rounded-md border border-(--line) flex items-center justify-center">
+                      <Users size={16} className={t.textMuted} />
+                    </span>
+                    <p className={`text-[15px] font-extrabold ${t.textPrimary}`}>No collaborators</p>
+                    <p className={`text-xs font-mono ${t.textMuted}`}>Share the invite link to collaborate</p>
                   </div>
                 )}
               </div>

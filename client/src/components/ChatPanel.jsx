@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Send, Copy, Check, Pin, Reply, Pencil, Trash2,
-  Search, X, CornerDownRight, SmilePlus
+  Search, X, CornerDownRight, MessageSquare
 } from 'lucide-react';
 import { copyText } from '../utils/clipboard';
 import { getAvatarStyle, getUserInitial } from '../utils/avatar';
@@ -9,7 +9,7 @@ import { getAvatarStyle, getUserInitial } from '../utils/avatar';
 // ─── URL / Link detection ────────────────────────────────────────────────────
 const URL_REGEX = /(https?:\/\/[^\s<]+)/g;
 
-function LinkifyText({ text }) {
+function LinkifyText({ text, theme }) {
   const parts = text.split(URL_REGEX);
   return (
     <>
@@ -20,7 +20,7 @@ function LinkifyText({ text }) {
             href={part}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-cyan-400 hover:underline break-all"
+            className="text-(--blue) hover:underline break-all"
           >
             {part}
           </a>
@@ -33,7 +33,7 @@ function LinkifyText({ text }) {
 }
 
 // ─── @Mention highlighting ───────────────────────────────────────────────────
-function RichText({ text }) {
+function RichText({ text, theme }) {
   // Split by @mentions
   const mentionRegex = /(@\w+)/g;
   const segments = text.split(mentionRegex);
@@ -41,11 +41,11 @@ function RichText({ text }) {
     <>
       {segments.map((seg, i) =>
         seg.startsWith('@') ? (
-          <span key={i} className="bg-violet-500/20 text-violet-300 font-semibold rounded px-1">
+          <span key={i} className="font-bold font-mono rounded px-1 border bg-(--blue)/10 text-(--blue) border-(--blue)/25">
             {seg}
           </span>
         ) : (
-          <LinkifyText key={i} text={seg} />
+          <LinkifyText key={i} text={seg} theme={theme} />
         )
       )}
     </>
@@ -63,20 +63,20 @@ function CodeSnippet({ code, theme }) {
     }
   };
   return (
-    <div className="relative group mt-1.5 rounded-xl overflow-hidden border border-white/10 animate-fade-in">
+    <div className="relative group mt-1.5 rounded-lg overflow-hidden border animate-fade-in border-(--line)">
       <div className="absolute right-1.5 top-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={handleCopy}
-          className={`p-1.5 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
-            copied ? 'bg-emerald-500 text-white' : 'bg-white/10 hover:bg-white/20 text-slate-300'
+          className={`p-1.5 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
+            copied
+              ? 'bg-emerald-500/15 text-emerald-600'
+              : 'bg-(--ink)/5 hover:bg-(--ink)/9 text-(--muted)'
           }`}
         >
           {copied ? <Check size={12} /> : <Copy size={12} />}
         </button>
       </div>
-      <pre className={`p-3 text-[12px] font-mono overflow-x-auto custom-scrollbar ${
-        theme === 'dark' ? 'bg-[#0a0a15] text-slate-300' : 'bg-slate-100 text-slate-800'
-      }`}>
+      <pre className="p-3 text-[12px] font-mono overflow-x-auto custom-scrollbar bg-(--paper) text-(--ink)">
         <code>{code}</code>
       </pre>
     </div>
@@ -98,28 +98,10 @@ function MessageContent({ text, theme }) {
         if (!part.trim()) return null;
         return (
           <span key={i} className="whitespace-pre-wrap">
-            <RichText text={part} />
+            <RichText text={part} theme={theme} />
           </span>
         );
       })}
-    </div>
-  );
-}
-
-// ─── Emoji picker (compact) ──────────────────────────────────────────────────
-const QUICK_EMOJIS = ['👍', '🔥', '✅', '❤️', '😂', '👀', '🎉', '🚀'];
-
-function EmojiPicker({ onSelect, theme }) {
-  return (
-    <div className={`flex gap-0.5 p-1.5 rounded-xl shadow-2xl border animate-scale-in ${
-      theme === 'dark' ? 'syn-glass-strong' : 'bg-white border-slate-200'
-    }`}>
-      {QUICK_EMOJIS.map(e => (
-        <button key={e} onClick={() => onSelect(e)}
-          className="w-8 h-8 flex items-center justify-center hover:bg-violet-500/15 rounded-lg text-base cursor-pointer transition-all hover:scale-125 active:scale-95">
-          {e}
-        </button>
-      ))}
     </div>
   );
 }
@@ -131,15 +113,11 @@ function MentionDropdown({ users, filter, onSelect, theme }) {
   );
   if (filtered.length === 0) return null;
   return (
-    <div className={`absolute bottom-full left-0 mb-1.5 w-52 rounded-xl shadow-2xl border overflow-hidden z-20 animate-scale-in ${
-      theme === 'dark' ? 'syn-glass-strong' : 'bg-white border-slate-200'
-    }`}>
+    <div className="absolute bottom-full left-0 mb-1.5 w-52 rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.35)] border overflow-hidden z-20 animate-fade-in bg-(--paper-2) border-(--line)">
       {filtered.slice(0, 5).map(u => (
         <button key={u.userId || u.username} onClick={() => onSelect(u.username)}
-          className={`w-full text-left px-3.5 py-2 text-xs font-medium cursor-pointer transition-colors ${
-            theme === 'dark' ? 'hover:bg-violet-500/15 text-slate-200 hover:text-violet-200' : 'hover:bg-violet-50 text-slate-700'
-          }`}>
-          <span className="text-violet-400">@</span>{u.username}
+          className="w-full text-left px-3.5 py-2 text-xs font-medium cursor-pointer transition-colors hover:bg-(--ink)/5 text-(--ink)">
+          <span className="text-(--blue)">@</span>{u.username}
         </button>
       ))}
     </div>
@@ -160,7 +138,6 @@ export default function ChatPanel({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showPinned, setShowPinned] = useState(false);
-  const [activeEmojiPicker, setActiveEmojiPicker] = useState(null); // messageId
   const [hoveredMsg, setHoveredMsg] = useState(null);
   const [mentionFilter, setMentionFilter] = useState(null);
   const messagesEndRef = useRef(null);
@@ -296,9 +273,7 @@ export default function ChatPanel({
     if (isSystem) {
       return (
         <div key={msgKey} className="flex justify-center my-2.5 animate-fade-in">
-          <span className={`text-[10px] font-medium px-3 py-1 rounded-full border ${
-            theme === 'dark' ? 'bg-white/4 border-white/10 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-500'
-          }`}>
+          <span className="font-mono text-[10px] font-medium px-3 py-1 rounded-md border bg-(--ink)/4 border-(--line) text-(--muted)">
             {msg.content}
           </span>
         </div>
@@ -319,14 +294,14 @@ export default function ChatPanel({
 
     return (
       <div key={msgKey}
-        className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group/msg animate-fade-up`}
+        className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group/msg animate-fade-in`}
         onMouseEnter={() => setHoveredMsg(msgKey)}
-        onMouseLeave={() => { setHoveredMsg(null); setActiveEmojiPicker(null); }}
+        onMouseLeave={() => setHoveredMsg(null)}
       >
         {/* Reply reference */}
         {msg.replyTo?.content && (
           <div className={`flex items-center gap-1 text-[9px] mb-1 px-2 ${textMuted} opacity-80`}>
-            <CornerDownRight size={10} className="text-violet-400" />
+            <CornerDownRight size={10} />
             <span className="font-bold">{msg.replyTo.senderName}:</span>
             <span className="truncate max-w-35">{msg.replyTo.content}</span>
           </div>
@@ -335,7 +310,7 @@ export default function ChatPanel({
         <div className={`flex items-end gap-2 max-w-[95%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
           {/* Avatar */}
           <div
-            className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold ring-2 ring-white/10"
+            className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold border ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
             style={avatarStyle}
           >
             {getUserInitial(msg.senderName)}
@@ -346,19 +321,17 @@ export default function ChatPanel({
             <span className={`text-[9px] font-semibold mb-1 px-1 opacity-70 ${textMuted}`}>
               {isMe ? 'You' : msg.senderName}
               {msg.edited && <span className="italic ml-1 font-normal">(edited)</span>}
-              {msg.pinned && <span className="ml-1">📌</span>}
+              {msg.pinned && <Pin size={9} className="inline ml-1 -mt-0.5" />}
               {' · '}
               {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
 
-            <div className={`px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed wrap-break-word relative transition-shadow duration-200 hover:shadow-lg ${
+            <div className={`px-3.5 py-2.5 rounded-lg text-xs leading-relaxed wrap-break-word relative border ${
               isDeleted
-                ? 'italic opacity-60 ' + (theme === 'dark' ? 'bg-white/4 text-slate-400' : 'bg-slate-100 text-slate-500')
+                ? 'italic opacity-60 bg-(--ink)/3 text-(--muted) border-(--line)'
                 : isMe
-                  ? 'bg-linear-to-br from-violet-600 to-indigo-600 text-white rounded-br-md shadow-[0_6px_18px_-6px_rgba(139,92,246,0.55)]'
-                  : theme === 'dark'
-                    ? 'bg-white/5 text-slate-200 border border-white/8 rounded-bl-md'
-                    : 'bg-white text-slate-800 border border-slate-200 rounded-bl-md shadow-sm'
+                  ? 'bg-(--ink) text-(--paper) border-(--ink)'
+                  : 'bg-(--paper) text-(--ink) border-(--line)'
             }`}>
               {isDeleted ? (
                 <span className="italic">This message was deleted.</span>
@@ -369,43 +342,27 @@ export default function ChatPanel({
 
             {/* Action buttons (on hover) */}
             {isHovered && !isDeleted && !searchMode && (
-              <div className={`absolute -top-7 ${isMe ? 'right-0' : 'left-0'} flex gap-0.5 rounded-xl p-1 shadow-2xl border z-20 animate-scale-in ${
-                theme === 'dark' ? 'syn-glass-strong' : 'bg-white border-slate-200'
-              }`}>
-                <button onClick={() => setActiveEmojiPicker(activeEmojiPicker === msgKey ? null : msgKey)}
-                  className="p-1.5 rounded-lg hover:bg-violet-500/15 cursor-pointer transition-colors" title="React">
-                  <SmilePlus size={12} className="text-slate-400" />
-                </button>
+              <div className={`absolute -top-7 ${isMe ? 'right-0' : 'left-0'} flex gap-0.5 rounded-lg p-1 shadow-[0_8px_24px_rgba(0,0,0,0.35)] border z-20 animate-fade-in bg-(--paper-2) border-(--line)`}>
                 <button onClick={() => { setReplyTo(msg); inputRef.current?.focus(); }}
-                  className="p-1.5 rounded-lg hover:bg-violet-500/15 cursor-pointer transition-colors" title="Reply">
-                  <Reply size={12} className="text-slate-400" />
+                  className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-(--ink)/6" title="Reply">
+                  <Reply size={12} className="text-(--muted)" />
                 </button>
                 <button onClick={() => getSocket?.()?.emit('pin-chat-message', { messageId: msg._id })}
-                  className="p-1.5 rounded-lg hover:bg-violet-500/15 cursor-pointer transition-colors" title={msg.pinned ? 'Unpin' : 'Pin'}>
-                  <Pin size={12} className={msg.pinned ? 'text-amber-400' : 'text-slate-400'} />
+                  className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-(--ink)/6" title={msg.pinned ? 'Unpin' : 'Pin'}>
+                  <Pin size={12} className={msg.pinned ? 'text-amber-500' : 'text-(--muted)'} />
                 </button>
                 {isMe && (
                   <>
                     <button onClick={() => { setEditingMsg(msg); setInputValue(msg.content); inputRef.current?.focus(); }}
-                      className="p-1.5 rounded-lg hover:bg-violet-500/15 cursor-pointer transition-colors" title="Edit">
-                      <Pencil size={12} className="text-slate-400" />
+                      className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-(--ink)/6" title="Edit">
+                      <Pencil size={12} className="text-(--muted)" />
                     </button>
                     <button onClick={() => getSocket?.()?.emit('delete-chat-message', { messageId: msg._id })}
-                      className="p-1.5 rounded-lg hover:bg-rose-500/15 cursor-pointer transition-colors" title="Delete">
-                      <Trash2 size={12} className="text-rose-400" />
+                      className="p-1.5 rounded-md cursor-pointer transition-colors hover:bg-(--red)/10" title="Delete">
+                      <Trash2 size={12} className="text-(--red)" />
                     </button>
                   </>
                 )}
-              </div>
-            )}
-
-            {/* Emoji picker popover */}
-            {activeEmojiPicker === msgKey && (
-              <div className={`absolute -top-14 ${isMe ? 'right-0' : 'left-0'} z-30`}>
-                <EmojiPicker theme={theme} onSelect={(emoji) => {
-                  getSocket?.()?.emit('react-chat-message', { messageId: msg._id, emoji });
-                  setActiveEmojiPicker(null);
-                }} />
               </div>
             )}
 
@@ -419,15 +376,15 @@ export default function ChatPanel({
                   return (
                     <button key={emoji}
                       onClick={() => getSocket?.()?.emit('react-chat-message', { messageId: msg._id, emoji })}
-                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border cursor-pointer transition-all hover:scale-105 active:scale-95 ${
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border cursor-pointer transition-colors ${
                         iReacted
-                          ? 'border-violet-500/60 bg-violet-500/15 shadow-[0_0_10px_-2px_rgba(139,92,246,0.5)]'
-                          : theme === 'dark' ? 'border-white/10 bg-white/5 hover:bg-white/9' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                          ? 'border-(--blue)/40 bg-(--blue)/10'
+                          : 'border-(--line) bg-(--ink)/3 hover:bg-(--ink)/6'
                       }`}
                       title={reactionUsers.map(u => u.username).join(', ')}
                     >
                       <span>{emoji}</span>
-                      <span className={`${textMuted} font-semibold`}>{reactionUsers.length}</span>
+                      <span className="text-(--muted) font-semibold font-mono">{reactionUsers.length}</span>
                     </button>
                   );
                 })}
@@ -452,7 +409,7 @@ export default function ChatPanel({
               onChange={e => setSearchQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
               placeholder="Search messages…"
-              className={`${t.input} flex-1 text-xs px-2.5 py-1.5 syn-focus-ring`}
+              className={`${t.input} flex-1 text-xs px-2.5 py-1.5`}
               autoFocus
             />
             <button onClick={handleSearchSubmit} className={`${t.iconBtn} p-1.5!`} title="Search">
@@ -471,8 +428,10 @@ export default function ChatPanel({
             </button>
             {pinnedMessages.length > 0 && (
               <button onClick={() => setShowPinned(!showPinned)}
-                className={`p-1.5 rounded-lg cursor-pointer flex items-center gap-1 text-[10px] font-bold transition-all ${
-                  showPinned ? 'text-amber-300 bg-amber-500/15' : 'text-slate-400 hover:bg-white/6'
+                className={`p-1.5 rounded-md cursor-pointer flex items-center gap-1 font-mono text-[10px] font-bold transition-colors ${
+                  showPinned
+                    ? 'text-amber-600 bg-amber-500/10'
+                    : 'text-(--muted) hover:bg-(--ink)/5'
                 }`}
                 title="Pinned messages">
                 <Pin size={12} />
@@ -489,15 +448,13 @@ export default function ChatPanel({
 
       {/* ─── Pinned messages bar ──────────────────────────────────────────── */}
       {showPinned && pinnedMessages.length > 0 && (
-        <div className={`px-3 py-2.5 border-b ${border} space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar animate-fade-in ${theme === 'dark' ? 'bg-amber-500/4' : 'bg-amber-50/60'}`}>
-          <div className="flex items-center gap-1.5 text-[10px] text-amber-400 font-bold uppercase tracking-[0.12em] mb-1">
+        <div className={`px-3 py-2.5 border-b ${border} space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar animate-fade-in bg-amber-500/5`}>
+          <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] mb-1 text-amber-600">
             <Pin size={10} /> Pinned
           </div>
           {pinnedMessages.map(pm => (
-            <div key={pm._id} className={`text-[10px] px-2.5 py-1.5 rounded-lg leading-relaxed ${
-              theme === 'dark' ? 'bg-white/4 text-slate-300 border border-white/6' : 'bg-white text-slate-700 border border-amber-200'
-            }`}>
-              <span className="font-bold text-amber-400">{pm.senderName}:</span> {pm.content?.slice(0, 100)}
+            <div key={pm._id} className="text-[10px] px-2.5 py-1.5 rounded-md leading-relaxed border bg-(--paper) text-(--muted) border-(--line)">
+              <span className="font-bold text-amber-600">{pm.senderName}:</span> {pm.content?.slice(0, 100)}
             </div>
           ))}
         </div>
@@ -510,17 +467,18 @@ export default function ChatPanel({
         className="flex-1 overflow-y-auto custom-scrollbar px-3.5 py-3 space-y-3.5 min-h-0"
       >
         {searchMode && searchResults.length === 0 && searchQuery && (
-          <div className={`text-xs ${textMuted} text-center py-10 opacity-70 animate-fade-in`}>
-            No results for <span className="font-mono text-violet-400">"{searchQuery}"</span>
+          <div className={`text-xs ${textMuted} text-center py-10 animate-fade-in`}>
+            No results for <span className="font-mono">"{searchQuery}"</span>
           </div>
         )}
 
         {!searchMode && uniqueMessages.length === 0 && (
-          <div className={`flex flex-col items-center gap-2 text-xs ${textMuted} text-center py-10 opacity-70 animate-fade-in`}>
-            <span className={`w-11 h-11 rounded-2xl flex items-center justify-center ${theme === 'dark' ? 'bg-violet-500/10 border border-violet-500/20' : 'bg-violet-50 border border-violet-200'}`}>
-              <Send size={16} className="text-violet-400" />
+          <div className="flex flex-col items-center gap-3 text-center py-10 animate-fade-in">
+            <span className="w-10 h-10 rounded-md border border-(--line) flex items-center justify-center">
+              <MessageSquare size={16} className="text-(--muted)" />
             </span>
-            <span>No messages yet.<br />Say hello to the room!</span>
+            <p className={`text-[15px] font-extrabold ${t.textPrimary}`}>No messages yet</p>
+            <p className={`text-xs font-mono ${t.textMuted}`}>Say hello to the room</p>
           </div>
         )}
 
@@ -528,11 +486,11 @@ export default function ChatPanel({
 
         {/* Typing Indicators */}
         {!searchMode && typingUsers.length > 0 && (
-          <div className="flex items-center gap-2 text-[10px] text-slate-400 px-1 opacity-80 animate-fade-in">
+          <div className="flex items-center gap-2 font-mono text-[10px] text-(--muted) px-1 animate-fade-in">
             <span className="flex gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-typing" />
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-typing" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-typing" style={{ animationDelay: '300ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-(--blue) animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-(--blue) animate-pulse" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-(--blue) animate-pulse" style={{ animationDelay: '300ms' }} />
             </span>
             <span className="font-medium">{typingUsers.join(', ')} {typingUsers.length > 1 ? 'are' : 'is'} typing…</span>
           </div>
@@ -543,30 +501,28 @@ export default function ChatPanel({
 
       {/* ─── Reply / Edit banner ──────────────────────────────────────────── */}
       {(replyTo || editingMsg) && (
-        <div className={`mx-3 mb-2 px-3 py-2 rounded-xl border flex items-center gap-2 text-[10px] ${textMuted} animate-fade-in ${
-          theme === 'dark' ? 'bg-violet-500/8 border-violet-500/25' : 'bg-violet-50 border-violet-200'
-        }`}>
+        <div className="mx-3 mb-2 px-3 py-2 rounded-lg border flex items-center gap-2 font-mono text-[10px] text-(--muted) animate-fade-in bg-(--ink)/3 border-(--line)">
           {replyTo && (
             <>
-              <Reply size={11} className="text-violet-400 shrink-0" />
-              <span className="truncate">Replying to <span className="font-bold text-violet-300">{replyTo.senderName}</span>: {replyTo.content?.slice(0, 60)}</span>
+              <Reply size={11} className="shrink-0 text-(--blue)" />
+              <span className="truncate">Replying to <span className="font-bold"> {replyTo.senderName}</span>: {replyTo.content?.slice(0, 60)}</span>
             </>
           )}
           {editingMsg && (
             <>
-              <Pencil size={11} className="text-amber-400 shrink-0" />
+              <Pencil size={11} className="text-amber-500 shrink-0" />
               <span className="font-medium">Editing message…</span>
             </>
           )}
           <button onClick={() => { setReplyTo(null); setEditingMsg(null); setInputValue(''); }}
-            className="ml-auto p-1 hover:bg-white/10 rounded-lg cursor-pointer shrink-0 transition-colors">
+            className="ml-auto p-1 rounded-md cursor-pointer shrink-0 transition-colors hover:bg-(--ink)/7">
             <X size={12} />
           </button>
         </div>
       )}
 
       {/* ─── Input Area ───────────────────────────────────────────────────── */}
-      <div className={`p-3 border-t ${border} shrink-0 ${theme === 'dark' ? 'bg-white/2' : 'bg-slate-50/60'}`}>
+      <div className={`p-3 border-t ${border} shrink-0`}>
         <form onSubmit={handleSubmit} className="relative">
           {/* Mention dropdown */}
           {mentionFilter && (
@@ -597,23 +553,19 @@ export default function ChatPanel({
                 : replyTo ? `Reply to ${replyTo.senderName}…`
                   : 'Message the room… (@ to mention)'
             }
-            className={`${t.input} w-full resize-none p-2.5 pr-11 text-xs syn-focus-ring leading-relaxed custom-scrollbar`}
+            className={`${t.input} w-full resize-none p-2.5 pr-11 text-xs leading-relaxed custom-scrollbar`}
             rows="2"
           />
           <button
             type="submit"
             disabled={!inputValue.trim()}
-            className={`absolute right-1.5 bottom-2 p-2 rounded-xl transition-all duration-200 ${
-              inputValue.trim()
-                ? 'bg-linear-to-br from-violet-500 to-indigo-600 text-white shadow-[0_4px_16px_-2px_rgba(139,92,246,0.7)] hover:scale-105 active:scale-95 cursor-pointer'
-                : 'bg-transparent text-slate-500 cursor-not-allowed'
-            }`}
+            className={inputValue.trim() ? `${t.btnPrimary} p-2! px-2! absolute right-1.5 bottom-2` : 'absolute right-1.5 bottom-2 p-2 rounded-lg bg-transparent text-(--muted) opacity-40 cursor-not-allowed'}
             title="Send"
           >
             <Send size={13} />
           </button>
         </form>
-        <div className={`text-[9px] mt-1.5 px-1 ${textMuted} font-mono opacity-80`}>
+        <div className={`text-[9px] mt-1.5 px-1 ${textMuted} font-mono`}>
           ``` code · @mention · Shift+Enter newline
         </div>
       </div>

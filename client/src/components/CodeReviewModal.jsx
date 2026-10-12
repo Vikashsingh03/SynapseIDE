@@ -18,17 +18,17 @@ import {
 const SEVERITY_META = {
   CRITICAL: {
     label: 'Critical',
-    badge: 'bg-red-500/15 text-red-400 border-red-500/40',
+    badge: 'bg-(--red)/10 text-(--red) border-(--red)/30',
     Icon: AlertOctagon,
   },
   WARNING: {
     label: 'Warning',
-    badge: 'bg-amber-500/15 text-amber-400 border-amber-500/40',
+    badge: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
     Icon: AlertTriangle,
   },
   SUGGESTION: {
     label: 'Suggestion',
-    badge: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/40',
+    badge: 'bg-(--blue)/10 text-(--blue) border-(--blue)/30',
     Icon: Lightbulb,
   },
 };
@@ -147,19 +147,24 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
     {}
   );
 
+  const badgeFor = (sev) => {
+    const meta = SEVERITY_META[sev] || SEVERITY_META.SUGGESTION;
+    return meta.badge;
+  };
+
   return (
     <div className={t.modalOverlay} onClick={onClose}>
       <div
-        className={`${t.modalCard} w-[min(720px,94vw)] max-h-[84vh] flex flex-col animate-scale-in`}
+        className={`${t.modalCard} w-[min(720px,94vw)] max-h-[84vh] flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className={`flex items-center gap-3 px-5 py-4 border-b ${t.border} shrink-0`}>
-          <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-linear-to-br from-violet-500 to-cyan-500 shadow-[0_0_18px_rgba(139,92,246,0.5)]">
-            <ScanSearch size={17} className="text-white" />
+          <span className="flex items-center justify-center w-9 h-9 rounded-md border bg-(--blue)/10 border-(--blue)/30">
+            <ScanSearch size={17} className="text-(--blue)" />
           </span>
           <div className="flex-1 min-w-0">
-            <h2 className={`text-sm font-bold ${t.textPrimary}`}>Neura Code Review</h2>
+            <h2 className={`text-sm font-extrabold ${t.textPrimary}`}>Neura Code Review</h2>
             <p className={`text-xs ${t.textMuted} truncate font-mono`}>{activeFile?.name || 'untitled'}</p>
           </div>
           {status === 'done' && !isClean && (
@@ -168,7 +173,7 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
                 counts[sev] ? (
                   <span
                     key={sev}
-                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.badge}`}
+                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${badgeFor(sev)}`}
                   >
                     {counts[sev]} {meta.label}
                   </span>
@@ -184,26 +189,19 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 custom-scrollbar min-h-0">
           {status === 'loading' && (
-            <div className="flex flex-col items-center gap-4 py-10 animate-fade-in">
-              <Loader2 size={28} className="text-violet-400 animate-spin" />
-              <p className={`text-sm ${t.textMuted}`}>
-                Neura is reviewing <span className="font-mono font-semibold">{activeFile?.name}</span>…
+            <div className="flex flex-col items-center gap-4 py-12 animate-fade-in">
+              <Loader2 size={28} className="animate-spin text-(--blue)" />
+              <p className={`text-sm font-mono ${t.textMuted}`}>
+                Neura is reviewing <span className="font-bold">{activeFile?.name}</span>…
               </p>
-              <div className="w-full max-w-md space-y-2.5">
-                {[92, 78, 85].map((w, i) => (
-                  <div
-                    key={i}
-                    className={`h-3 rounded-full animate-shimmer ${theme === 'dark' ? 'bg-white/6' : 'bg-slate-200'}`}
-                    style={{ width: `${w}%` }}
-                  />
-                ))}
-              </div>
             </div>
           )}
 
           {status === 'error' && (
             <div className="flex flex-col items-center gap-3 py-10 animate-fade-in">
-              <FileWarning size={30} className="text-amber-400" />
+              <span className="w-10 h-10 rounded-md border border-(--line) flex items-center justify-center">
+                <FileWarning size={18} className="text-amber-500" />
+              </span>
               <p className={`text-sm ${t.textMuted} text-center max-w-sm`}>{error}</p>
               <button onClick={() => setRunId((id) => id + 1)} className={t.btnSecondary}>
                 <RotateCcw size={14} /> Try again
@@ -212,10 +210,10 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
           )}
 
           {status === 'done' && isClean && (
-            <div className="flex flex-col items-center gap-3 py-10 animate-scale-in">
-              <CheckCircle2 size={44} className="text-emerald-400" />
-              <p className={`text-base font-bold ${t.textPrimary}`}>Clean code! 🎉</p>
-              <p className={`text-sm ${t.textMuted} text-center max-w-sm`}>
+            <div className="flex flex-col items-center gap-3 py-10 animate-fade-in">
+              <CheckCircle2 size={44} className="text-emerald-500" />
+              <p className={`text-base font-extrabold ${t.textPrimary}`}>Clean code</p>
+              <p className={`text-sm ${t.textMuted} text-center max-w-sm font-mono`}>
                 Neura found no critical issues, warnings or suggestions in this file.
               </p>
             </div>
@@ -229,11 +227,10 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
                 return (
                   <div
                     key={i}
-                    className={`rounded-xl border p-4 animate-fade-up ${theme === 'dark' ? 'bg-white/3 border-white/10' : 'bg-slate-50 border-slate-200'}`}
-                    style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
+                    className="rounded-lg border p-4 bg-(--paper) border-(--line)"
                   >
                     <div className="flex items-center gap-2.5 mb-1.5">
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.badge}`}>
+                      <span className={`inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border ${badgeFor(f.severity)}`}>
                         <Icon size={11} /> {meta.label}
                       </span>
                       <p className={`text-sm font-bold ${t.textPrimary}`}>{f.title}</p>
@@ -252,7 +249,7 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
 
         {/* Footer */}
         <div className={`flex items-center justify-between px-5 py-3.5 border-t ${t.border} shrink-0`}>
-          <p className={`text-[11px] ${t.textMuted}`}>Powered by Neura AI • Always double-check critical findings</p>
+          <p className={`text-[11px] ${t.textMuted}`}>Powered by Neura AI · Always double-check critical findings</p>
           <button
             onClick={() => setRunId((id) => id + 1)}
             disabled={status === 'loading'}

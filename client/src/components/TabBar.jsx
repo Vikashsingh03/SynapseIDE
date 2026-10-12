@@ -1,13 +1,24 @@
-import { useState } from 'react';
+import { useState, useLayoutEffect, useRef } from 'react';
 import { useFiles } from '../contexts/FileContext';
 import { copyText } from '../utils/clipboard';
-import { getThemeClasses } from '../utils/theme';
 import { X, FileCode2, ChevronRight, Lock, Copy, Check, Download } from 'lucide-react';
 
 export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, currentUserId }) {
   const { files, openTabs, activeFileId, openTab, closeTab } = useFiles();
-  const t = getThemeClasses(theme);
   const [copied, setCopied] = useState(false);
+
+  // ── Sliding active-tab indicator (measured, transform-only) ──
+  const tabEls = useRef(new Map());
+  const [indicator, setIndicator] = useState({ left: 0, width: 0, visible: false });
+
+  useLayoutEffect(() => {
+    const el = tabEls.current.get(activeFileId);
+    if (el) {
+      setIndicator({ left: el.offsetLeft, width: el.offsetWidth, visible: true });
+    } else {
+      setIndicator((prev) => ({ ...prev, visible: false }));
+    }
+  }, [activeFileId, openTabs]);
 
   const tabFiles = openTabs
     .map(id => files.find(f => f.id === id))
@@ -37,36 +48,33 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  // Tabs sit inside the ALWAYS-DARK IDE frame → use the IDE palette
+  // (code text #dce5f3, comments #8290a8) regardless of page theme.
   return (
     <>
-      {/* Tabs */}
-      <div className={`flex items-end ${t.header} border-b ${t.border} min-h-10 overflow-x-auto scrollbar-hide shrink-0 px-1.5 pt-1.5 gap-0.5`}>
-        {tabFiles.map((file, i) => {
+      {/* Tabs — text with 2px blue accent underline for active */}
+      <div className="relative flex items-stretch bg-[#121824] border-b border-[#2b3546] min-h-10 overflow-x-auto scrollbar-hide shrink-0 px-2 gap-1">
+        {tabFiles.map((file) => {
           const isActive = file.id === activeFileId;
           const fileLock = fileLocks[file.id];
           const isLockedByOther = Boolean(fileLock?.userId && fileLock.userId !== currentUserId);
           return (
             <div
               key={file.id}
+              ref={(el) => {
+                if (el) tabEls.current.set(file.id, el);
+                else tabEls.current.delete(file.id);
+              }}
               onClick={() => openTab(file.id)}
-              style={{ animationDelay: `${i * 40}ms` }}
-              className={`animate-fade-in relative flex items-center gap-2 pl-3.5 pr-2.5 py-2 text-xs rounded-t-xl cursor-pointer min-w-33 max-w-50 select-none transition-all duration-200 group border border-b-0 ${
-                isActive
-                  ? theme === 'dark'
-                    ? 'bg-white/6 border-white/9 text-white shadow-[0_-8px_20px_-12px_rgba(139,92,246,0.4)]'
-                    : 'bg-white border-slate-200 text-slate-900 shadow-sm'
-                  : `border-transparent ${t.textMuted} hover:text-slate-200 ${theme === 'dark' ? 'hover:bg-white/4' : 'hover:bg-slate-100'}`
+              className={`relative flex items-center gap-2 px-3 text-xs cursor-pointer min-w-33 max-w-50 select-none transition-colors group border-b-2 border-transparent -mb-px font-mono ${
+                isActive ? 'text-[#dce5f3]' : 'text-[#8290a8] hover:text-[#dce5f3]'
               }`}
             >
-              {/* Active gradient underline */}
-              {isActive && (
-                <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-linear-to-r from-violet-500 via-indigo-400 to-cyan-400 shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
-              )}
-              <FileCode2 size={13} className={`shrink-0 ${isActive ? 'text-violet-400' : t.textMuted}`} />
+              <FileCode2 size={13} className={`shrink-0 ${isActive ? 'text-(--blue)' : ''}`} />
               <span className="truncate font-medium">{file.name}</span>
               {fileLock && (
                 <span
-                  className={`inline-flex items-center shrink-0 ${isLockedByOther ? 'text-amber-400' : 'text-emerald-400'}`}
+                  className={`inline-flex items-center shrink-0 ${isLockedByOther ? 'text-amber-500' : 'text-emerald-500'}`}
                   title={isLockedByOther ? `${fileLock.username || 'Someone'} is editing` : 'You hold the lock'}
                 >
                   <Lock size={10} />
@@ -77,7 +85,7 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
                   e.stopPropagation();
                   closeTab(file.id);
                 }}
-                className={`ml-auto shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 ${t.textMuted} hover:text-rose-400 hover:bg-white/10 transition-all cursor-pointer`}
+                className="ml-auto shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 text-[#8290a8] hover:text-[#dce5f3] transition-colors cursor-pointer"
                 title="Close tab"
               >
                 <X size={12} />
@@ -85,17 +93,27 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
             </div>
           );
         })}
+        {/* Sliding active-tab indicator (transform-only, 60fps) */}
+        <span
+          aria-hidden="true"
+          className="tab-indicator pointer-events-none absolute bottom-0 left-0 h-0.5 bg-(--blue)"
+          style={{
+            width: indicator.width,
+            transform: `translateX(${indicator.left}px)`,
+            opacity: indicator.visible ? 1 : 0,
+          }}
+        />
       </div>
 
-      {/* Breadcrumbs */}
-      <div className={`flex items-center gap-1.5 px-4 py-2 text-[11px] ${t.textMuted} ${t.editorBg} border-b ${t.border} shrink-0`}>
-        <span className="hover:text-violet-400 cursor-pointer transition-colors font-medium">{roomId}</span>
+      {/* Breadcrumbs — IDE chrome */}
+      <div className="flex items-center gap-1.5 px-4 py-2 text-[11px] text-[#8290a8] bg-[#121824] border-b border-[#2b3546] shrink-0 font-mono">
+        <span className="cursor-pointer transition-colors font-medium hover:text-[#70a5ff]">{roomId}</span>
         <ChevronRight size={11} className="opacity-50" />
-        <span className="hover:text-violet-400 cursor-pointer transition-colors font-medium">src</span>
+        <span className="cursor-pointer transition-colors font-medium hover:text-[#70a5ff]">src</span>
         {activeFile && (
           <>
             <ChevronRight size={11} className="opacity-50" />
-            <span className="syn-text-gradient font-semibold font-mono">{activeFile.name}</span>
+            <span className="text-[#dce5f3] font-semibold">{activeFile.name}</span>
           </>
         )}
 
@@ -104,14 +122,14 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
           <span className="ml-auto flex items-center gap-0.5">
             <button
               onClick={handleCopyCode}
-              className={t.iconBtn + ' p-1.5!'}
+              className="p-1.5 rounded-md text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/6 transition-colors cursor-pointer"
               title="Copy file code"
             >
-              {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+              {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
             </button>
             <button
               onClick={handleDownload}
-              className={t.iconBtn + ' p-1.5!'}
+              className="p-1.5 rounded-md text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/6 transition-colors cursor-pointer"
               title={`Download ${activeFile.name}`}
             >
               <Download size={13} />

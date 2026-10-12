@@ -19,7 +19,7 @@ export default function TechStack() {
           {STACK.map((tech) => (
             <div
               key={tech.name}
-              className="group flex min-h-[80px] min-w-[145px] flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-4 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.06]"
+              className="group flex min-h-[80px] min-w-[145px] flex-col items-center justify-center rounded-2xl border border-white/6 bg-white/3 px-5 py-4 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/6"
             >
               <span className="mb-2 text-sm font-bold tracking-tight text-gray-300 transition-colors group-hover:text-white">
                 {tech.name}

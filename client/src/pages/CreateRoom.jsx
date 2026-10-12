@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Loader2, PlusCircle, Check } from 'lucide-react';
+import { ArrowRight, Loader2, Plus, Check, Waypoints } from 'lucide-react';
 import { createRoom } from '../services/roomService';
-import SynapseInteractiveBackground from '../components/SynapseInteractiveBackground';
-import SynapseLogo from '../components/SynapseLogo';
+import { getThemeClasses } from '../utils/theme';
+import { readStorage } from '../utils/storage';
 
 const STEPS = ['Name your room', 'Share & collaborate'];
 
@@ -13,10 +13,14 @@ export default function CreateRoom() {
   const [error, setError] = useState('');
   const [roomName, setRoomName] = useState('');
 
+  const [theme] = useState(() => readStorage('synapse-theme') || 'dark');
+  const t = getThemeClasses(theme);
+  const dark = theme === 'dark';
+
   useEffect(() => {
-    document.body.style.backgroundColor = '#05070d';
+    document.body.style.backgroundColor = dark ? '#111310' : '#f3f1eb';
     return () => { document.body.style.backgroundColor = ''; };
-  }, []);
+  }, [dark]);
 
   const handleCreateRoom = async () => {
     try {
@@ -32,109 +36,99 @@ export default function CreateRoom() {
   };
 
   return (
-    <div className="min-h-screen bg-void text-slate-200 syn-noise relative overflow-hidden flex items-center justify-center p-6">
-      <SynapseInteractiveBackground />
-
-      {/* aurora orbs */}
-      <div className="pointer-events-none fixed inset-0 z-1">
-        <div className="absolute top-1/4 left-1/4 h-80 w-80 rounded-full bg-violet-600/20 blur-[120px] animate-aurora" />
-        <div className="absolute bottom-1/4 right-1/4 h-80 w-80 rounded-full bg-cyan-500/10 blur-[120px] animate-aurora" style={{ animationDelay: '-9s' }} />
-      </div>
-
-      <div className="relative z-10 w-full max-w-115 animate-scale-in">
-        <Link to="/dashboard" className="flex items-center justify-center gap-2.5 mb-8 group">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_0_24px_rgba(139,92,246,0.4)] group-hover:scale-105 transition-transform duration-200">
-            <SynapseLogo size={22} color="#ffffff" nodeColor="#ffffff" />
-          </div>
-          <span className="font-display text-lg font-bold tracking-tight text-white uppercase">Synapse</span>
+    <div className={`min-h-screen syn-grain ${t.page} flex items-center justify-center p-6`}>
+      <div className="w-full max-w-md animate-fade-up">
+        <Link to="/dashboard" className="flex items-center justify-center gap-2.5 mb-8">
+          <span className="w-9 h-9 rounded-lg bg-(--red) flex items-center justify-center shadow-[2px_2px_0_var(--ink)]">
+            <Waypoints size={17} className="text-white" />
+          </span>
+          <span className={`text-[16px] font-extrabold tracking-tight ${t.textPrimary}`}>Synapse</span>
         </Link>
 
-        <div className="syn-glass rounded-3xl p-8 sm:p-10 shadow-[0_32px_80px_-24px_rgba(0,0,0,0.8)]">
+        <div className={`${t.card} p-8`}>
           {/* step indicator */}
           <div className="flex items-center gap-2 mb-8">
             {STEPS.map((step, i) => (
               <div key={step} className="flex items-center gap-2 flex-1 last:flex-none">
                 <div className="flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold border transition-all duration-300 ${
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center font-mono text-[11px] font-bold border ${
                     i === 0
-                      ? 'bg-violet-500/20 border-violet-500/40 text-violet-200 shadow-[0_0_14px_rgba(139,92,246,0.35)]'
-                      : 'bg-white/4 border-white/10 text-slate-500'
+                      ? 'border-(--blue) text-(--blue)'
+                      : `${t.border} ${t.textMuted2}`
                   }`}>
                     {i + 1}
                   </span>
-                  <span className={`text-xs font-medium hidden sm:block ${i === 0 ? 'text-slate-200' : 'text-slate-500'}`}>
+                  <span className={`font-mono text-[11px] font-bold uppercase tracking-[0.06em] hidden sm:block ${i === 0 ? t.textPrimary : t.textMuted2}`}>
                     {step}
                   </span>
                 </div>
-                {i < STEPS.length - 1 && <div className="flex-1 h-px bg-linear-to-r from-violet-500/40 to-white/10 mx-1" />}
+                {i < STEPS.length - 1 && <div className={`flex-1 h-px border-t ${t.divider} mx-1`} />}
               </div>
             ))}
           </div>
 
           <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/25 flex items-center justify-center mx-auto mb-5">
-              <PlusCircle size={22} className="text-violet-300" />
+            <div className={`w-10 h-10 rounded-lg border ${t.border} flex items-center justify-center mx-auto mb-4 bg-(--paper-2)`}>
+              <Plus size={18} className={t.textSecondary} />
             </div>
-            <h1 className="font-display text-[26px] font-bold tracking-tight text-white mb-2">
+            <h1 className={`text-2xl font-extrabold tracking-[-0.02em] ${t.textPrimary} mb-2`}>
               Create a collaboration room
             </h1>
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className={`text-sm ${t.textSecondary} leading-relaxed`}>
               Generate a shared workspace, invite your teammates, and start editing code in real time.
             </p>
           </div>
 
           {error ? (
-            <div key={error} className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-[13px] mb-6 animate-[authShake_0.4s_ease-out]">
+            <div key={error} className={`px-4 py-3 rounded-lg border text-[13px] mb-6 animate-fade-in ${dark ? 'border-(--red)/30 bg-(--red)/8 text-(--red)' : 'border-(--red)/25 bg-(--red)/6 text-(--red-deep)'}`}>
               <span>{error}</span>
             </div>
           ) : null}
 
           <div className="mb-6">
-            <label className="block text-[13px] font-medium text-slate-400 mb-2" htmlFor="roomName">
+            <label className={`block font-mono text-[11px] font-bold uppercase tracking-[0.08em] ${t.textSecondary} mb-2`} htmlFor="roomName">
               Room name
             </label>
-            <div className="flex items-center gap-3 rounded-xl syn-input px-4 h-13">
-              <input
-                id="roomName"
-                type="text"
-                placeholder="e.g. System Design Practice"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCreateRoom();
-                }}
-                className="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-slate-100 placeholder:text-slate-600"
-                autoFocus
-              />
-            </div>
-            <p className="text-xs text-slate-600 mt-2">Leave blank for a default name.</p>
+            <input
+              id="roomName"
+              type="text"
+              placeholder="e.g. System Design Practice"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateRoom();
+              }}
+              className={t.input}
+              autoFocus
+            />
+            <p className={`text-xs ${t.textMuted2} mt-2`}>Leave blank for a default name.</p>
           </div>
 
-          <button onClick={handleCreateRoom} className="syn-btn-primary w-full h-13 rounded-xl text-[15px]" disabled={loading}>
+          <button onClick={handleCreateRoom} className={`${t.btnAccent} w-full`} disabled={loading}>
             {loading ? (
-              <span className="flex items-center gap-2.5">
-                <Loader2 size={18} className="animate-spin" />
+              <>
+                <Loader2 size={16} className="animate-spin" />
                 Creating room...
-              </span>
+              </>
             ) : (
-              <span className="flex items-center gap-2">
-                <span>Create room</span>
-                <ArrowRight size={18} />
-              </span>
+              <>
+                Create room
+                <ArrowRight size={16} />
+              </>
             )}
           </button>
 
-          <div className="text-center mt-7 pt-6 border-t border-white/[0.07] text-[13px] text-slate-500">
+          <div className={`text-center mt-6 pt-6 border-t ${t.divider} text-[13px] ${t.textMuted2}`}>
             Prefer joining an existing session?{' '}
-            <Link to="/join-room" className="text-violet-400 hover:text-violet-300 font-semibold transition-colors">
+            <Link to="/join-room" className="font-bold text-(--blue) hover:underline underline-offset-4 transition-all">
               Use a room code
             </Link>
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-slate-600">
-          <Check size={13} className="text-emerald-400" />
-          You&apos;ll get a shareable invite link right after creation
+        <div className={`mt-6 flex items-center justify-center gap-2 text-xs ${t.textMuted2}`}>
+          <Check size={13} className="text-emerald-500" />
+          <span className="font-mono">You&apos;ll get a shareable invite link right after creation</span>
         </div>
       </div>
     </div>

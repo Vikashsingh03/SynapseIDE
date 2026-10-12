@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PanelLeft, Sparkles, X } from 'lucide-react';
 import { FileProvider } from '../contexts/FileContext';
 import { useAuth } from '../context/useAuth';
 import Sidebar from '../components/Sidebar';
@@ -47,6 +48,10 @@ function EditorPage() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [zenMode, setZenMode] = useState(false);
 
+  // ── Mobile: slide-over drawers for sidebar + Neura ──
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [mobileNeuraOpen, setMobileNeuraOpen] = useState(false);
+
   useEffect(() => {
     const openReview = () => setReviewOpen(true);
     const toggleZen = () => setZenMode((v) => !v);
@@ -88,18 +93,20 @@ function EditorPage() {
 
   return (
     <FileProvider>
+      <style>{`
+        @keyframes syn-slide-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        @keyframes syn-slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes syn-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .syn-drawer-left { animation: syn-slide-in-left 0.22s ease-out; }
+        .syn-drawer-right { animation: syn-slide-in-right 0.22s ease-out; }
+        .syn-drawer-fade { animation: syn-fade-in 0.18s ease-out; }
+      `}</style>
       <div
-        className={`flex flex-col h-screen w-screen overflow-hidden ${t.page} relative`}
+        className={`flex flex-col h-screen w-screen overflow-hidden ${t.page}`}
         data-theme={theme}
       >
-        {/* Subtle ambient glow behind the workspace */}
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
-          <div className="absolute -top-32 left-1/3 w-2xl h-88 rounded-full bg-violet-600/10 blur-[130px] animate-aurora" />
-          <div className="absolute -bottom-40 -right-24 w-xl h-80 rounded-full bg-cyan-500/[0.07] blur-[130px] animate-aurora" style={{ animationDelay: '-12s' }} />
-        </div>
-
         {/* Top Toolbar */}
-        <div className="relative z-50 animate-fade-in">
+        <div className="relative z-50 shrink-0">
           <Toolbar
             theme={theme}
             onToggleTheme={toggleTheme}
@@ -112,47 +119,112 @@ function EditorPage() {
         </div>
 
         {/* Main content area */}
-        <div className="relative z-10 flex flex-1 overflow-hidden p-2.5 gap-2.5 min-h-0">
-          {/* Sidebar — hidden in zen mode */}
+        <div className="flex flex-1 overflow-hidden p-2 gap-2 min-h-0">
+          {/* Sidebar — desktop inline, mobile drawer */}
           {!zenMode && (
-            <div className="animate-fade-up flex shrink-0 min-h-0" style={{ animationDelay: '60ms' }}>
-              <Sidebar theme={theme} />
-            </div>
+            <>
+              <div className="hidden md:flex shrink-0 min-h-0">
+                <Sidebar theme={theme} />
+              </div>
+              {mobileSidebarOpen && (
+                <div className="fixed inset-0 z-70 md:hidden">
+                  <div
+                    className="absolute inset-0 bg-black/60 syn-drawer-fade"
+                    onClick={() => setMobileSidebarOpen(false)}
+                  />
+                  <div className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] syn-drawer-left">
+                    <div className="relative h-full flex">
+                      <Sidebar theme={theme} />
+                      <button
+                        onClick={() => setMobileSidebarOpen(false)}
+                        aria-label="Close files"
+                        className={`absolute top-3 right-3 p-1.5 rounded-md border ${t.border} bg-(--panel) ${t.textMuted} hover:text-(--ink)`}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
-          {/* Editor + Output */}
+          {/* Editor + Output — dark IDE frame (always dark, like a real IDE) */}
           <div
-            className="animate-fade-up flex flex-col flex-1 min-w-0 overflow-hidden rounded-2xl border shadow-2xl min-h-0"
-            style={{ animationDelay: '120ms' }}
+            className="flex flex-col flex-1 min-w-0 overflow-hidden rounded-xl border border-[#2b3546] bg-[#121824] min-h-0"
           >
-            <div className={`${t.editorBg} flex flex-col flex-1 min-h-0 rounded-2xl overflow-hidden border ${t.border}`}>
-              {/* Tab bar */}
-              <TabBar theme={theme} />
+            {/* Tab bar */}
+            <TabBar theme={theme} />
 
-              {/* Editor */}
-              <EditorPanel theme={theme} editorSettings={editorSettings} />
+            {/* Editor */}
+            <EditorPanel theme={theme} editorSettings={editorSettings} />
 
-              {/* Output */}
-              <OutputPanel theme={theme} output={output} />
-            </div>
+            {/* Output */}
+            <OutputPanel theme={theme} output={output} />
           </div>
 
-          {/* Neura AI Sidebar — hidden in zen mode */}
+          {/* Neura AI Sidebar — desktop inline, mobile drawer */}
           {!zenMode && (
-            <div className="animate-fade-up flex shrink-0 min-h-0" style={{ animationDelay: '180ms' }}>
-              <NeuraPanel theme={theme} />
-            </div>
+            <>
+              <div className="hidden md:flex shrink-0 min-h-0">
+                <NeuraPanel theme={theme} />
+              </div>
+              {mobileNeuraOpen && (
+                <div className="fixed inset-0 z-70 md:hidden">
+                  <div
+                    className="absolute inset-0 bg-black/60 syn-drawer-fade"
+                    onClick={() => setMobileNeuraOpen(false)}
+                  />
+                  <div className="absolute right-0 top-0 bottom-0 w-80 max-w-[90vw] syn-drawer-right">
+                    <div className="relative h-full flex">
+                      <NeuraPanel
+                        theme={theme}
+                        forceOpen
+                        onClose={() => setMobileNeuraOpen(false)}
+                      />
+                      <button
+                        onClick={() => setMobileNeuraOpen(false)}
+                        aria-label="Close Neura AI"
+                        className={`absolute top-3 right-3 p-1.5 rounded-md border ${t.border} bg-(--panel) ${t.textMuted} hover:text-(--ink)`}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
         {/* Status Bar — hidden in zen mode */}
         {!zenMode && (
-          <div className="relative z-40 animate-fade-in" style={{ animationDelay: '240ms' }}>
+          <div className="shrink-0 overflow-x-auto">
             <StatusBar theme={theme} peersCount={0} />
           </div>
         )}
 
-        {/* ⌘K Command Palette */}
+        {/* Mobile floating buttons: files + Neura */}
+        {!zenMode && (
+          <div className="md:hidden fixed bottom-16 left-3 z-40 flex flex-col gap-2">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label="Open files"
+              className="w-11 h-11 rounded-xl bg-(--red) text-white flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,0.35)] active:scale-95 transition-transform"
+            >
+              <PanelLeft size={18} />
+            </button>
+            <button
+              onClick={() => setMobileNeuraOpen(true)}
+              aria-label="Open Neura AI"
+              className="w-11 h-11 rounded-xl bg-(--blue) text-white flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,0.35)] active:scale-95 transition-transform"
+            >
+              <Sparkles size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* Command Palette */}
         <CommandPalette
           open={paletteOpen}
           onClose={() => setPaletteOpen(false)}
