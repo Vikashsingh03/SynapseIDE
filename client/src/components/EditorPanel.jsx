@@ -4,7 +4,7 @@ import { MonacoBinding } from 'y-monaco';
 import { useFiles } from '../contexts/FileContext';
 import { getMonacoLanguage } from '../utils/languageMap';
 import { getThemeClasses } from '../utils/theme';
-import { Loader2, Lock, FileCode2 } from 'lucide-react';
+import { Loader2, Users, FileCode2 } from 'lucide-react';
 
 /** Custom Monaco editor color themes (defined once per mount, idempotent). */
 function defineCustomEditorThemes(monaco) {
@@ -203,23 +203,21 @@ function EditingIndicatorBar({ editingUsers = {}, activeFileId, theme }) {
   );
 }
 
-function FileLockBanner({ activeFileLock, isReadOnly, lockNotice, theme }) {
-  if (!activeFileLock && !lockNotice) return null;
+function FileLockBanner({ activeFileLock, lockedByOther, lockNotice, theme }) {
+  // Google Docs mode: no exclusive locks — this is now just a friendly
+  // presence hint shown when someone else is also in this file.
+  if (!lockedByOther && !lockNotice) return null;
 
-  const message = isReadOnly && activeFileLock
-    ? `${activeFileLock.username || 'Another user'} is editing this file. View-only mode is active.`
-    : activeFileLock
-      ? 'You hold the edit lock for this file.'
-      : lockNotice;
+  const message = lockedByOther && activeFileLock
+    ? `${activeFileLock.username || 'Another user'} is also editing this file`
+    : lockNotice;
 
   return (
     <div
-      className={`flex items-center gap-2.5 px-4 py-2 border-b border-[#283348] bg-[#182131] text-xs animate-fade-in shrink-0 ${
-        isReadOnly ? 'text-amber-200' : 'text-[#70a5ff]'
-      }`}
+      className="flex items-center gap-2.5 px-4 py-2 border-b border-[#283348] bg-[#182131] text-xs animate-fade-in shrink-0 text-[#70a5ff]"
     >
-      <Lock size={12} className="shrink-0" />
-      <span className="font-mono font-semibold uppercase tracking-[0.12em] text-[10px]">{isReadOnly ? 'Locked' : 'Lock'}</span>
+      <Users size={12} className="shrink-0" />
+      <span className="font-mono font-semibold uppercase tracking-[0.12em] text-[10px]">Live</span>
       <span className="opacity-90">{message}</span>
     </div>
   );
@@ -237,6 +235,7 @@ export default function EditorPanel({
   activeFileId: activeFileIdProp,
   activeFileLock = null,
   isReadOnly = false,
+  lockedByOther = false,
   lockNotice = '',
 }) {
   const { activeFile, updateContent, jumpTarget } = useFiles();
@@ -406,7 +405,7 @@ export default function EditorPanel({
     <div className={`flex-1 overflow-hidden flex flex-col min-h-0 ${t.editorBg}`}>
       {/* Real-time "who is editing" indicator */}
       <EditingIndicatorBar editingUsers={editingUsers} activeFileId={activeFileId} theme={theme} />
-      <FileLockBanner activeFileLock={activeFileLock} isReadOnly={isReadOnly} lockNotice={lockNotice} theme={theme} />
+      <FileLockBanner activeFileLock={activeFileLock} lockedByOther={lockedByOther} lockNotice={lockNotice} theme={theme} />
 
       <div style={{ flex: 1, overflow: 'hidden' }} className="min-h-0 relative">
         {/* ── Empty-file watermark ── */}

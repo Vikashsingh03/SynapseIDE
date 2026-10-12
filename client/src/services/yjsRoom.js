@@ -39,10 +39,10 @@ export class RoomYjsManager {
     const textObserver = () => this.onFileContent?.(fileId, text.toString());
     text.observe(textObserver);
 
-    // Only broadcast truly LOCAL user edits (not remote or seed operations)
+    // Only broadcast truly LOCAL user edits (not remote or seed operations).
+    // Google Docs mode: no exclusive locks — Yjs CRDT merges concurrent edits.
     doc.on('update', (update, origin) => {
       if (origin === this.remoteOrigin || origin === this.localSeedOrigin) return;
-      if (this.canEditFile && !this.canEditFile(fileId)) return;
       this.socket.emit('code-change', {
         roomId: this.roomId,
         fileId,

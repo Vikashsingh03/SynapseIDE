@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import throttle from 'lodash.throttle';
 import debounce from 'lodash.debounce';
 import { useCallback } from 'react';
-import { Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertTriangle, ArrowLeft, Phone } from 'lucide-react';
 import { FileProvider, useFiles } from '../contexts/FileContext';
 import { useAuth } from '../context/useAuth';
 import Sidebar from '../components/Sidebar';
@@ -13,6 +13,7 @@ import Toolbar from '../components/Toolbar';
 import OutputPanel from '../components/OutputPanel';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
+import VoiceChat from '../components/VoiceChat';
 import { getThemeClasses } from '../utils/theme';
 import { createCollaborationSocket } from '../services/socket';
 import { getRoom } from '../services/roomService';
@@ -58,6 +59,9 @@ function RoomSession({ roomId }) {
   // ── Advanced pack: Neura code review modal + zen mode ──
   const [reviewOpen, setReviewOpen] = useState(false);
   const [zenMode, setZenMode] = useState(false);
+
+  // ── Voice/video chat (LiveKit) ──
+  const [voiceOpen, setVoiceOpen] = useState(false);
 
   useEffect(() => {
     const openReview = () => setReviewOpen(true);
@@ -766,7 +770,8 @@ function RoomSession({ roomId }) {
             editingUsers={editingUsers}
             activeFileId={activeFileId}
             activeFileLock={activeFileLock}
-            isReadOnly={isActiveFileLockedByOther}
+            isReadOnly={false}
+            lockedByOther={isActiveFileLockedByOther}
             lockNotice={lockNotice}
           />
 
@@ -783,6 +788,33 @@ function RoomSession({ roomId }) {
           activeFileLock={activeFileLock}
           currentUserId={user?.userId}
         />
+      )}
+
+      {/* Voice/video chat — floating button + drawer (LiveKit) */}
+      {!zenMode && !voiceOpen && (
+        <button
+          onClick={() => setVoiceOpen(true)}
+          aria-label="Join voice chat"
+          title="Join voice chat"
+          className="fixed bottom-16 right-3 z-40 w-11 h-11 rounded-xl bg-[#d9ff3f] text-[#10140b] flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all"
+        >
+          <Phone size={18} />
+        </button>
+      )}
+      {voiceOpen && (
+        <div className="fixed inset-0 z-[70] md:inset-auto md:right-2 md:top-16 md:bottom-2 md:w-[380px] md:rounded-xl md:overflow-hidden md:border md:border-[#283348] md:shadow-[0_18px_54px_rgba(0,0,0,0.5)]">
+          <div
+            className="absolute inset-0 bg-black/60 md:hidden"
+            onClick={() => setVoiceOpen(false)}
+          />
+          <div className="absolute inset-0 md:relative md:h-full syn-drawer-fade">
+            <VoiceChat
+              roomId={roomId}
+              theme={theme}
+              onClose={() => setVoiceOpen(false)}
+            />
+          </div>
+        </div>
       )}
 
       {/* Command Palette */}

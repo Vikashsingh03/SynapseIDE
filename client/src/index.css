@@ -187,3 +187,17 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ── Voice chat drawers + tiles (LiveKit) ── */
+@keyframes syn-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.syn-drawer-fade { animation: syn-fade-in 0.18s ease-out; }
+
+.syn-voice-tile {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #283348;
+  background: #1a2230;
+}
+.syn-voice-tile[data-lk-participant-placeholder] {
+  background: #1a2230;
+}

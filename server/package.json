@@ -19,6 +19,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
     "jsonwebtoken": "^9.0.3",
+    "livekit-server-sdk": "^2.19.1",
     "mongoose": "^9.3.3",
     "nodemailer": "^8.0.5",
     "otp-generator": "^4.0.1",
