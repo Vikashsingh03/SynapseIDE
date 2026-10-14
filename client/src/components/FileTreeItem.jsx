@@ -1,37 +1,10 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
-  Folder, FolderOpen, Lock, Trash2, Pencil, ChevronRight,
-  FileCode, FileText, FileJson, FileType, File, Braces, Hash,
-  Code, Terminal, Image, Settings, Database
+  Lock, Trash2, Pencil, ChevronRight,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
-
-// Editorial v3: file-type icons stay distinct (Lucide), monochrome with
-// the v3 blue accent on the active file.
-function getFileIcon(name, isActive) {
-  const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
-
-  const iconMap = {
-    js: Braces, jsx: Braces, ts: Braces, tsx: Braces,
-    py: Hash,
-    html: Code, css: FileType, scss: FileType,
-    json: FileJson, xml: FileCode, yaml: FileText, yml: FileText, env: Settings,
-    java: FileCode, cpp: FileCode, c: FileCode, h: FileCode,
-    sh: Terminal, bat: Terminal,
-    md: FileText, txt: FileText,
-    png: Image, jpg: Image, svg: Image,
-    sql: Database, db: Database,
-  };
-
-  const Icon = iconMap[ext] || File;
-  return (
-    <Icon
-      size={14}
-      className={`shrink-0 ${isActive ? 'text-(--blue)' : 'text-(--muted)'}`}
-    />
-  );
-}
+import FileIcon from './FileIcon';
 
 export default function FileTreeItem({
   item,
@@ -261,11 +234,9 @@ export default function FileTreeItem({
           <>
             {/* File/Folder icon */}
             {isFolder ? (
-              item.isOpen
-                ? <FolderOpen size={15} className={`shrink-0 ${isActive ? 'text-(--blue)' : 'text-(--muted)'}`} />
-                : <Folder size={15} className={`shrink-0 ${isActive ? 'text-(--blue)' : 'text-(--muted)'}`} />
+              <FileIcon name={item.name} folder open={Boolean(item.isOpen)} size={18} />
             ) : (
-              getFileIcon(item.name, isActive)
+              <FileIcon name={item.name} size={17} />
             )}
 
             {/* Name or rename input */}

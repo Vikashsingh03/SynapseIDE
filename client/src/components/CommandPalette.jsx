@@ -4,6 +4,7 @@ import { copyText } from '../utils/clipboard';
 import { getThemeClasses } from '../utils/theme';
 import { exportCodeSnapshot } from '../utils/snapshot';
 import { EDITOR_THEMES } from '../hooks/useEditorSettings';
+import FileIcon from './FileIcon';
 import {
   Search,
   Play,
@@ -134,7 +135,7 @@ export default function CommandPalette({
       .slice(0, 8)
       .map((f) => ({
         key: `file-${f.id}`,
-        icon: FileCode2,
+        icon: () => <FileIcon name={f.name} size={16} />,
         label: f.name,
         hint: f.id === activeFile?.id ? 'open' : 'jump to',
         run: () => openTab(f.id),

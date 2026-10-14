@@ -1,7 +1,8 @@
 import { useState, useLayoutEffect, useRef } from 'react';
 import { useFiles } from '../contexts/FileContext';
 import { copyText } from '../utils/clipboard';
-import { X, FileCode2, ChevronRight, Lock, Copy, Check, Download } from 'lucide-react';
+import { X, ChevronRight, Lock, Copy, Check, Download } from 'lucide-react';
+import FileIcon from './FileIcon';
 
 export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, currentUserId }) {
   const { files, openTabs, activeFileId, openTab, closeTab } = useFiles();
@@ -70,7 +71,7 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
                 isActive ? 'text-[#dce5f3]' : 'text-[#8290a8] hover:text-[#dce5f3]'
               }`}
             >
-              <FileCode2 size={13} className={`shrink-0 ${isActive ? 'text-(--blue)' : ''}`} />
+              <FileIcon name={file.name} size={15} />
               <span className="truncate font-medium">{file.name}</span>
               {fileLock && (
                 <span

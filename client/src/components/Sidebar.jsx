@@ -33,6 +33,7 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import FileTreeItem from './FileTreeItem';
+import FileIcon from './FileIcon';
 import ChatPanel from './ChatPanel';
 import { copyText } from '../utils/clipboard';
 import { computeReplacements, parseSearchRegex } from '../utils/searchReplace';
@@ -888,7 +889,7 @@ export default function Sidebar({
                             onClick={() => openTab(file.id)}
                           >
                             <ChevronDown size={13} className={t.textMuted} />
-                            <FileCode size={13} className="text-(--blue)" />
+                            <FileIcon name={file.name} size={15} />
                             <span className="truncate font-mono">{file.name}</span>
                           </button>
                           <div className="flex flex-col pl-5 mt-0.5">
