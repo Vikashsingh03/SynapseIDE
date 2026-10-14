@@ -17,6 +17,8 @@ import {
   FilePlus,
   Copy,
   FolderSearch,
+  LayoutTemplate,
+  Trophy,
 } from 'lucide-react';
 import {
   DndContext,
@@ -583,45 +585,45 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Activity Bar */}
-      <nav className="w-12 rounded-lg border flex flex-col items-center py-2.5 gap-1 shrink-0 bg-(--paper-2) border-(--line)">
+      {/* Activity Bar — dark VS Code-style rail (intentional contrast vs paper panel) */}
+      <nav className="w-[46px] flex flex-col items-center py-3 gap-1 shrink-0 bg-[#0B0F16] border-r border-white/[0.07]">
         {activityTypes.map((type) => {
           const isActive = activeSidebar === type;
           return (
             <button
               key={type}
               onClick={() => handleSidebarToggle(type)}
-              className={`relative p-2 rounded-md transition-colors duration-150 cursor-pointer ${
+              className={`relative w-full h-[42px] flex items-center justify-center transition-colors duration-150 cursor-pointer ${
                 isActive
-                  ? 'text-(--blue) bg-(--blue)/10'
-                  : 'text-(--muted) hover:text-(--ink) hover:bg-(--ink)/5'
+                  ? 'text-[#EAF4FF] bg-gradient-to-r from-white/[0.05] to-transparent'
+                  : 'text-[#71809A] hover:text-[#C9D6EB] hover:bg-white/[0.03]'
               }`}
               title={type.charAt(0).toUpperCase() + type.slice(1)}
             >
               {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-(--red)" />
+                <span className="absolute left-0 top-0 w-[2px] h-full bg-[#58A6FF] shadow-[2px_0_8px_#58A6FF55]" />
               )}
-              {type === 'explorer' && <Files size={18} />}
-              {type === 'search' && <Search size={18} />}
+              {type === 'explorer' && <Files size={20} />}
+              {type === 'search' && <Search size={20} />}
               {type === 'users' && (
                 <span className="relative inline-flex">
-                  <Users size={18} />
+                  <Users size={20} />
                   {hasNewUser && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border border-(--paper-2)" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-[#0B0F16]" />
                   )}
                 </span>
               )}
               {type === 'chat' && (
                 <span className="relative inline-flex">
-                  <MessageSquare size={18} />
-                  {hasUnreadMention && (
-                    <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 bg-(--blue) text-white font-mono text-[10px] font-bold rounded-full flex items-center justify-center">
-                      @
+                  <MessageSquare size={20} />
+                  {hasUnreadMsgs && (
+                    <span className="absolute top-1 right-1.5 min-w-4 h-4 px-1 bg-[#2563EB] text-white text-[9.5px] leading-4 font-bold rounded-full flex items-center justify-center ring-2 ring-[#0B0F16]">
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
                     </span>
                   )}
-                  {hasUnreadMsgs && (
-                    <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-(--red) text-white font-mono text-[10px] font-bold rounded-full flex items-center justify-center">
-                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                  {hasUnreadMention && (
+                    <span className="absolute bottom-1 right-1.5 min-w-4 h-4 px-1 bg-[#2563EB] text-white text-[9.5px] leading-4 font-bold rounded-full flex items-center justify-center ring-2 ring-[#0B0F16]">
+                      @
                     </span>
                   )}
                 </span>
@@ -630,8 +632,8 @@ export default function Sidebar({
           );
         })}
         <div className="flex-1" />
-        <div className="w-6 h-px bg-(--line)" />
-        <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5" title="Connected" />
+        <div className="w-6 h-px bg-white/[0.07]" />
+        <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 ring-2 ring-[#0B0F16]" title="Connected" />
       </nav>
 
       {/* Primary Sidebar */}
@@ -664,6 +666,20 @@ export default function Sidebar({
                 </button>
                 <button className={t.iconBtn} title="New Folder" onClick={handleCreateFolder}>
                   <FolderPlus size={15} />
+                </button>
+                <button
+                  className={t.iconBtn}
+                  title="New Project from Template"
+                  onClick={() => window.dispatchEvent(new Event('synapse:new-project'))}
+                >
+                  <LayoutTemplate size={15} />
+                </button>
+                <button
+                  className={t.iconBtn}
+                  title="Practice Coding Problems"
+                  onClick={() => window.dispatchEvent(new Event('synapse:open-practice'))}
+                >
+                  <Trophy size={15} />
                 </button>
               </div>
             )}

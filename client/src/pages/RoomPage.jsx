@@ -12,6 +12,9 @@ import EditorPanel from '../components/EditorPanel';
 import Toolbar from '../components/Toolbar';
 import OutputPanel from '../components/OutputPanel';
 import SnippetHost from '../components/SnippetHost';
+import { ProjectTemplatesHost } from '../components/ProjectTemplatesModal';
+import { PracticeHost } from '../components/PracticePanel';
+import Breadcrumbs from '../components/Breadcrumbs';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import VoiceChat from '../components/VoiceChat';
@@ -89,6 +92,13 @@ function RoomSession({ roomId }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // TitleBar command-center box + Empty State rows open the palette via event
+  useEffect(() => {
+    const open = () => setPaletteOpen(true);
+    window.addEventListener('synapse:open-palette', open);
+    return () => window.removeEventListener('synapse:open-palette', open);
   }, []);
   const [output, setOutput] = useState({
     stdout: '',
@@ -745,6 +755,8 @@ function RoomSession({ roomId }) {
 
       <div className="flex flex-1 overflow-hidden p-2 gap-2 min-h-0">
         <SnippetHost theme={theme} />
+        <ProjectTemplatesHost theme={theme} />
+        <PracticeHost theme={theme} />
 
         {!zenMode && (
           <Sidebar
@@ -761,6 +773,7 @@ function RoomSession({ roomId }) {
 
         <main className="flex-1 min-w-0 flex flex-col bg-[#121824] overflow-hidden rounded-xl border border-[#2b3546] min-h-0">
           <TabBar theme={theme} roomId={roomId} fileLocks={fileLocks} currentUserId={user?.userId} />
+          <Breadcrumbs />
 
           <EditorPanel
             theme={theme}
@@ -785,12 +798,7 @@ function RoomSession({ roomId }) {
       </div>
 
       {!zenMode && (
-        <StatusBar
-          theme={theme}
-          peersCount={Object.keys(presence).length}
-          activeFileLock={activeFileLock}
-          currentUserId={user?.userId}
-        />
+        <StatusBar contextLabel={`Room ${roomId}`} />
       )}
 
       {/* Voice/video chat — floating button + drawer (LiveKit) */}

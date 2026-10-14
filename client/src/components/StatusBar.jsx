@@ -1,44 +1,163 @@
-import { Lock, Users, Check } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { GitBranch, Check } from 'lucide-react';
 import { useFiles } from '../contexts/FileContext';
-import { LANGUAGES, getLanguageByExtension } from '../utils/languageMap';
+import FileIcon from './FileIcon';
 
-export default function StatusBar({ theme = 'dark', peersCount = 0, activeFileLock = null, currentUserId }) {
-  const { activeFile } = useFiles();
+/**
+ * StatusBar — VS Code-style bottom status bar, premium edition.
+ *
+ * - LEFT:  a filled accent segment (room/Synapse identity) + active file
+ *           with its real Material Icon Theme icon + language label.
+ * - RIGHT: cursor position (Ln/Col + selected count) from the
+ *           `synapse:cursor` window event, language label, `UTF-8`, and a
+ *           `Ready` indicator.
+ *
+ * Fully self-contained: it pulls the active file from FileContext and the
+ * cursor from a window CustomEvent — the parent only passes contextLabel.
+ */
 
-  const currentLang = activeFile ? getLanguageByExtension(activeFile.name) : LANGUAGES[0];
-  const isLockedByOther = Boolean(
-    activeFileLock?.userId && activeFileLock.userId !== currentUserId
-  );
-  const lockLabel = activeFileLock
-    ? isLockedByOther
-      ? `Locked by ${activeFileLock.username || 'someone'}`
-      : 'Edit lock held by you'
-    : 'No file lock';
+const EXT_LANGUAGE = {
+  js: 'JavaScript',
+  mjs: 'JavaScript',
+  cjs: 'JavaScript',
+  jsx: 'JavaScript React',
+  ts: 'TypeScript',
+  mts: 'TypeScript',
+  tsx: 'TypeScript React',
+  py: 'Python',
+  cpp: 'C++',
+  cxx: 'C++',
+  cc: 'C++',
+  c: 'C',
+  h: 'C',
+  hpp: 'C++',
+  java: 'Java',
+  html: 'HTML',
+  htm: 'HTML',
+  css: 'CSS',
+  scss: 'SCSS',
+  less: 'Less',
+  json: 'JSON',
+  md: 'Markdown',
+  txt: 'Plain Text',
+  yml: 'YAML',
+  yaml: 'YAML',
+  xml: 'XML',
+  svg: 'SVG',
+  sh: 'Shell',
+  rs: 'Rust',
+  go: 'Go',
+  rb: 'Ruby',
+  php: 'PHP',
+  kt: 'Kotlin',
+  swift: 'Swift',
+  sql: 'SQL',
+  dart: 'Dart',
+  r: 'R',
+  toml: 'TOML',
+  ini: 'INI',
+  vue: 'Vue',
+  svelte: 'Svelte',
+  dockerfile: 'Docker',
+};
 
-  // v3 signature: SOLID BLUE bar, mono white text — identical in both themes
+function languageLabel(fileName) {
+  if (!fileName) return '';
+  const base = fileName.split('/').pop();
+  const dot = base.lastIndexOf('.');
+  if (dot <= 0) {
+    // dotfiles / extensionless — special names
+    const lower = base.toLowerCase();
+    if (lower.startsWith('dockerfile')) return 'Docker';
+    if (lower === 'makefile') return 'Makefile';
+    return 'Plain Text';
+  }
+  const ext = base.slice(dot + 1).toLowerCase();
+  if (EXT_LANGUAGE[ext]) return EXT_LANGUAGE[ext];
+  return ext.toUpperCase();
+}
+
+export default function StatusBar({ contextLabel }) {
+  const { files, activeFileId } = useFiles();
+  const activeFile = files.find((f) => f.id === activeFileId && f.type === 'file') || null;
+
+  const [cursor, setCursor] = useState(null); // { line, column, selectedChars }
+
+  useEffect(() => {
+    const handler = (e) => {
+      const d = e?.detail || {};
+      if (typeof d.line === 'number' && typeof d.column === 'number') {
+        setCursor({
+          line: d.line,
+          column: d.column,
+          selectedChars: typeof d.selectedChars === 'number' ? d.selectedChars : 0,
+        });
+      }
+    };
+    window.addEventListener('synapse:cursor', handler);
+    return () => window.removeEventListener('synapse:cursor', handler);
+  }, []);
+
+  const lang = activeFile ? languageLabel(activeFile.name) : '';
+
   return (
-    <footer className="h-8 bg-(--blue) flex items-center justify-between pl-2 pr-3 text-[11px] text-white font-mono relative z-60 shrink-0 select-none">
-      <div className="flex items-center gap-1 h-full">
-        <div className="flex items-center gap-1.5 px-2.5 h-full">
-          <Lock size={10} className="opacity-80" />
-          <span className="font-semibold tracking-wide">Secure Tunnel</span>
+    <footer
+      className="h-[26px] flex items-stretch justify-between text-[11.5px] select-none shrink-0 bg-[#0B0F16]/95 backdrop-blur border-t border-white/10 text-[#A9B7CC] overflow-hidden"
+      role="statusbar"
+      aria-label="Status bar"
+    >
+      {/* ─── LEFT ─── */}
+      <div className="flex items-stretch min-w-0">
+        <div
+          className="flex items-center gap-1.5 px-2.5 font-semibold text-white text-[11px] tracking-wide whitespace-nowrap"
+          style={{
+            background: 'linear-gradient(135deg, #2563eb 0%, #58a6ff 100%)',
+            boxShadow: '0 0 14px rgba(88, 166, 255, 0.45)',
+          }}
+        >
+          <GitBranch size={12} strokeWidth={2.5} />
+          <span>{contextLabel || 'Synapse'}</span>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 h-full">
-          <Users size={10} className="opacity-80" />
-          <span className="font-semibold tracking-wide tabular-nums">{peersCount} Peer{peersCount !== 1 ? 's' : ''} Online</span>
-        </div>
-        <div className="flex items-center gap-1.5 px-2.5 h-full">
-          <Check size={10} className="opacity-80" />
-          <span className="font-medium opacity-90">{lockLabel}</span>
-        </div>
+
+        {activeFile ? (
+          <>
+            <span className="flex items-center gap-1.5 px-2.5 min-w-0 hover:bg-white/5 transition-colors cursor-default">
+              <FileIcon name={activeFile.name} size={12} />
+              <span className="truncate text-[#D6DFEC]">{activeFile.name}</span>
+            </span>
+            <span className="flex items-center px-2 hover:bg-white/5 transition-colors cursor-default whitespace-nowrap">
+              {lang}
+            </span>
+          </>
+        ) : (
+          <span className="flex items-center px-2.5 text-[#5C6B82] whitespace-nowrap">
+            No file open
+          </span>
+        )}
       </div>
-      <div className="flex items-center gap-1 h-full">
-        <span className="px-2.5 opacity-90">{currentLang.name} <span className="opacity-70">v{currentLang.version || '3.10'}</span></span>
-        <span className="px-2.5 opacity-70 tabular-nums">Ln 1, Col 1</span>
-        <div className="flex items-center gap-1.5 pl-2.5 pr-2 h-full">
-          <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse-dot" />
-          <span className="font-semibold uppercase tracking-[0.14em] text-[9px]">Live Sync Active</span>
-        </div>
+
+      {/* ─── RIGHT ─── */}
+      <div className="flex items-stretch">
+        {cursor && (
+          <span className="flex items-center px-2.5 hover:bg-white/5 transition-colors cursor-default whitespace-nowrap tabular-nums">
+            Ln {cursor.line}, Col {cursor.column}
+            {cursor.selectedChars > 0 && (
+              <span className="text-[#7C8CA6]"> ({cursor.selectedChars} selected)</span>
+            )}
+          </span>
+        )}
+        {lang && (
+          <span className="flex items-center px-2.5 hover:bg-white/5 transition-colors cursor-default whitespace-nowrap">
+            {lang}
+          </span>
+        )}
+        <span className="flex items-center px-2.5 hover:bg-white/5 transition-colors cursor-default whitespace-nowrap">
+          UTF-8
+        </span>
+        <span className="flex items-center gap-1 px-2.5 hover:bg-white/5 transition-colors cursor-default whitespace-nowrap text-[#7ED492]">
+          <Check size={12} strokeWidth={2.5} />
+          <span className="text-[#A9B7CC]">Ready</span>
+        </span>
       </div>
     </footer>
   );

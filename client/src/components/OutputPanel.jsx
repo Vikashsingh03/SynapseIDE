@@ -114,9 +114,9 @@ export default function OutputPanel({ theme, output, roomId }) {
 
   const panelHeight = !isOutputExpanded ? 'h-10' : activeTab === 'git' ? 'h-[420px]' : 'h-64';
   return (
-    <div className={`border-t border-[#283348] flex flex-col transition-[height] duration-200 shrink-0 bg-[#121824] ${panelHeight}`}>
+    <div className={`border-t border-white/[0.07] flex flex-col transition-[height] duration-200 shrink-0 bg-[#121824] shadow-[inset_0_1px_10px_rgba(0,0,0,0.28)] ${panelHeight}`}>
       {/* Header */}
-      <div className="h-10 flex items-center justify-between pl-4 pr-2 border-b border-[#283348] bg-[#182131] shrink-0">
+      <div className="h-[34px] flex items-center justify-between pl-4 pr-2 border-b border-white/[0.06] bg-[#0B0F16] shrink-0">
         <div className="flex gap-1 h-full items-end">
           {['output', 'errors', 'terminal', 'git'].map((tab) => {
             const isActive = activeTab === tab && isOutputExpanded;
@@ -124,17 +124,17 @@ export default function OutputPanel({ theme, output, roomId }) {
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); setIsOutputExpanded(true); }}
-                className={`relative font-mono text-[10px] font-bold uppercase tracking-[0.16em] h-full px-3 flex items-center gap-1.5 transition-colors duration-150 cursor-pointer ${
-                  isActive ? 'text-[#dce5f3]' : 'text-[#8290a8] hover:text-[#dce5f3]'
+                className={`relative text-[11px] font-semibold uppercase tracking-[0.08em] h-full px-3.5 flex items-center gap-1.5 transition-colors duration-150 cursor-pointer ${
+                  isActive ? 'text-[#EAF1FB]' : 'text-[#7E8CA3] hover:text-[#C7D3E8]'
                 }`}
               >
                 {tab === 'output' ? <Terminal size={12} /> : tab === 'terminal' ? <SquareTerminal size={12} /> : tab === 'git' ? <GitBranch size={12} /> : <AlertCircle size={12} />}
                 {tab}
                 {tab === 'errors' && hasError && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)]" />
                 )}
                 {isActive && (
-                  <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-(--blue)" />
+                  <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] rounded-full bg-[#58A6FF] shadow-[0_0_10px_rgba(88,166,255,0.8)]" />
                 )}
               </button>
             );
@@ -165,7 +165,7 @@ export default function OutputPanel({ theme, output, roomId }) {
           )}
           <button
             onClick={() => setIsOutputExpanded(!isOutputExpanded)}
-            className={`${t.iconBtn} p-1.5!`}
+            className="p-1 rounded text-[#8B98AC] hover:text-white hover:bg-white/5 transition-colors"
             title={isOutputExpanded ? 'Collapse' : 'Expand'}
           >
             <ChevronDown size={14} className={`transition-transform duration-200 ${isOutputExpanded ? '' : 'rotate-180'}`} />
@@ -184,7 +184,7 @@ export default function OutputPanel({ theme, output, roomId }) {
         </div>
       )}
       {isOutputExpanded && activeTab !== 'terminal' && activeTab !== 'git' && (
-        <div className="flex-1 overflow-auto font-mono text-xs custom-scrollbar min-h-0">
+        <div className="flex-1 overflow-auto font-mono text-[12.5px] leading-relaxed custom-scrollbar min-h-0">
           {displayContent()}
         </div>
       )}

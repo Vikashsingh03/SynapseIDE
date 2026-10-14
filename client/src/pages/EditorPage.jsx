@@ -9,6 +9,9 @@ import EditorPanel from '../components/EditorPanel';
 import Toolbar from '../components/Toolbar';
 import OutputPanel from '../components/OutputPanel';
 import SnippetHost from '../components/SnippetHost';
+import { ProjectTemplatesHost } from '../components/ProjectTemplatesModal';
+import { PracticeHost } from '../components/PracticePanel';
+import Breadcrumbs from '../components/Breadcrumbs';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import CommandPalette from '../components/CommandPalette';
@@ -78,6 +81,13 @@ function EditorPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // TitleBar command-center box + Empty State rows open the palette via event
+  useEffect(() => {
+    const open = () => setPaletteOpen(true);
+    window.addEventListener('synapse:open-palette', open);
+    return () => window.removeEventListener('synapse:open-palette', open);
   }, []);
 
   const toggleTheme = () => {
@@ -156,6 +166,7 @@ function EditorPage() {
           >
             {/* Tab bar */}
             <TabBar theme={theme} />
+            <Breadcrumbs />
 
             {/* Editor */}
             <EditorPanel theme={theme} editorSettings={editorSettings} />
@@ -201,7 +212,7 @@ function EditorPage() {
         {/* Status Bar — hidden in zen mode */}
         {!zenMode && (
           <div className="shrink-0 overflow-x-auto">
-            <StatusBar theme={theme} peersCount={0} />
+            <StatusBar contextLabel="Solo workspace" />
           </div>
         )}
 
@@ -241,6 +252,8 @@ function EditorPage() {
         />
 
         <SnippetHost theme={theme} />
+        <ProjectTemplatesHost theme={theme} />
+        <PracticeHost theme={theme} />
 
         {/* Neura code review modal */}
         <CodeReviewModal

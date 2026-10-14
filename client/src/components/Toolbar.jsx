@@ -23,6 +23,7 @@ import {
   Command,
   ScanSearch,
   Code2,
+  Search,
 } from 'lucide-react';
 
 export default function Toolbar({
@@ -128,10 +129,28 @@ export default function Toolbar({
     ? 'text-(--muted) hover:text-(--ink) hover:bg-white/6'
     : 'text-(--muted) hover:text-(--ink) hover:bg-black/5';
 
+  // ── TitleBar squad: 'synapse:open-palette' bridge ──
+  // The centered command box dispatches this window event; the bridge routes
+  // it into the onOpenPalette prop (the same path the palette icon button
+  // already uses), so the command box works with the current page wiring.
+  useEffect(() => {
+    const open = () => { try { onOpenPalette?.(); } catch {} };
+    window.addEventListener('synapse:open-palette', open);
+    return () => window.removeEventListener('synapse:open-palette', open);
+  }, [onOpenPalette]);
+
+  // VS Code-style command-center box (theme-aware)
+  const cmdBox = dark
+    ? 'bg-white/[0.05] border-white/10 hover:border-white/20 hover:bg-white/[0.08] text-[#6b6e66] hover:text-[#a8aba3]'
+    : 'bg-black/[0.04] border-black/10 hover:border-black/20 hover:bg-black/[0.06] text-[#8a8d85] hover:text-[#60635d]';
+
+  // Premium RUN elevation: acid-lime identity kept (signature), sheen + press physics added
+  const runElevate = 'bg-gradient-to-b from-white/25 via-transparent to-black/[0.08] hover:scale-[1.02] active:scale-[0.99]';
+
   return (
-    <header className={`h-14 flex items-center justify-between pl-3 pr-4 ${t.header} relative z-50 shrink-0`}>
+    <header className={`h-[46px] flex items-center pl-3 pr-3 gap-2 select-none ${t.header} relative z-50 shrink-0`}>
       {/* Left: brand + run controls */}
-      <div className="flex items-center flex-1 min-w-0 gap-3">
+      <div className="flex items-center min-w-0 gap-3 shrink-0">
         <div className="flex items-center shrink-0">
           <Link to="/" className="flex items-center gap-2.5">
             <span className="flex w-8 h-8 rounded-md bg-(--red) items-center justify-center">
@@ -155,7 +174,7 @@ export default function Toolbar({
           onClick={handleRun}
           disabled={isRunning || !activeFile}
           aria-label="Run code"
-          className={`${t.btnRun} md:hidden disabled:opacity-50 disabled:pointer-events-none ml-1`}
+          className={`${t.btnRun} ${runElevate} md:hidden disabled:opacity-50 disabled:pointer-events-none ml-1`}
         >
           {isRunning ? (
             <span className="w-3.5 h-3.5 border-2 rounded-full animate-spin border-[#10140b]/30 border-t-[#10140b]" />
@@ -171,7 +190,7 @@ export default function Toolbar({
           <button
             onClick={handleRun}
             disabled={isRunning || !activeFile}
-            className={`${t.btnRun} disabled:opacity-50 disabled:pointer-events-none`}
+            className={`${t.btnRun} ${runElevate} disabled:opacity-50 disabled:pointer-events-none`}
           >
             {isRunning ? (
               <span className="w-3.5 h-3.5 border-2 rounded-full animate-spin border-[#10140b]/30 border-t-[#10140b]" />
@@ -287,6 +306,19 @@ export default function Toolbar({
             <span>Review</span>
           </button>
         </div>
+      </div>
+
+      {/* Center: VS Code-style command center (no overlap — flex absorbs space, truncates) */}
+      <div className="flex-1 min-w-0 hidden md:flex items-center justify-center px-2">
+        <button
+          onClick={() => window.dispatchEvent(new Event('synapse:open-palette'))}
+          title="Search files or run a command (Ctrl+K)"
+          className={`w-full max-w-[440px] h-[30px] rounded-md border flex items-center justify-center gap-2 px-3 text-[12px] transition-colors cursor-pointer ${cmdBox}`}
+        >
+          <Search size={13} className="shrink-0 opacity-70" />
+          <span className="truncate">Search files or run a command…</span>
+          <span className={`${t.kbd} shrink-0 hidden lg:inline-block`}>Ctrl K</span>
+        </button>
       </div>
 
       {/* Right: theme, room, exit, avatar */}

@@ -4,6 +4,10 @@ import { MonacoBinding } from 'y-monaco';
 import { useFiles } from '../contexts/FileContext';
 import { getMonacoLanguage } from '../utils/languageMap';
 import { registerSnippetProvider, registerSnippetUseCommand } from '../services/snippetProvider';
+import { registerIntellisense } from '../editor/intellisense';
+import { registerEmmet } from '../editor/emmet';
+import { registerPremiumThemes } from '../editor/themes';
+import EditorEmptyState from './EditorEmptyState';
 import { getThemeClasses } from '../utils/theme';
 import { Loader2, Users, FileCode2 } from 'lucide-react';
 
@@ -285,6 +289,22 @@ export default function EditorPanel({
     }
   }, [language]);
 
+  // Breadcrumbs symbol click → jump the editor to that line
+  useEffect(() => {
+    const onGotoLine = (e) => {
+      const editor = editorRef.current;
+      const line = e?.detail?.line;
+      if (!editor || !line) return;
+      try {
+        editor.revealLineInCenter(line);
+        editor.setPosition({ lineNumber: line, column: 1 });
+        editor.focus();
+      } catch {}
+    };
+    window.addEventListener('synapse:goto-line', onGotoLine);
+    return () => window.removeEventListener('synapse:goto-line', onGotoLine);
+  }, []);
+
   // Collect current selection for "save as snippet"
   useEffect(() => {
     const onCollect = () => {
@@ -431,17 +451,7 @@ export default function EditorPanel({
   }, [jumpTarget, activeFileId, editorMountKey]);
 
   if (!activeFile) {
-    return (
-      <div className={`flex-1 flex items-center justify-center ${t.editorBg}`}>
-        <div className="flex flex-col items-center gap-3 text-center animate-fade-in px-6">
-          <span className="w-10 h-10 rounded-md border border-[#283348] flex items-center justify-center">
-            <FileCode2 size={16} className="text-[#8290a8]" />
-          </span>
-          <p className="text-[15px] font-extrabold text-[#dce5f3]">No file open</p>
-          <p className="text-xs text-[#8290a8] font-mono">Create a new file or open one from the sidebar</p>
-        </div>
-      </div>
-    );
+    return <EditorEmptyState />;
   }
 
   return (
@@ -497,12 +507,23 @@ export default function EditorPanel({
 
             // Register custom color themes (Dracula, Monokai, Night Owl, GitHub Dark)
             defineCustomEditorThemes(monaco);
+            try {
+              registerPremiumThemes(monaco);
+            } catch {}
 
             // ─── Snippet Tab-completion (VS Code style) ───
             try {
               const mLang = getMonacoLanguage(activeFile?.name || '');
               registerSnippetProvider(monaco, mLang);
               registerSnippetUseCommand(editor);
+            } catch {}
+
+            // ─── VS Code Wave 1: IntelliSense (React/Tailwind/JSON) + Emmet ───
+            try {
+              registerIntellisense(monaco);
+            } catch {}
+            try {
+              registerEmmet(editor, monaco);
             } catch {}
 
             // The binding is created ONLY by the binding useEffect below (it
@@ -517,6 +538,24 @@ export default function EditorPanel({
 
             editor.onDidChangeCursorSelection((event) => {
               onCursorMove?.(event.selection.getPosition());
+              // Bridge for StatusBar + Breadcrumbs (VS Code chrome)
+              try {
+                const sel = event.selection;
+                let selectedChars = 0;
+                try {
+                  const m = editor.getModel();
+                  if (m && !sel.isEmpty()) selectedChars = m.getValueInRange(sel).length;
+                } catch {}
+                window.dispatchEvent(
+                  new CustomEvent('synapse:cursor', {
+                    detail: {
+                      line: sel.positionLineNumber,
+                      column: sel.positionColumn,
+                      selectedChars,
+                    },
+                  })
+                );
+              } catch {}
               onSelectionChange?.({
                 startLineNumber: event.selection.startLineNumber,
                 startColumn: event.selection.startColumn,
@@ -537,23 +576,33 @@ export default function EditorPanel({
             fontSize: editorSettings?.fontSize ?? 15,
             fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
             fontLigatures: true,
-            minimap: { enabled: editorSettings?.minimap ?? true, scale: 1 },
+            minimap: { enabled: editorSettings?.minimap ?? true, scale: 1, renderCharacters: false, maxColumn: 90 },
             scrollBeyondLastLine: false,
             smoothScrolling: true,
             cursorBlinking: 'smooth',
             cursorSmoothCaretAnimation: 'on',
             renderLineHighlight: 'all',
+            renderWhitespace: 'selection',
             bracketPairColorization: { enabled: true },
+            guides: { bracketPairs: true, indentation: true, highlightActiveIndentation: true },
+            stickyScroll: { enabled: true },
             formatOnPaste: true,
             wordWrap: editorSettings?.wordWrap ?? 'off',
-            padding: { top: 24, bottom: 24 },
+            padding: { top: 12, bottom: 24 },
             lineNumbers: 'on',
             glyphMargin: false,
             folding: true,
+            codeLens: false,
+            links: true,
+            'semanticHighlighting.enabled': true,
+            occurrencesHighlight: 'singleFile',
+            selectionHighlight: true,
+            hover: { enabled: true, delay: 300 },
             automaticLayout: true,
             tabSize: 4,
             insertSpaces: true,
-            suggest: { showIcons: true, showStatusBar: true },
+            scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10, useShadows: false },
+            suggest: { showIcons: true, showStatusBar: true, preview: true },
           }}
         />
       </div>

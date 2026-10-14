@@ -13,6 +13,8 @@ const DEFAULTS = {
 /** Editor color themes available in the palette (auto = follow app theme). */
 export const EDITOR_THEMES = [
   { id: 'auto', label: 'Auto (follow app)' },
+  { id: 'synapse-dark-plus', label: 'Dark+ (VS Code)' },
+  { id: 'synapse-midnight', label: 'Synapse Midnight' },
   { id: 'dracula', label: 'Dracula' },
   { id: 'monokai', label: 'Monokai' },
   { id: 'night-owl', label: 'Night Owl' },

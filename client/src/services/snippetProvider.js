@@ -1,4 +1,5 @@
 import { getSnippets, trackSnippetUse } from './snippetService';
+import { BUILT_IN_SNIPPETS } from './builtinSnippets';
 
 /**
  * Registers Monaco snippet completions (VS Code-style Tab completion
@@ -17,6 +18,10 @@ function monacoLangToSnippetLang(monacoLang) {
     java: 'java',
     javascript: 'javascript',
     typescript: 'javascript',
+    javascriptreact: 'javascript',
+    typescriptreact: 'javascript',
+    html: 'html',
+    css: 'css',
   };
   return map[monacoLang] || null;
 }
@@ -33,12 +38,16 @@ export async function registerSnippetProvider(monaco, monacoLang) {
     disposables.delete(monacoLang);
   }
 
-  let snippets = [];
+  // Built-in snippets (rfce, useState, HTML boilerplate…) always ship with
+  // the editor; user snippets from the backend are merged on top.
+  const builtIns = BUILT_IN_SNIPPETS.filter((s) => s.language === snippetLang);
+  let userSnippets = [];
   try {
-    snippets = await getSnippets({ language: snippetLang });
+    userSnippets = await getSnippets({ language: snippetLang });
   } catch {
-    return;
+    userSnippets = [];
   }
+  const snippets = [...builtIns, ...userSnippets];
   if (!snippets.length) return;
 
   const provider = monaco.languages.registerCompletionItemProvider(monacoLang, {
@@ -61,11 +70,15 @@ export async function registerSnippetProvider(monaco, monacoLang) {
         insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
         range,
         sortText: `0-${String(999 - Math.min(s.useCount || 0, 999)).padStart(3, '0')}-${s.prefix}`,
-        command: {
-          id: 'synapse.snippetUsed',
-          title: 'Track snippet use',
-          arguments: [s._id],
-        },
+        ...(s._id
+          ? {
+              command: {
+                id: 'synapse.snippetUsed',
+                title: 'Track snippet use',
+                arguments: [s._id],
+              },
+            }
+          : {}),
       }));
 
       return { suggestions };

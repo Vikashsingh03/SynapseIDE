@@ -9,6 +9,7 @@ import {
   ZoomIn,
   ZoomOut,
   Eraser,
+  PackagePlus,
 } from 'lucide-react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
@@ -188,6 +189,52 @@ export default function TerminalPanel({ roomId } = {}) {
     });
   }, [fitActive]);
 
+  // ─── Package install bar ───
+  const [installOpen, setInstallOpen] = useState(false);
+  const [installName, setInstallName] = useState('');
+  const [installError, setInstallError] = useState('');
+  const [installStatus, setInstallStatus] = useState('');
+  const installInputRef = useRef(null);
+
+  const QUICK_PACKAGES = ['react', 'react-dom', 'express', 'axios', 'cors', 'dotenv', 'mongoose', 'tailwindcss'];
+
+  const closeInstallBar = useCallback(() => {
+    setInstallOpen(false);
+    setInstallError('');
+    setInstallStatus('');
+  }, []);
+
+  const submitInstall = useCallback(() => {
+    const name = installName.trim();
+    if (!/^[a-zA-Z0-9@][a-zA-Z0-9@./_-]*$/.test(name) || name.length > 80) {
+      setInstallError('Invalid package name.');
+      setInstallStatus('');
+      return;
+    }
+    const send = () => {
+      const terminalId = activeIdRef.current;
+      if (!terminalId) {
+        setInstallError('Open a terminal first');
+        setInstallStatus('');
+        return;
+      }
+      setInstallError('');
+      socketRef.current?.emit('terminal:input', { terminalId, data: `npm install ${name}\r` });
+      setInstallStatus(`Installing ${name}…`);
+    };
+    if (!activeIdRef.current) {
+      // No terminal yet: start one, then send into it once ready.
+      createTerminal();
+      setTimeout(send, 800);
+    } else {
+      send();
+    }
+  }, [installName, createTerminal]);
+
+  useEffect(() => {
+    if (installOpen) installInputRef.current?.focus();
+  }, [installOpen]);
+
   // ─── Socket lifecycle ───
   useEffect(() => {
     const socket = createCollaborationSocket();
@@ -296,6 +343,15 @@ export default function TerminalPanel({ roomId } = {}) {
 
         {/* Toolbar actions */}
         <div className="flex items-center gap-0.5 px-2 shrink-0 border-l border-[#1c2942]">
+          <button
+            onClick={() => setInstallOpen((v) => !v)}
+            title="Install package"
+            className={`p-1.5 rounded-md transition-colors ${
+              installOpen ? 'text-[#d9ff3f] bg-white/5' : 'text-[#8290a8] hover:text-[#d9ff3f] hover:bg-white/5'
+            }`}
+          >
+            <PackagePlus size={12} />
+          </button>
           <button onClick={clearActive} title="Clear terminal" className="p-1.5 rounded-md text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/5 transition-colors">
             <Eraser size={12} />
           </button>
@@ -314,6 +370,61 @@ export default function TerminalPanel({ roomId } = {}) {
           </button>
         </div>
       </div>
+
+      {/* Package install bar */}
+      {installOpen && (
+        <div className="border-b border-[#1c2942] bg-[#0a101c] px-3 py-2 shrink-0">
+          <div className="flex items-center gap-2">
+            <PackagePlus size={12} className="text-[#d9ff3f] shrink-0" />
+            <input
+              ref={installInputRef}
+              type="text"
+              value={installName}
+              onChange={(e) => {
+                setInstallName(e.target.value);
+                setInstallStatus('');
+                setInstallError('');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submitInstall();
+                else if (e.key === 'Escape') closeInstallBar();
+              }}
+              placeholder="Package name — e.g. axios, lodash@4, @scope/pkg"
+              className="flex-1 min-w-0 bg-[#0d1420] border border-[#1c2942] rounded-md px-2.5 py-1.5 font-mono text-[11px] text-[#dce5f3] placeholder:text-[#4a5568] outline-none focus:border-[#d9ff3f]/50 transition-colors"
+            />
+            <button
+              onClick={submitInstall}
+              className="px-3 py-1.5 rounded-md bg-[#d9ff3f] text-black font-mono text-[11px] font-bold hover:brightness-110 transition-all shrink-0"
+            >
+              Install
+            </button>
+            <button onClick={closeInstallBar} title="Close" className="p-1.5 rounded-md text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/5 transition-colors shrink-0">
+              <X size={12} />
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+            {QUICK_PACKAGES.map((pkg) => (
+              <button
+                key={pkg}
+                onClick={() => {
+                  setInstallName(pkg);
+                  setInstallError('');
+                  setInstallStatus('');
+                  installInputRef.current?.focus();
+                }}
+                className="px-2 py-0.5 rounded-md border border-[#1c2942] font-mono text-[10px] text-[#8290a8] hover:text-[#d9ff3f] hover:border-[#d9ff3f]/40 transition-colors"
+              >
+                {pkg}
+              </button>
+            ))}
+          </div>
+          {(installError || installStatus) && (
+            <p className={`font-mono text-[10px] mt-1.5 ${installError ? 'text-[#ff6b57]' : 'text-[#9bef7f]'}`}>
+              {installError || installStatus}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Terminal views */}
       <div className="flex-1 min-h-0 relative">

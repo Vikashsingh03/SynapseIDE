@@ -27,6 +27,8 @@ import {
   Eye,
   Code2,
   BookmarkPlus,
+  LayoutTemplate,
+  Trophy,
 } from 'lucide-react';
 
 /**
@@ -165,6 +167,20 @@ export default function CommandPalette({
         label: 'New folder',
         hint: '',
         run: handleNewFolder,
+      },
+      {
+        key: 'new-project',
+        icon: LayoutTemplate,
+        label: 'New Project from Template…',
+        hint: 'React · Node · Python · more',
+        run: () => window.dispatchEvent(new Event('synapse:new-project')),
+      },
+      {
+        key: 'practice',
+        icon: Trophy,
+        label: 'Practice Coding Problems',
+        hint: 'DSA Arena',
+        run: () => window.dispatchEvent(new Event('synapse:open-practice')),
       },
       {
         key: 'copy',

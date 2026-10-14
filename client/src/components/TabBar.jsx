@@ -53,8 +53,13 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
   // (code text #dce5f3, comments #8290a8) regardless of page theme.
   return (
     <>
-      {/* Tabs — text with 2px blue accent underline for active */}
-      <div className="relative flex items-stretch bg-[#121824] border-b border-[#2b3546] min-h-10 overflow-x-auto scrollbar-hide shrink-0 px-2 gap-1">
+      {/* Tabs — VS Code shape: rectangular, divider between inactive tabs,
+          active tab in editor surface bg with a glowing 2px TOP accent bar */}
+      <div
+        className="relative flex items-stretch bg-[#0B0F16] border-b border-white/8 h-9 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0 select-none"
+        role="tablist"
+        aria-label="Open files"
+      >
         {tabFiles.map((file) => {
           const isActive = file.id === activeFileId;
           const fileLock = fileLocks[file.id];
@@ -62,17 +67,31 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
           return (
             <div
               key={file.id}
+              role="tab"
+              aria-selected={isActive}
               ref={(el) => {
                 if (el) tabEls.current.set(file.id, el);
                 else tabEls.current.delete(file.id);
               }}
               onClick={() => openTab(file.id)}
-              className={`relative flex items-center gap-2 px-3 text-xs cursor-pointer min-w-33 max-w-50 select-none transition-colors group border-b-2 border-transparent -mb-px font-mono ${
-                isActive ? 'text-[#dce5f3]' : 'text-[#8290a8] hover:text-[#dce5f3]'
+              onMouseDown={(e) => {
+                // Suppress middle-click autoscroll so middle-click can close
+                if (e.button === 1) e.preventDefault();
+              }}
+              onAuxClick={(e) => {
+                if (e.button === 1) {
+                  e.stopPropagation();
+                  closeTab(file.id);
+                }
+              }}
+              className={`relative flex items-center gap-2 px-3 text-[12.5px] font-medium cursor-pointer min-w-33 max-w-50 shrink-0 border-r border-white/6 transition-colors group ${
+                isActive
+                  ? 'bg-[#121824] text-[#EAF1FB] border-r-transparent'
+                  : 'text-[#8B98AC] hover:bg-white/[0.04] hover:text-[#C9D4E6]'
               }`}
             >
               <FileIcon name={file.name} size={15} />
-              <span className="truncate font-medium">{file.name}</span>
+              <span className="truncate">{file.name}</span>
               {fileLock && (
                 <span
                   className={`inline-flex items-center shrink-0 ${isLockedByOther ? 'text-amber-500' : 'text-emerald-500'}`}
@@ -86,18 +105,21 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
                   e.stopPropagation();
                   closeTab(file.id);
                 }}
-                className="ml-auto shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 text-[#8290a8] hover:text-[#dce5f3] transition-colors cursor-pointer"
+                className={`ml-auto shrink-0 p-0.5 rounded text-[#8B98AC] hover:text-[#EAF1FB] hover:bg-white/10 transition-all cursor-pointer ${
+                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
                 title="Close tab"
+                aria-label={`Close ${file.name}`}
               >
                 <X size={12} />
               </button>
             </div>
           );
         })}
-        {/* Sliding active-tab indicator (transform-only, 60fps) */}
+        {/* Sliding active-tab indicator: 2px TOP accent bar with glow (transform-only, 60fps) */}
         <span
           aria-hidden="true"
-          className="tab-indicator pointer-events-none absolute bottom-0 left-0 h-0.5 bg-(--blue)"
+          className="tab-indicator pointer-events-none absolute top-0 left-0 h-[2px] bg-[#58A6FF] shadow-[0_0_8px_#58A6FF66]"
           style={{
             width: indicator.width,
             transform: `translateX(${indicator.left}px)`,
@@ -106,17 +128,9 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
         />
       </div>
 
-      {/* Breadcrumbs — IDE chrome */}
+      {/* Chrome row — room label + quick actions (the real path trail lives in Breadcrumbs below) */}
       <div className="flex items-center gap-1.5 px-4 py-2 text-[11px] text-[#8290a8] bg-[#121824] border-b border-[#2b3546] shrink-0 font-mono">
-        <span className="cursor-pointer transition-colors font-medium hover:text-[#70a5ff]">{roomId}</span>
-        <ChevronRight size={11} className="opacity-50" />
-        <span className="cursor-pointer transition-colors font-medium hover:text-[#70a5ff]">src</span>
-        {activeFile && (
-          <>
-            <ChevronRight size={11} className="opacity-50" />
-            <span className="text-[#dce5f3] font-semibold">{activeFile.name}</span>
-          </>
-        )}
+        <span className="font-medium tracking-wide">{roomId}</span>
 
         {/* Quick actions: copy + download active file */}
         {activeFile && (
