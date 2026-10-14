@@ -35,6 +35,7 @@ import {
   Replace,
   Bug,
   XCircle,
+  Type,
 } from 'lucide-react';
 import { fontLabelFor } from '../hooks/useEditorSettings';
 
