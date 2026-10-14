@@ -29,7 +29,14 @@ import {
   BookmarkPlus,
   LayoutTemplate,
   Trophy,
+  Space,
+  Wand2,
+  Pin,
+  Replace,
+  Bug,
+  XCircle,
 } from 'lucide-react';
+import { fontLabelFor } from '../hooks/useEditorSettings';
 
 /**
  * VS Code-style command palette (Ctrl/⌘ + K).
@@ -52,6 +59,10 @@ export default function CommandPalette({
   onDecreaseFont,
   onToggleWordWrap,
   onToggleMinimap,
+  onCycleFontFamily,
+  onCycleTabSize,
+  onToggleFormatOnType,
+  onToggleStickyScroll,
   onOpenReview,
 }) {
   const { files, activeFile, createFile, createFolder, openTab } = useFiles();
@@ -183,6 +194,27 @@ export default function CommandPalette({
         run: () => window.dispatchEvent(new Event('synapse:open-practice')),
       },
       {
+        key: 'rename-symbol',
+        icon: Replace,
+        label: 'Rename Symbol in Project…',
+        hint: 'all files',
+        run: () => window.dispatchEvent(new Event('synapse:rename-symbol')),
+      },
+      {
+        key: 'run-debug',
+        icon: Bug,
+        label: 'Run & Debug',
+        hint: 'terminal',
+        run: () => window.dispatchEvent(new Event('synapse:open-debug')),
+      },
+      {
+        key: 'problems',
+        icon: XCircle,
+        label: 'Show Problems',
+        hint: 'errors & warnings',
+        run: () => window.dispatchEvent(new Event('synapse:open-problems')),
+      },
+      {
         key: 'copy',
         icon: copied ? Check : Copy,
         label: copied ? 'Copied!' : 'Copy active file code',
@@ -266,6 +298,50 @@ export default function CommandPalette({
         hint: settings?.minimap ? 'on' : 'off',
         run: onToggleMinimap,
       },
+      ...(onCycleFontFamily
+        ? [
+            {
+              key: 'editor-font',
+              icon: Type,
+              label: `Editor font: ${fontLabelFor(settings?.fontFamily)}`,
+              hint: 'cycle',
+              run: onCycleFontFamily,
+            },
+          ]
+        : []),
+      ...(onCycleTabSize
+        ? [
+            {
+              key: 'tab-size',
+              icon: Space,
+              label: `Tab size: ${settings?.tabSize ?? 4} spaces`,
+              hint: 'cycle 2 → 4 → 8',
+              run: onCycleTabSize,
+            },
+          ]
+        : []),
+      ...(onToggleFormatOnType
+        ? [
+            {
+              key: 'format-on-type',
+              icon: Wand2,
+              label: `${settings?.formatOnType ? 'Disable' : 'Enable'} format on type`,
+              hint: settings?.formatOnType ? 'on' : 'off',
+              run: onToggleFormatOnType,
+            },
+          ]
+        : []),
+      ...(onToggleStickyScroll
+        ? [
+            {
+              key: 'sticky-scroll',
+              icon: Pin,
+              label: `${settings?.stickyScroll === false ? 'Enable' : 'Disable'} sticky scroll`,
+              hint: settings?.stickyScroll === false ? 'off' : 'on',
+              run: onToggleStickyScroll,
+            },
+          ]
+        : []),
       {
         key: 'theme',
         icon: theme === 'dark' ? Sun : Moon,
@@ -286,7 +362,7 @@ export default function CommandPalette({
         : []),
     ];
     return all.filter((a) => !q || a.label.toLowerCase().includes(q));
-  }, [query, theme, settings, activeFile, copied, snapshotBusy, onToggleTheme, onExit, onIncreaseFont, onDecreaseFont, onToggleWordWrap, onToggleMinimap, onOpenReview]);
+  }, [query, theme, settings, activeFile, copied, snapshotBusy, onToggleTheme, onExit, onIncreaseFont, onDecreaseFont, onToggleWordWrap, onToggleMinimap, onCycleFontFamily, onCycleTabSize, onToggleFormatOnType, onToggleStickyScroll, onOpenReview]);
 
   const sections = useMemo(() => {
     const out = [];

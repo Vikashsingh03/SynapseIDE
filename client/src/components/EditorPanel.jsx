@@ -7,7 +7,9 @@ import { registerSnippetProvider, registerSnippetUseCommand } from '../services/
 import { registerIntellisense } from '../editor/intellisense';
 import { registerEmmet } from '../editor/emmet';
 import { registerPremiumThemes } from '../editor/themes';
+import { setMonacoProblems } from '../diagnostics/problemsStore';
 import EditorEmptyState from './EditorEmptyState';
+import { fontStackFor } from '../hooks/useEditorSettings';
 import { getThemeClasses } from '../utils/theme';
 import { Loader2, Users, FileCode2 } from 'lucide-react';
 
@@ -305,6 +307,19 @@ export default function EditorPanel({
     return () => window.removeEventListener('synapse:goto-line', onGotoLine);
   }, []);
 
+  // Keep the active file identity fresh for the problems bridge below
+  const activeFileForProblemsRef = useRef(null);
+  useEffect(() => {
+    activeFileForProblemsRef.current = activeFile
+      ? { id: activeFile.id, name: activeFile.name }
+      : null;
+    if (!activeFile) {
+      try {
+        setMonacoProblems([]);
+      } catch {}
+    }
+  }, [activeFile]);
+
   // Collect current selection for "save as snippet"
   useEffect(() => {
     const onCollect = () => {
@@ -526,6 +541,38 @@ export default function EditorPanel({
               registerEmmet(editor, monaco);
             } catch {}
 
+            // ─── Problems bridge: Monaco markers → problems store ───
+            try {
+              const modelUri = editor.getModel()?.uri?.toString();
+              const pushMarkers = () => {
+                try {
+                  const info = activeFileForProblemsRef.current;
+                  const markers = monaco.editor
+                    .getModelMarkers({})
+                    .filter((mk) => !modelUri || mk.resource?.toString() === modelUri);
+                  setMonacoProblems(
+                    markers.map((mk) => ({
+                      fileId: info?.id || null,
+                      fileName: info?.name || 'Current file',
+                      path: null,
+                      line: mk.startLineNumber,
+                      column: mk.startColumn,
+                      severity:
+                        mk.severity === monaco.MarkerSeverity.Error
+                          ? 'error'
+                          : mk.severity === monaco.MarkerSeverity.Warning
+                            ? 'warning'
+                            : 'info',
+                      message: mk.message,
+                      source: 'monaco',
+                    }))
+                  );
+                } catch {}
+              };
+              monaco.editor.onDidChangeMarkers(() => pushMarkers());
+              pushMarkers();
+            } catch {}
+
             // The binding is created ONLY by the binding useEffect below (it
             // re-runs on the editorMountKey bump). Creating one here as well
             // would risk two live MonacoBindings on the same Y.Text + model —
@@ -574,19 +621,22 @@ export default function EditorPanel({
             readOnly: isReadOnly,
             domReadOnly: isReadOnly,
             fontSize: editorSettings?.fontSize ?? 15,
-            fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+            fontFamily: fontStackFor(editorSettings?.fontFamily),
             fontLigatures: true,
+            lineHeight: editorSettings?.lineHeight ?? 1.6,
             minimap: { enabled: editorSettings?.minimap ?? true, scale: 1, renderCharacters: false, maxColumn: 90 },
             scrollBeyondLastLine: false,
             smoothScrolling: true,
             cursorBlinking: 'smooth',
             cursorSmoothCaretAnimation: 'on',
+            cursorStyle: editorSettings?.cursorStyle ?? 'line',
             renderLineHighlight: 'all',
-            renderWhitespace: 'selection',
-            bracketPairColorization: { enabled: true },
+            renderWhitespace: editorSettings?.renderWhitespace ?? 'selection',
+            bracketPairColorization: { enabled: editorSettings?.bracketColorization ?? true },
             guides: { bracketPairs: true, indentation: true, highlightActiveIndentation: true },
-            stickyScroll: { enabled: true },
+            stickyScroll: { enabled: editorSettings?.stickyScroll ?? true },
             formatOnPaste: true,
+            formatOnType: editorSettings?.formatOnType ?? false,
             wordWrap: editorSettings?.wordWrap ?? 'off',
             padding: { top: 12, bottom: 24 },
             lineNumbers: 'on',
@@ -599,7 +649,7 @@ export default function EditorPanel({
             selectionHighlight: true,
             hover: { enabled: true, delay: 300 },
             automaticLayout: true,
-            tabSize: 4,
+            tabSize: editorSettings?.tabSize ?? 4,
             insertSpaces: true,
             scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10, useShadows: false },
             suggest: { showIcons: true, showStatusBar: true, preview: true },

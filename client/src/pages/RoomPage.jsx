@@ -15,6 +15,8 @@ import SnippetHost from '../components/SnippetHost';
 import { ProjectTemplatesHost } from '../components/ProjectTemplatesModal';
 import { PracticeHost } from '../components/PracticePanel';
 import Breadcrumbs from '../components/Breadcrumbs';
+import { RenameSymbolHost } from '../components/RenameSymbolModal';
+import { DebugHost } from '../components/DebugPanel';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import VoiceChat from '../components/VoiceChat';
@@ -58,6 +60,10 @@ function RoomSession({ roomId }) {
     toggleWordWrap,
     toggleMinimap,
     cycleEditorTheme,
+    cycleFontFamily,
+    cycleTabSize,
+    toggleFormatOnType,
+    toggleStickyScroll,
   } = useEditorSettings();
 
   // ── Advanced pack: Neura code review modal + zen mode ──
@@ -757,6 +763,8 @@ function RoomSession({ roomId }) {
         <SnippetHost theme={theme} />
         <ProjectTemplatesHost theme={theme} />
         <PracticeHost theme={theme} />
+        <RenameSymbolHost />
+        <DebugHost />
 
         {!zenMode && (
           <Sidebar
@@ -840,6 +848,10 @@ function RoomSession({ roomId }) {
         onDecreaseFont={decreaseFont}
         onToggleWordWrap={toggleWordWrap}
         onToggleMinimap={toggleMinimap}
+        onCycleFontFamily={cycleFontFamily}
+        onCycleTabSize={cycleTabSize}
+        onToggleFormatOnType={toggleFormatOnType}
+        onToggleStickyScroll={toggleStickyScroll}
         onOpenReview={() => setReviewOpen(true)}
       />
 

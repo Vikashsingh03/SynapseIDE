@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { GitBranch, Check } from 'lucide-react';
+import { GitBranch, Check, XCircle, AlertTriangle } from 'lucide-react';
 import { useFiles } from '../contexts/FileContext';
 import FileIcon from './FileIcon';
+import { getCounts, subscribe as subscribeProblems } from '../diagnostics/problemsStore';
 
 /**
  * StatusBar — VS Code-style bottom status bar, premium edition.
@@ -82,6 +83,7 @@ export default function StatusBar({ contextLabel }) {
   const activeFile = files.find((f) => f.id === activeFileId && f.type === 'file') || null;
 
   const [cursor, setCursor] = useState(null); // { line, column, selectedChars }
+  const [counts, setCounts] = useState(() => getCounts());
 
   useEffect(() => {
     const handler = (e) => {
@@ -96,6 +98,11 @@ export default function StatusBar({ contextLabel }) {
     };
     window.addEventListener('synapse:cursor', handler);
     return () => window.removeEventListener('synapse:cursor', handler);
+  }, []);
+
+  useEffect(() => {
+    const refresh = () => setCounts(getCounts());
+    return subscribeProblems(refresh);
   }, []);
 
   const lang = activeFile ? languageLabel(activeFile.name) : '';
@@ -138,6 +145,28 @@ export default function StatusBar({ contextLabel }) {
 
       {/* ─── RIGHT ─── */}
       <div className="flex items-stretch">
+        {counts.errors + counts.warnings > 0 && (
+          <span
+            role="button"
+            tabIndex={0}
+            title="Open Problems"
+            onClick={() => window.dispatchEvent(new Event('synapse:open-problems'))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                window.dispatchEvent(new Event('synapse:open-problems'));
+              }
+            }}
+            className="flex items-center gap-2 px-2.5 hover:bg-white/5 transition-colors cursor-pointer whitespace-nowrap"
+          >
+            <span className="flex items-center gap-1 text-[#F87171] tabular-nums">
+              <XCircle size={12} /> {counts.errors}
+            </span>
+            <span className="flex items-center gap-1 text-[#FBBF24] tabular-nums">
+              <AlertTriangle size={12} /> {counts.warnings}
+            </span>
+          </span>
+        )}
         {cursor && (
           <span className="flex items-center px-2.5 hover:bg-white/5 transition-colors cursor-default whitespace-nowrap tabular-nums">
             Ln {cursor.line}, Col {cursor.column}

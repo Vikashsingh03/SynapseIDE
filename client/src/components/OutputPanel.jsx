@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFiles } from '../contexts/FileContext';
 import { getLanguageByExtension } from '../utils/languageMap';
 import { getThemeClasses } from '../utils/theme';
@@ -16,11 +16,22 @@ import {
 } from 'lucide-react';
 import TerminalPanel from './TerminalPanel';
 import GitPanel from './GitPanel';
+import ProblemsPanel from './ProblemsPanel';
 
 export default function OutputPanel({ theme, output, roomId }) {
   const [activeTab, setActiveTab] = useState('output');
   const [isOutputExpanded, setIsOutputExpanded] = useState(true);
   const { activeFile } = useFiles();
+
+  // Status bar / palette "Problems" → jump to the errors tab
+  useEffect(() => {
+    const openProblems = () => {
+      setActiveTab('errors');
+      setIsOutputExpanded(true);
+    };
+    window.addEventListener('synapse:open-problems', openProblems);
+    return () => window.removeEventListener('synapse:open-problems', openProblems);
+  }, []);
 
   const t = getThemeClasses(theme);
 
@@ -94,19 +105,16 @@ export default function OutputPanel({ theme, output, roomId }) {
 
     if (activeTab === 'errors') {
       const errorContent = output?.stderr || output?.compile_output;
-      if (errorContent) {
-        return (
-          <pre className="leading-relaxed whitespace-pre-wrap animate-fade-in p-5 font-mono text-xs text-amber-400">
-            {errorContent}
-          </pre>
-        );
-      }
       return (
-        <div className="flex items-center justify-center gap-2 h-full min-h-30 text-xs animate-fade-in">
-          <span className="inline-flex items-center gap-2 text-[#8290a8] font-mono">
-            <Check size={14} className="text-emerald-500" />
-            Clean build. Zero issues found.
-          </span>
+        <div className="flex flex-col h-full min-h-30">
+          {errorContent ? (
+            <pre className="leading-relaxed whitespace-pre-wrap animate-fade-in p-5 pb-2 font-mono text-xs text-amber-400 shrink-0 max-h-32 overflow-auto">
+              {errorContent}
+            </pre>
+          ) : null}
+          <div className="flex-1 min-h-0">
+            <ProblemsPanel />
+          </div>
         </div>
       );
     }

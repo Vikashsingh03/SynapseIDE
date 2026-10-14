@@ -18,6 +18,7 @@ const notificationsRoute = require('./routes/notifications');
 const snippetsRoute = require('./routes/snippets');
 const analyticsRoute = require('./routes/analytics');
 const gitRoute = require('./routes/git');
+const typecheckRoute = require('./routes/typecheck');
 const { globalLimiter } = require('./middleware/rateLimits');
 const { createSocketServer } = require('./socket/socketManager');
 
@@ -64,6 +65,7 @@ app.use('/api/notifications', notificationsRoute);
 app.use('/api/snippets', snippetsRoute);
 app.use('/api/analytics', analyticsRoute);
 app.use('/api/git', gitRoute);
+app.use('/api', typecheckRoute);
 
 app.get('/api/health', (req, res) => {
   res.json({

@@ -235,6 +235,31 @@ export default function TerminalPanel({ roomId } = {}) {
     if (installOpen) installInputRef.current?.focus();
   }, [installOpen]);
 
+  // ─── Run & Debug squad: launch commands from the Run and Debug drawer ───
+  // Sends e.detail.command to the active terminal, reusing the install flow's
+  // create-then-send-after-800ms fallback when no terminal exists yet.
+  useEffect(() => {
+    const onTerminalRun = (e) => {
+      try {
+        const command = String(e?.detail?.command ?? '').trim();
+        if (!command) return;
+        const send = () => {
+          const terminalId = activeIdRef.current;
+          if (!terminalId) return;
+          socketRef.current?.emit('terminal:input', { terminalId, data: `${command}\r` });
+        };
+        if (!activeIdRef.current) {
+          createTerminal();
+          setTimeout(send, 800);
+        } else {
+          send();
+        }
+      } catch {}
+    };
+    window.addEventListener('synapse:terminal-run', onTerminalRun);
+    return () => window.removeEventListener('synapse:terminal-run', onTerminalRun);
+  }, [createTerminal]);
+
   // ─── Socket lifecycle ───
   useEffect(() => {
     const socket = createCollaborationSocket();
