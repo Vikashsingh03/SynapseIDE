@@ -35,6 +35,7 @@ import {
 import FileTreeItem from './FileTreeItem';
 import ChatPanel from './ChatPanel';
 import { copyText } from '../utils/clipboard';
+import { computeReplacements, parseSearchRegex } from '../utils/searchReplace';
 import { getAvatarStyle, getUserInitial } from '../utils/avatar';
 
 const SIDEBAR_WIDTH_KEY = 'synapse-primary-sidebar-width';
@@ -128,13 +129,21 @@ export default function Sidebar({
   currentUser,
   fileLocks = {},
 }) {
-  const { files, activeFileId, openTab, createFile, createFolder, moveItem, renameFile, deleteFile, toggleFolder, jumpToFileLine } = useFiles();
+  const { files, activeFileId, openTab, createFile, createFolder, moveItem, renameFile, deleteFile, toggleFolder, jumpToFileLine, updateContent } = useFiles();
   const [activeSidebar, setActiveSidebar] = useState('explorer');
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [creatingType, setCreatingType] = useState(null);
   const [createParentId, setCreateParentId] = useState(null);
   const [newItemName, setNewItemName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [replaceQuery, setReplaceQuery] = useState('');
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [useRegex, setUseRegex] = useState(false);
+  const [confirmReplace, setConfirmReplace] = useState(false);
+  const [replaceStatus, setReplaceStatus] = useState('');
+  const [pendingFocus, setPendingFocus] = useState(null); // 'search' | 'replace'
+  const searchInputRef = useRef(null);
+  const replaceInputRef = useRef(null);
   const [activeDragId, setActiveDragId] = useState(null);
   const [overDragId, setOverDragId] = useState(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -194,6 +203,42 @@ export default function Sidebar({
     return myName && msg.content?.toLowerCase().includes(`@${myName}`);
   });
   const hasUnreadMsgs = activeSidebar !== 'chat' && unreadMessages > 0 && !hasUnreadMention;
+
+  // ─── Global search shortcuts ───────────────────────────────────────
+  // Ctrl+Shift+F → Search panel · Ctrl+Shift+H → Search panel, replace focused
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!(e.ctrlKey || e.metaKey) || !e.shiftKey) return;
+      const key = e.key.toLowerCase();
+      if (key === 'f') {
+        e.preventDefault();
+        setActiveSidebar('search');
+        setPendingFocus('search');
+      } else if (key === 'h') {
+        e.preventDefault();
+        setActiveSidebar('search');
+        setPendingFocus('replace');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingFocus || activeSidebar !== 'search') return;
+    const target = pendingFocus === 'replace' ? replaceInputRef.current : searchInputRef.current;
+    if (target) {
+      target.focus();
+      target.select();
+    }
+    setPendingFocus(null);
+  }, [pendingFocus, activeSidebar]);
+
+  // Any change to the query/options cancels a pending replace confirmation
+  useEffect(() => {
+    setConfirmReplace(false);
+    setReplaceStatus('');
+  }, [searchQuery, replaceQuery, caseSensitive, useRegex]);
 
   // ─── Target folder logic ────────────────────────────────────────────
   const getTargetParentId = (itemOrId) => {
@@ -443,16 +488,37 @@ export default function Sidebar({
   const draggedItem = activeDragId ? visibleFiles.find(f => f.id === activeDragId) : null;
 
   // ─── Search ───────────────────────────────────────────────────────
+  const searchOptions = { caseSensitive, useRegex };
+  const searchError = searchQuery.trim()
+    ? parseSearchRegex(searchQuery, searchOptions).error
+    : '';
+  const replacePreview = computeReplacements(files, searchQuery, replaceQuery, searchOptions);
+
+  const handleReplaceAll = () => {
+    if (!replacePreview.total) return;
+    if (!confirmReplace) {
+      setConfirmReplace(true);
+      return;
+    }
+    replacePreview.updates.forEach((u) => updateContent(u.fileId, u.content));
+    setReplaceStatus(
+      `${replacePreview.total} replacement${replacePreview.total === 1 ? '' : 's'} in ${replacePreview.updates.length} file${replacePreview.updates.length === 1 ? '' : 's'}`
+    );
+    setConfirmReplace(false);
+  };
+
   const searchResults = (() => {
     if (!searchQuery.trim()) return [];
-    const query = searchQuery.toLowerCase();
+    const { regex } = parseSearchRegex(searchQuery, searchOptions);
+    if (!regex) return [];
+    const lineRegex = new RegExp(regex.source, regex.flags.replace('g', ''));
     const results = [];
     files.forEach(file => {
       if (file.type === 'folder' || !file.content) return;
       const lines = file.content.split('\n');
       const matches = [];
       lines.forEach((line, index) => {
-        if (line.toLowerCase().includes(query)) {
+        if (lineRegex.test(line)) {
           matches.push({ lineNumber: index + 1, content: line.trim() });
         }
       });
@@ -706,10 +772,11 @@ export default function Sidebar({
 
             {activeSidebar === 'search' && (
               <div className="flex flex-col h-full">
-                <div className="px-4 py-3 shrink-0">
+                <div className="px-4 py-3 shrink-0 flex flex-col gap-2">
                   <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-(--line) bg-(--paper) transition-colors duration-150 focus-within:border-(--blue)/60">
                     <Search size={14} className={t.textMuted} />
                     <input
+                      ref={searchInputRef}
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -723,6 +790,77 @@ export default function Sidebar({
                       </button>
                     )}
                   </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCaseSensitive((v) => !v)}
+                      title="Match case"
+                      className={`px-2 py-0.5 rounded-md border font-mono text-[11px] font-bold cursor-pointer transition-colors ${
+                        caseSensitive
+                          ? 'bg-(--blue)/15 text-(--blue) border-(--blue)/40'
+                          : 'text-(--muted) border-(--line) hover:text-(--ink)'
+                      }`}
+                    >
+                      Aa
+                    </button>
+                    <button
+                      onClick={() => setUseRegex((v) => !v)}
+                      title="Use regular expression"
+                      className={`px-2 py-0.5 rounded-md border font-mono text-[11px] font-bold cursor-pointer transition-colors ${
+                        useRegex
+                          ? 'bg-(--blue)/15 text-(--blue) border-(--blue)/40'
+                          : 'text-(--muted) border-(--line) hover:text-(--ink)'
+                      }`}
+                    >
+                      .*
+                    </button>
+                    <span className="ml-auto font-mono text-[10px] text-(--muted)">
+                      Ctrl+Shift+F · Ctrl+Shift+H
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center px-3 py-2 rounded-md border border-(--line) bg-(--paper) transition-colors duration-150 focus-within:border-(--blue)/60 flex-1 min-w-0">
+                      <input
+                        ref={replaceInputRef}
+                        type="text"
+                        value={replaceQuery}
+                        onChange={(e) => setReplaceQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleReplaceAll();
+                        }}
+                        placeholder="Replace with"
+                        className={`w-full bg-transparent text-[13px] outline-none ${t.textPrimary} placeholder:${t.textMuted}`}
+                      />
+                    </div>
+                    <button
+                      onClick={handleReplaceAll}
+                      disabled={!replacePreview.total}
+                      className={`px-3 py-2 rounded-md text-[12px] font-bold whitespace-nowrap transition-colors ${
+                        !replacePreview.total
+                          ? 'border border-(--line) text-(--muted) opacity-50 cursor-not-allowed'
+                          : confirmReplace
+                            ? 'bg-(--red) text-white cursor-pointer'
+                            : 'border border-(--blue)/50 text-(--blue) hover:bg-(--blue)/10 cursor-pointer'
+                      }`}
+                    >
+                      {confirmReplace ? `Confirm (${replacePreview.total})` : 'Replace All'}
+                    </button>
+                  </div>
+
+                  {searchError && (
+                    <p className="font-mono text-[11px] text-(--red)">
+                      {searchError} — check the pattern
+                    </p>
+                  )}
+                  {confirmReplace && !searchError && (
+                    <p className="font-mono text-[11px] text-(--muted)">
+                      Replaces {replacePreview.total} match{replacePreview.total === 1 ? '' : 'es'} in {replacePreview.updates.length} file{replacePreview.updates.length === 1 ? '' : 's'}. Undo a file with Ctrl+Z in the editor.
+                    </p>
+                  )}
+                  {replaceStatus && (
+                    <p className="font-mono text-[11px] text-emerald-500">{replaceStatus}</p>
+                  )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar px-3 pb-3">
