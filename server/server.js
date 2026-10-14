@@ -19,6 +19,9 @@ const snippetsRoute = require('./routes/snippets');
 const analyticsRoute = require('./routes/analytics');
 const gitRoute = require('./routes/git');
 const typecheckRoute = require('./routes/typecheck');
+const proxyRoute = require('./routes/proxy');
+const dbRoute = require('./routes/db');
+const dockerRoute = require('./routes/docker');
 const { globalLimiter } = require('./middleware/rateLimits');
 const { createSocketServer } = require('./socket/socketManager');
 
@@ -66,6 +69,9 @@ app.use('/api/snippets', snippetsRoute);
 app.use('/api/analytics', analyticsRoute);
 app.use('/api/git', gitRoute);
 app.use('/api', typecheckRoute);
+app.use('/api', proxyRoute);
+app.use('/api/db', dbRoute);
+app.use('/api/docker', dockerRoute);
 
 app.get('/api/health', (req, res) => {
   res.json({

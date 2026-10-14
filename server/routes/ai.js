@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/auth');
 const { aiChatLimiter } = require('../middleware/rateLimits');
 const { requestAIChat } = require('../services/aiProvider');
+const { extractAgentActions } = require('../services/agentActions');
 const Conversation = require('../models/Conversation');
 const AIMessage = require('../models/AIMessage');
 
@@ -211,8 +212,12 @@ router.post('/chat', aiChatLimiter, async (req, res) => {
       return;
     }
 
-    const { message, conversationId, history = [], context = {} } = req.body || {};
+    const { message, conversationId, history = [], context = {}, agentMode = false } = req.body || {};
     const normalizedMessage = normalizeMessage(message);
+    // Agent mode: the model may emit ```neura-action fenced blocks proposing
+    // file changes; these are extracted, validated, and returned separately.
+    // Non-agent behavior below is untouched (agentMode defaults to false).
+    const isAgentMode = agentMode === true;
 
     if (!normalizedMessage) {
       return res.status(400).json({
@@ -247,7 +252,18 @@ router.post('/chat', aiChatLimiter, async (req, res) => {
       message: normalizedMessage,
       history: persistedHistory.length > 0 ? persistedHistory : history,
       context,
+      agent: isAgentMode,
     });
+
+    // Agent mode only: strip the action blocks out of the chat text and
+    // hand the validated actions to the client as structured data.
+    let assistantContent = reply;
+    let actions = [];
+    if (isAgentMode) {
+      const extracted = extractAgentActions(reply);
+      assistantContent = extracted.cleanText;
+      actions = extracted.actions;
+    }
 
     const existingMessageCount = await AIMessage.countDocuments({
       conversationId: conversation._id,
@@ -262,7 +278,7 @@ router.post('/chat', aiChatLimiter, async (req, res) => {
       {
         conversationId: conversation._id,
         role: 'assistant',
-        content: reply,
+        content: assistantContent,
       },
     ]);
 
@@ -275,6 +291,7 @@ router.post('/chat', aiChatLimiter, async (req, res) => {
 
     return res.json({
       reply,
+      actions,
       conversation,
       conversationId: conversation._id,
       userMessage,

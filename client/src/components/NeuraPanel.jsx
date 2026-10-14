@@ -15,7 +15,12 @@ import {
   Check,
   Trash2,
   ChevronRight,
-  LoaderCircle
+  LoaderCircle,
+  Bot,
+  X,
+  FilePlus2,
+  Replace,
+  ListPlus
 } from 'lucide-react';
 import { useFiles } from '../contexts/FileContext';
 import { readStorage, writeStorage } from '../utils/storage';
@@ -27,6 +32,8 @@ import {
   getNeuraConversationHistory,
   deleteNeuraConversation
 } from '../services/aiService';
+import { API_BASE } from '../config/apiConfig';
+import { getToken } from '../services/authService';
 import { copyText } from '../utils/clipboard';
 
 const PANEL_WIDTH_KEY = 'synapse-neura-width';
@@ -131,8 +138,135 @@ const QUICK_ACTIONS = [
   { label: 'Refactor', prompt: 'Refactor the current code', Icon: Code2, primary: false },
 ];
 
+const AGENT_MODE_KEY = 'synapse-neura-agent';
+
+// Agent mode: same /ai/chat endpoint with agentMode: true. Non-streaming —
+// the server returns { reply, actions } after extracting validated
+// ```neura-action blocks from the model reply.
+async function sendAgentChat({ message, conversationId, context }) {
+  const token = getToken();
+  const response = await fetch(`${API_BASE}/ai/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({
+      message,
+      conversationId,
+      history: [],
+      context,
+      agentMode: true,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || 'Unable to get a response from Neura.');
+  }
+  return data;
+}
+
+const ACTION_TYPE_META = {
+  create_file: {
+    label: 'CREATE',
+    Icon: FilePlus2,
+    chip: 'bg-[#D9FF3F]/10 text-[#D9FF3F] border-[#D9FF3F]/30',
+  },
+  replace_file: {
+    label: 'REPLACE',
+    Icon: Replace,
+    chip: 'bg-(--blue)/10 text-(--blue) border-(--blue)/30',
+  },
+  insert_code: {
+    label: 'INSERT',
+    Icon: ListPlus,
+    chip: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+  },
+};
+
+function ActionCard({ action, status, onApply, onReject }) {
+  const meta = ACTION_TYPE_META[action.type] || {
+    label: String(action.type || 'action').toUpperCase(),
+    Icon: FilePlus2,
+    chip: 'bg-(--ink)/5 text-(--muted) border-(--line)',
+  };
+  const Icon = meta.Icon;
+  const charCount = String(action.content || '').length;
+  const isPending = status === 'pending';
+
+  return (
+    <div
+      className={`mt-2 rounded-lg border bg-(--ink)/[0.02] transition-opacity ${
+        status === 'rejected' ? 'border-(--line) opacity-45' : 'border-(--line)'
+      }`}
+    >
+      <div className="flex items-center gap-2 px-3 py-2">
+        <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.08em] ${meta.chip}`}>
+          <Icon size={10} />
+          {meta.label}
+        </span>
+        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-(--ink)" title={action.path}>
+          {action.path}
+        </span>
+        <span className="shrink-0 font-mono text-[10px] tabular-nums text-(--muted)">
+          {charCount.toLocaleString()} chars
+        </span>
+      </div>
+
+      <details className="border-t border-(--line) px-3 py-1.5">
+        <summary className="cursor-pointer font-mono text-[10px] text-(--muted) hover:text-(--ink)">
+          View code
+        </summary>
+        <pre className="custom-scrollbar max-h-40 select-text overflow-auto rounded-md bg-(--paper) p-2.5 font-mono text-[11px] leading-5 text-(--ink)">
+          {action.content}
+        </pre>
+      </details>
+
+      <div className="flex items-center gap-2 border-t border-(--line) px-3 py-2">
+        {status === 'applied' && (
+          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold text-emerald-500">
+            <Check size={12} />
+            Applied
+          </span>
+        )}
+        {status === 'rejected' && (
+          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold text-(--muted)">
+            <X size={12} />
+            Rejected
+          </span>
+        )}
+        {status === 'error' && (
+          <span className="font-mono text-[11px] font-bold text-(--red)">
+            File not found in project
+          </span>
+        )}
+        {isPending && (
+          <>
+            <button
+              type="button"
+              onClick={onApply}
+              className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-mono text-[11px] font-bold text-emerald-500 transition-colors hover:bg-emerald-500/20 cursor-pointer"
+            >
+              <Check size={12} />
+              Apply
+            </button>
+            <button
+              type="button"
+              onClick={onReject}
+              className="inline-flex items-center gap-1.5 rounded-md border border-(--line) bg-(--ink)/3 px-2.5 py-1 font-mono text-[11px] font-bold text-(--muted) transition-colors hover:text-(--red) hover:border-(--red)/40 cursor-pointer"
+            >
+              <X size={12} />
+              Reject
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
-  const { files, activeFile } = useFiles();
+  const { files, activeFile, activeFileId, createFile, createFolder, updateContent } = useFiles();
   const t = getThemeClasses(theme);
   const panelRef = useRef(null);
   const resizeStateRef = useRef(null);
@@ -166,6 +300,11 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'history'
+  const [agentMode, setAgentMode] = useState(() => readStorage(AGENT_MODE_KEY) === 'true');
+
+  useEffect(() => {
+    writeStorage(AGENT_MODE_KEY, agentMode ? 'true' : 'false');
+  }, [agentMode]);
 
   useEffect(() => {
     writeStorage(PANEL_WIDTH_KEY, String(panelWidth));
@@ -352,6 +491,122 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
     }
   };
 
+  // ─── Agent mode: file action resolution ────────────────────────────
+  // Project-relative path for a file, built from parentId chains.
+  const fileRelPath = (file) => {
+    const parts = [];
+    let cur = file;
+    const seen = new Set();
+    while (cur && !seen.has(cur.id)) {
+      seen.add(cur.id);
+      parts.unshift(cur.name);
+      cur = files.find((x) => x.id === cur.parentId);
+    }
+    return parts.join('/');
+  };
+
+  const findActionTarget = (actionPath) => {
+    const target = String(actionPath || '').toLowerCase();
+    const exact = files.find(
+      (f) => f.type === 'file' && fileRelPath(f).toLowerCase() === target
+    );
+    if (exact) return exact;
+    const base = target.split('/').pop();
+    const cands = files.filter(
+      (f) => f.type === 'file' && String(f.name).toLowerCase() === base
+    );
+    return cands.length === 1 ? cands[0] : null;
+  };
+
+  // Walk/create the folder segments of an action path. Returns the file name
+  // and the parentId to create under. Folder ids are returned synchronously
+  // by createFolder, so the walk is safe against stale state.
+  const ensurePathFolders = (actionPath) => {
+    const segs = String(actionPath || '').split('/').filter(Boolean);
+    const fileName = segs.pop();
+    let parentId = null;
+    for (const seg of segs) {
+      const existing = files.find(
+        (f) => f.type === 'folder' && f.name === seg && f.parentId === parentId
+      );
+      parentId = existing ? existing.id : createFolder(seg, parentId);
+    }
+    return { fileName, parentId };
+  };
+
+  const setActionStatus = (msgId, index, status) => {
+    setMessages((current) =>
+      current.map((m) =>
+        m._id === msgId
+          ? { ...m, actionStatus: { ...(m.actionStatus || {}), [index]: status } }
+          : m
+      )
+    );
+  };
+
+  // Edits to the ACTIVE file go through the editor (Monaco/Yjs-safe) via
+  // 'synapse:neura-apply' (EditorPanel listener, added at assembly).
+  // Edits to any other file write straight to FileContext.
+  const applyAction = (msg, index) => {
+    const action = msg.actions && msg.actions[index];
+    if (!action) return;
+
+    const replaceTarget = (target, content) => {
+      if (target.id === activeFileId) {
+        window.dispatchEvent(
+          new CustomEvent('synapse:neura-apply', {
+            detail: { fileId: target.id, mode: 'replace', content },
+          })
+        );
+      } else {
+        updateContent(target.id, content);
+      }
+    };
+
+    if (action.type === 'create_file') {
+      const existing = findActionTarget(action.path);
+      if (existing) {
+        // File already exists — apply as a full replace instead.
+        replaceTarget(existing, action.content);
+      } else {
+        const { fileName, parentId } = ensurePathFolders(action.path);
+        const newId = createFile(fileName, parentId);
+        updateContent(newId, action.content);
+      }
+      setActionStatus(msg._id, index, 'applied');
+      return;
+    }
+
+    const target = findActionTarget(action.path);
+    if (!target) {
+      setActionStatus(msg._id, index, 'error');
+      return;
+    }
+
+    if (action.type === 'replace_file') {
+      replaceTarget(target, action.content);
+    } else if (action.type === 'insert_code') {
+      if (target.id === activeFileId) {
+        window.dispatchEvent(
+          new CustomEvent('synapse:neura-apply', {
+            detail: {
+              fileId: target.id,
+              mode: 'insert',
+              afterLine: action.afterLine || 0,
+              content: action.content,
+            },
+          })
+        );
+      } else {
+        const lines = String(target.content || '').split('\n');
+        const at = Math.min(Math.max(action.afterLine || 0, 0), lines.length);
+        lines.splice(at, 0, ...String(action.content).split('\n'));
+        updateContent(target.id, lines.join('\n'));
+      }
+    }
+    setActionStatus(msg._id, index, 'applied');
+  };
+
   const handleSend = async (messageOverride = null) => {
     const messageToSend = messageOverride !== null && typeof messageOverride === 'string' ? messageOverride : inputValue;
     const trimmedMessage = String(messageToSend || '').trim();
@@ -370,11 +625,17 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
     setError('');
 
     try {
-      const response = await chatWithNeura({
-        message: trimmedMessage,
-        conversationId: activeConversationId,
-        context: fileContext,
-      });
+      const response = agentMode
+        ? await sendAgentChat({
+            message: trimmedMessage,
+            conversationId: activeConversationId,
+            context: fileContext,
+          })
+        : await chatWithNeura({
+            message: trimmedMessage,
+            conversationId: activeConversationId,
+            context: fileContext,
+          });
 
       setActiveConversationId(response.conversationId);
       if (response.conversation) {
@@ -383,15 +644,21 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
 
       setMessages((current) => {
         const withoutOptimistic = current.filter((entry) => entry._id !== optimisticUserMessage._id);
+        const assistantMessage = response.assistantMessage || {
+          _id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: response.reply,
+          createdAt: new Date().toISOString(),
+        };
+        // Attach validated file actions (agent mode) for the Apply/Reject cards.
+        const actionList = Array.isArray(response.actions) ? response.actions : [];
+        if (agentMode || actionList.length > 0) {
+          assistantMessage.actions = actionList;
+        }
         return [
           ...withoutOptimistic,
           response.userMessage || optimisticUserMessage,
-          response.assistantMessage || {
-            _id: `assistant-${Date.now()}`,
-            role: 'assistant',
-            content: response.reply,
-            createdAt: new Date().toISOString(),
-          },
+          assistantMessage,
         ];
       });
     } catch (requestError) {
@@ -474,6 +741,22 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
 
           <div className="flex items-center gap-1">
             <button
+              type="button"
+              onClick={() => setAgentMode((v) => !v)}
+              title="Agent mode — Neura can propose file changes (you approve each one)"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-mono text-[10px] font-bold uppercase tracking-[0.08em] border transition-colors cursor-pointer ${
+                agentMode
+                  ? 'bg-(--blue)/15 text-(--blue) border-(--blue)/40'
+                  : 'bg-(--ink)/3 text-(--muted) border-(--line) hover:text-(--ink)'
+              }`}
+            >
+              <Bot size={12} />
+              <span>Agent</span>
+              <span className={`relative w-6 h-3.5 rounded-full transition-colors ${agentMode ? 'bg-(--blue)' : 'bg-(--ink)/15'}`}>
+                <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all ${agentMode ? 'left-3' : 'left-0.5'}`} />
+              </span>
+            </button>
+            <button
               className={t.iconBtn + ' p-1.5!'}
               title="New Chat"
               onClick={handleNewChat}
@@ -492,6 +775,14 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
         </header>
 
         {/* Quick actions */}
+        {agentMode && (
+          <div className="px-4 py-2 border-b border-(--line) bg-(--blue)/5 flex items-center gap-2 shrink-0">
+            <Bot size={12} className="text-(--blue) shrink-0" />
+            <p className="text-[11px] text-(--muted)">
+              Agent mode: Neura can propose file changes — you approve each one.
+            </p>
+          </div>
+        )}
         <div className={`flex items-center gap-1.5 px-3 py-2.5 border-b ${t.border} overflow-x-auto shrink-0`}>
           {QUICK_ACTIONS.map(({ label, prompt, Icon, primary }) => (
             <button
@@ -557,6 +848,20 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
                         <div className="whitespace-pre-wrap select-text">{msg.content}</div>
                       ) : (
                         <AssistantMessage content={msg.content} theme={theme} />
+                      )}
+
+                      {!isUser && Array.isArray(msg.actions) && msg.actions.length > 0 && (
+                        <div className="mt-1">
+                          {msg.actions.map((action, ai) => (
+                            <ActionCard
+                              key={ai}
+                              action={action}
+                              status={(msg.actionStatus && msg.actionStatus[ai]) || 'pending'}
+                              onApply={() => applyAction(msg, ai)}
+                              onReject={() => setActionStatus(msg._id, ai, 'rejected')}
+                            />
+                          ))}
+                        </div>
                       )}
 
                       {msg.role === 'assistant' && msg._id === 'welcome' && (activeFile || files.length > 0) && (
@@ -669,7 +974,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
                   }
                 }}
                 maxLength={4000}
-                placeholder="Ask Neura anything…"
+                placeholder={agentMode ? "Ask Neura anything — or tell it what to build…" : "Ask Neura anything…"}
                 rows={3}
                 className={`${t.input} w-full min-h-22 p-3 pr-12 text-[13px] resize-none leading-relaxed`}
               />

@@ -39,6 +39,10 @@ import {
   Puzzle,
   Blocks,
   NotebookPen,
+  Globe,
+  Database,
+  Rocket,
+  Container,
 } from 'lucide-react';
 import { fontLabelFor } from '../hooks/useEditorSettings';
 import { getExtensionCommands } from '../extensions/registry';
@@ -225,6 +229,34 @@ export default function CommandPalette({
         label: 'Open Notebook',
         hint: 'cells · python/js',
         run: () => window.dispatchEvent(new Event('synapse:open-notebook')),
+      },
+      {
+        key: 'rest-client',
+        icon: Globe,
+        label: 'REST Client',
+        hint: 'api tester',
+        run: () => window.dispatchEvent(new Event('synapse:open-rest')),
+      },
+      {
+        key: 'db-viewer',
+        icon: Database,
+        label: 'Database Viewer',
+        hint: 'mongodb · read-only',
+        run: () => window.dispatchEvent(new Event('synapse:open-db')),
+      },
+      {
+        key: 'deploy',
+        icon: Rocket,
+        label: 'Deploy',
+        hint: 'vercel · render · netlify · docker',
+        run: () => window.dispatchEvent(new Event('synapse:open-deploy')),
+      },
+      {
+        key: 'docker',
+        icon: Container,
+        label: 'Docker',
+        hint: 'containers · images · logs',
+        run: () => window.dispatchEvent(new Event('synapse:open-docker')),
       },
       {
         key: 'problems',

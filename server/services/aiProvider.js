@@ -12,6 +12,7 @@
  * so the request/response shape stays identical.
  */
 const axios = require('axios');
+const { AGENT_SYSTEM_SUFFIX } = require('./agentActions');
 
 const PROVIDERS = {
   groq: {
@@ -101,7 +102,7 @@ function buildContextBlock(context = {}) {
   ].join('\n');
 }
 
-function buildMessages({ message, history = [], context = {} }) {
+function buildMessages({ message, history = [], context = {}, agent = false }) {
   const safeHistory = Array.isArray(history)
     ? history
         .filter((entry) => entry && (entry.role === 'user' || entry.role === 'assistant'))
@@ -112,16 +113,18 @@ function buildMessages({ message, history = [], context = {} }) {
         }))
     : [];
 
+  const systemIntro = [
+    'You are Neura, an AI coding assistant inside Synapse.',
+    'Help with code understanding, debugging, refactoring, architecture, and tests.',
+    'Be concise, practical, and specific.',
+    'When code context is provided, ground your answer in it instead of making assumptions.',
+    'If context is missing, say what is missing and still provide the most useful next step.',
+  ].join(' ');
+
   return [
     {
       role: 'system',
-      content: [
-        'You are Neura, an AI coding assistant inside Synapse.',
-        'Help with code understanding, debugging, refactoring, architecture, and tests.',
-        'Be concise, practical, and specific.',
-        'When code context is provided, ground your answer in it instead of making assumptions.',
-        'If context is missing, say what is missing and still provide the most useful next step.',
-      ].join(' '),
+      content: agent ? `${systemIntro}\n\n${AGENT_SYSTEM_SUFFIX}` : systemIntro,
     },
     {
       role: 'system',
@@ -135,7 +138,7 @@ function buildMessages({ message, history = [], context = {} }) {
   ];
 }
 
-async function requestAIChat({ message, history, context }) {
+async function requestAIChat({ message, history, context, agent = false }) {
   const cfg = getProviderConfig();
 
   const response = await axios.post(
@@ -144,7 +147,7 @@ async function requestAIChat({ message, history, context }) {
       model: cfg.model,
       temperature: cfg.temperature,
       max_tokens: cfg.maxTokens,
-      messages: buildMessages({ message, history, context }),
+      messages: buildMessages({ message, history, context, agent }),
     },
     {
       headers: {

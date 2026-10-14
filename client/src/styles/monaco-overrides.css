@@ -274,3 +274,15 @@
 .monaco-editor .synapse-fixme-line {
   background: rgba(248, 113, 113, 0.12);
 }
+
+/* ─── Visual debugger: breakpoints + execution line (Wave 4) ─── */
+.monaco-editor .synapse-bp-dot {
+  background: radial-gradient(circle at center, #f87171 0 5px, transparent 6px);
+  cursor: pointer;
+}
+.monaco-editor .synapse-debug-line {
+  background: rgba(250, 204, 21, 0.14);
+}
+.monaco-editor .synapse-debug-line-glyph {
+  background: rgba(250, 204, 21, 0.5);
+}

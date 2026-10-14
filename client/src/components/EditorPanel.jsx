@@ -8,6 +8,12 @@ import { registerIntellisense } from '../editor/intellisense';
 import { registerEmmet } from '../editor/emmet';
 import { registerPremiumThemes } from '../editor/themes';
 import { setMonacoProblems } from '../diagnostics/problemsStore';
+import {
+  getBreakpoints,
+  toggleBreakpoint,
+  subscribe as subscribeBreakpoints,
+  relPathOf,
+} from '../debug/breakpointsStore';
 import EditorEmptyState from './EditorEmptyState';
 import { fontStackFor } from '../hooks/useEditorSettings';
 import { getThemeClasses } from '../utils/theme';
@@ -328,6 +334,10 @@ export default function EditorPanel({
   // Extensions decorations bridge state: last 'synapse:ext-decorations'
   // payload + the live Monaco decorations collection for the current editor.
   const extDecoRef = useRef({ detail: null, collection: null, collectionFor: null, cleanup: null });
+  // Visual debugger state: breakpoint dots + execution line decorations,
+  // re-created per editor instance (onMount), cleaned up on unmount.
+  const bpDecoRef = useRef({ collection: null, collectionFor: null, unsubscribe: null });
+  const lineDecoRef = useRef({ collection: null, collectionFor: null });
   useEffect(() => {
     if (!isPrimary) return;
     activeFileForProblemsRef.current = effectiveFile
@@ -339,6 +349,92 @@ export default function EditorPanel({
       } catch {}
     }
   }, [effectiveFile, isPrimary]);
+
+  // Neura Agent: apply an approved action to the ACTIVE file's Monaco model
+  // (executeEdits keeps undo + the Yjs binding in sync; non-active targets
+  // are written by NeuraPanel via updateContent instead). Primary only.
+  useEffect(() => {
+    if (!isPrimary) return undefined;
+    const onNeuraApply = (e) => {
+      try {
+        const { fileId, mode, afterLine, content } = e.detail || {};
+        const editor = editorRef.current;
+        if (!editor || !fileId || fileId !== activeFileForProblemsRef.current?.id) return;
+        const model = editor.getModel();
+        if (!model || typeof content !== 'string') return;
+        if (mode === 'replace') {
+          editor.executeEdits('neura-apply', [
+            { range: model.getFullModelRange(), text: content, forceMoveMarkers: true },
+          ]);
+        } else if (mode === 'insert') {
+          const lineCount = model.getLineCount();
+          const at = Math.min(Math.max(Number(afterLine) || 0, 0), lineCount);
+          if (at === 0) {
+            const text = content.endsWith('\n') ? content : content + '\n';
+            editor.executeEdits('neura-apply', [
+              {
+                range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 },
+                text,
+                forceMoveMarkers: true,
+              },
+            ]);
+          } else {
+            const col = model.getLineMaxColumn(at);
+            editor.executeEdits('neura-apply', [
+              {
+                range: { startLineNumber: at, startColumn: col, endLineNumber: at, endColumn: col },
+                text: '\n' + content,
+                forceMoveMarkers: true,
+              },
+            ]);
+          }
+        }
+        editor.focus();
+      } catch {}
+    };
+    window.addEventListener('synapse:neura-apply', onNeuraApply);
+    return () => window.removeEventListener('synapse:neura-apply', onNeuraApply);
+  }, [isPrimary]);
+
+  // Visual debugger: highlight the line the debugger is paused on.
+  // Listens for 'synapse:debug-line' { relPath, line } (line null = clear).
+  // Primary panel only; the listener refreshes when the active file changes.
+  useEffect(() => {
+    if (!isPrimary) return;
+    const applyLine = (rel, line) => {
+      try {
+        const ed = editorRef.current;
+        if (!ed || !window.monaco) return;
+        if (lineDecoRef.current.collectionFor !== ed) {
+          lineDecoRef.current.collection = ed.createDecorationsCollection([]);
+          lineDecoRef.current.collectionFor = ed;
+        }
+        const match = line && relPathOf(effectiveFile, files) === rel;
+        lineDecoRef.current.collection.set(
+          match
+            ? [
+                {
+                  range: new window.monaco.Range(line, 1, line, 1),
+                  options: {
+                    isWholeLine: true,
+                    className: 'synapse-debug-line',
+                    glyphMarginClassName: 'synapse-debug-line-glyph',
+                  },
+                },
+              ]
+            : []
+        );
+        if (match) ed.revealLineInCenter(line);
+      } catch {}
+    };
+    const onLine = (e) => applyLine(e.detail?.relPath, e.detail?.line ?? null);
+    window.addEventListener('synapse:debug-line', onLine);
+    // File switched: clear any stale execution line on the new editor.
+    try {
+      lineDecoRef.current.collection?.set([]);
+    } catch {}
+    return () => window.removeEventListener('synapse:debug-line', onLine);
+  }, [isPrimary, effectiveFile]);
 
   // Collect current selection for "save as snippet"
   useEffect(() => {
@@ -644,6 +740,51 @@ export default function EditorPanel({
             } catch {}
             }
 
+            // ─── Visual debugger: breakpoint gutter ───
+            // Click the glyph margin to toggle a breakpoint on that line.
+            // Dots render for the active file's breakpoints (primary only).
+            if (isPrimary) {
+            try {
+              bpDecoRef.current.unsubscribe?.();
+              const applyBp = () => {
+                try {
+                  const ed = editorRef.current;
+                  if (!ed) return;
+                  if (bpDecoRef.current.collectionFor !== ed) {
+                    bpDecoRef.current.collection = ed.createDecorationsCollection([]);
+                    bpDecoRef.current.collectionFor = ed;
+                  }
+                  const rel = relPathOf(effectiveFile, files);
+                  const lines = rel ? getBreakpoints(rel) : [];
+                  bpDecoRef.current.collection.set(
+                    lines.map((ln) => ({
+                      range: new monaco.Range(ln, 1, ln, 1),
+                      options: {
+                        glyphMarginClassName: 'synapse-bp-dot',
+                        glyphMarginHoverMessage: {
+                          value: `Breakpoint · line ${ln}\nClick the gutter to remove`,
+                        },
+                      },
+                    }))
+                  );
+                } catch {}
+              };
+              bpDecoRef.current.unsubscribe = subscribeBreakpoints(applyBp);
+              editor.onMouseDown((e) => {
+                try {
+                  if (
+                    e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN &&
+                    e.target.position
+                  ) {
+                    const rel = relPathOf(effectiveFile, files);
+                    if (rel) toggleBreakpoint(rel, e.target.position.lineNumber);
+                  }
+                } catch {}
+              });
+              applyBp();
+            } catch {}
+            }
+
             // The binding is created ONLY by the binding useEffect below (it
             // re-runs on the editorMountKey bump). Creating one here as well
             // would risk two live MonacoBindings on the same Y.Text + model —
@@ -715,7 +856,7 @@ export default function EditorPanel({
             wordWrap: editorSettings?.wordWrap ?? 'off',
             padding: { top: 12, bottom: 24 },
             lineNumbers: 'on',
-            glyphMargin: false,
+            glyphMargin: true,
             folding: true,
             codeLens: false,
             links: true,

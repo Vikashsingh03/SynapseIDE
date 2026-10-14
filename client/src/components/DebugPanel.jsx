@@ -1,8 +1,21 @@
-import { useState, useEffect, useMemo } from 'react';
-import { X, Play, Bug, TerminalSquare } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import {
+  X,
+  Play,
+  Bug,
+  TerminalSquare,
+  Square,
+  StepForward,
+  ArrowDownRight,
+  ArrowUpRight,
+  FileCode2,
+} from 'lucide-react';
 import { useFiles } from '../contexts/FileContext';
+import { createCollaborationSocket } from '../services/socket';
+import { getBreakpoints, subscribe as subscribeBreakpoints } from '../debug/breakpointsStore';
 
 const RUNNABLE = new Set(['js', 'mjs', 'cjs', 'py']);
+const VISUAL_EXTS = new Set(['js', 'mjs', 'cjs']);
 const PREFS_KEY = 'synapse-debug-prefs';
 
 function extOf(name) {
@@ -24,6 +37,409 @@ function loadPrefs() {
   } catch {
     return { args: '', debug: false };
   }
+}
+
+/**
+ * VisualDebug — real in-editor debugging for Node.js via the Chrome DevTools
+ * Protocol. The server spawns `node --inspect-brk` on the workspace file and
+ * bridges CDP over this panel's own Socket.IO connection (same pattern as
+ * TerminalPanel: own socket, works in solo + rooms, no page changes needed).
+ *
+ * Breakpoints are toggled by clicking the editor's glyph margin (red dot)
+ * and read from the shared breakpointsStore for the target file's relPath.
+ */
+function VisualDebug({ jsFiles, files }) {
+  const { activeFileId } = useFiles();
+  const [fileId, setFileId] = useState(
+    () => (jsFiles.find((r) => r.id === activeFileId) || jsFiles[0] || null)?.id ?? null
+  );
+  const [bps, setBps] = useState([]);
+  const [running, setRunning] = useState(false);
+  const [status, setStatus] = useState('idle'); // idle | running | paused | stopped
+  const [frames, setFrames] = useState([]);
+  const [variables, setVariables] = useState([]);
+  const [consoleLines, setConsoleLines] = useState([]);
+  const socketRef = useRef(null);
+  const runningRef = useRef(false);
+  const consoleRef = useRef(null);
+  const relRef = useRef(null);
+
+  const selected = jsFiles.find((r) => r.id === fileId) || null;
+  const rel = selected?.rel || null;
+
+  // Keep the store's breakpoints for this file live (gutter clicks elsewhere update us).
+  useEffect(() => {
+    if (!rel) {
+      setBps([]);
+      return;
+    }
+    setBps(getBreakpoints(rel));
+    const off = subscribeBreakpoints(() => setBps(getBreakpoints(rel)));
+    return off;
+  }, [rel]);
+
+  useEffect(() => {
+    relRef.current = rel;
+  }, [rel]);
+
+  const pushLine = (type, text) =>
+    setConsoleLines((prev) => [...prev.slice(-500), { type, text }]);
+
+  const clearExecLine = () => {
+    try {
+      window.dispatchEvent(
+        new CustomEvent('synapse:debug-line', { detail: { relPath: relRef.current, line: null } })
+      );
+    } catch {}
+  };
+
+  const sendCommand = (command) => {
+    try {
+      socketRef.current?.emit('debug:command', { command });
+    } catch {}
+  };
+
+  // ─── Own socket lifecycle (mirrors TerminalPanel) ───
+  useEffect(() => {
+    const socket = createCollaborationSocket();
+    socketRef.current = socket;
+    socket.on('debug:event', (evt) => {
+      if (!evt) return;
+      switch (evt.kind) {
+        case 'output':
+          pushLine(evt.type, evt.text);
+          break;
+        case 'started':
+          setStatus('running');
+          pushLine(
+            'system',
+            `Debugger attached — breakpoints at ${(evt.breakpoints || []).length ? evt.breakpoints.join(', ') : 'none'}`
+          );
+          break;
+        case 'paused': {
+          setStatus('paused');
+          const list = evt.callFrames || [];
+          const top = list[0];
+          setFrames(list);
+          setVariables(top?.variables || []);
+          try {
+            window.dispatchEvent(
+              new CustomEvent('synapse:debug-line', {
+                detail: { relPath: relRef.current, line: top?.line ?? null },
+              })
+            );
+          } catch {}
+          break;
+        }
+        case 'resumed':
+          setStatus('running');
+          setFrames([]);
+          setVariables([]);
+          clearExecLine();
+          break;
+        case 'terminated':
+          setRunning(false);
+          runningRef.current = false;
+          setStatus('stopped');
+          setFrames([]);
+          setVariables([]);
+          clearExecLine();
+          pushLine('system', `Process exited${evt.code != null ? ` (code ${evt.code})` : ''}.`);
+          break;
+        case 'error':
+          pushLine('system', `Error: ${evt.message}`);
+          break;
+        default:
+          break;
+      }
+    });
+    socket.connect();
+    return () => {
+      try {
+        socket.emit('debug:command', { command: 'stop' });
+      } catch {}
+      try {
+        socket.disconnect();
+      } catch {}
+      socketRef.current = null;
+      try {
+        window.dispatchEvent(
+          new CustomEvent('synapse:debug-line', { detail: { relPath: relRef.current, line: null } })
+        );
+      } catch {}
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Live-push gutter toggles while a session runs.
+  useEffect(() => {
+    if (!runningRef.current || !socketRef.current) return;
+    try {
+      socketRef.current.emit('debug:setBreakpoints', { breakpoints: bps });
+    } catch {}
+  }, [bps]);
+
+  useEffect(() => {
+    const el = consoleRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [consoleLines]);
+
+  const start = () => {
+    if (!selected || !socketRef.current) return;
+    const roomMatch = window.location.pathname.match(/^\/room\/([A-Za-z0-9]{1,16})/);
+    const roomId = roomMatch ? roomMatch[1] : undefined;
+    socketRef.current.emit('debug:start', {
+      roomId,
+      filePath: rel,
+      breakpoints: bps,
+      files: (files || []).map((f) => ({
+        id: f.id,
+        name: f.name,
+        type: f.type,
+        parentId: f.parentId,
+        content: f.content,
+      })),
+    });
+    setRunning(true);
+    runningRef.current = true;
+    setStatus('running');
+    setConsoleLines([]);
+    setFrames([]);
+    setVariables([]);
+  };
+
+  const stop = () => {
+    sendCommand('stop');
+    setRunning(false);
+    runningRef.current = false;
+    setStatus('stopped');
+    setFrames([]);
+    setVariables([]);
+    clearExecLine();
+    pushLine('system', 'Session stopped.');
+  };
+
+  const paused = status === 'paused';
+  const statusLabel =
+    status === 'running'
+      ? 'Running…'
+      : paused
+        ? 'Paused'
+        : status === 'stopped'
+          ? 'Stopped'
+          : 'Idle';
+
+  const lineColor = (type) =>
+    type === 'stderr'
+      ? 'text-red-400'
+      : type === 'system'
+        ? 'text-(--muted) italic'
+        : type === 'console'
+          ? 'text-(--blue)'
+          : 'text-(--ink)';
+
+  if (jsFiles.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center py-10">
+        <FileCode2 size={28} className="text-(--muted)" />
+        <p className="text-[13px] font-bold text-(--ink)">Nothing debuggable yet</p>
+        <p className="font-mono text-[11px] text-(--muted)">Create a .js file to visually debug</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* File picker */}
+      <div>
+        <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">
+          File to debug
+        </label>
+        <select
+          value={fileId || ''}
+          onChange={(e) => setFileId(e.target.value || null)}
+          disabled={running}
+          className="mt-1.5 w-full h-9 px-2.5 rounded-md border border-(--line) bg-(--paper) text-[13px] text-(--ink) font-mono outline-none focus:border-(--blue)/60 transition-colors cursor-pointer disabled:opacity-50"
+        >
+          {jsFiles.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.rel}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Breakpoint summary */}
+      <div className="rounded-lg border border-(--line) bg-(--paper) p-3">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
+          <span className="text-[12px] font-bold text-(--ink)">
+            {bps.length === 0 ? 'No breakpoints' : `${bps.length} breakpoint${bps.length > 1 ? 's' : ''}`}
+          </span>
+          {bps.length > 0 && (
+            <span className="font-mono text-[11px] text-(--muted)">lines {bps.join(', ')}</span>
+          )}
+        </div>
+        <p className="font-mono text-[10.5px] text-(--muted) mt-1.5">
+          Click the editor&apos;s left gutter to toggle a red breakpoint dot — they apply on launch,
+          and can be changed live while paused or running.
+        </p>
+      </div>
+
+      {/* Start / Stop */}
+      {!running ? (
+        <button
+          onClick={start}
+          disabled={!selected}
+          className="h-10 rounded-lg font-extrabold text-[13px] flex items-center justify-center gap-2 bg-(--ink) text-(--paper) hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Bug size={15} />
+          Start Visual Debug
+        </button>
+      ) : (
+        <button
+          onClick={stop}
+          className="h-10 rounded-lg font-extrabold text-[13px] flex items-center justify-center gap-2 border border-red-400/50 text-red-400 hover:bg-red-400/10 active:scale-[0.99] transition-all cursor-pointer"
+        >
+          <Square size={15} />
+          Stop Session
+        </button>
+      )}
+
+      {running && (
+        <>
+          {/* Status */}
+          <div className="flex items-center gap-2">
+            <span
+              className={`w-2 h-2 rounded-full ${paused ? 'bg-yellow-400' : 'bg-emerald-400'} ${paused ? '' : 'animate-pulse'}`}
+            />
+            <span className="text-[12px] font-bold text-(--ink)">{statusLabel}</span>
+            {paused && frames[0] && (
+              <span className="font-mono text-[11px] text-(--muted)">
+                at line {frames[0].line} of {selected?.name}
+              </span>
+            )}
+          </div>
+
+          {/* Step controls */}
+          <div className="grid grid-cols-4 gap-1.5">
+            <button
+              onClick={() => sendCommand('resume')}
+              disabled={!paused}
+              title="Continue (resume)"
+              className="h-9 rounded-md border border-(--line) bg-(--paper) text-[11px] font-bold text-(--ink) flex items-center justify-center gap-1.5 hover:border-(--blue)/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <Play size={13} /> Continue
+            </button>
+            <button
+              onClick={() => sendCommand('stepOver')}
+              disabled={!paused}
+              title="Step over"
+              className="h-9 rounded-md border border-(--line) bg-(--paper) text-[11px] font-bold text-(--ink) flex items-center justify-center gap-1.5 hover:border-(--blue)/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <StepForward size={13} /> Over
+            </button>
+            <button
+              onClick={() => sendCommand('stepInto')}
+              disabled={!paused}
+              title="Step into"
+              className="h-9 rounded-md border border-(--line) bg-(--paper) text-[11px] font-bold text-(--ink) flex items-center justify-center gap-1.5 hover:border-(--blue)/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <ArrowDownRight size={13} /> Into
+            </button>
+            <button
+              onClick={() => sendCommand('stepOut')}
+              disabled={!paused}
+              title="Step out"
+              className="h-9 rounded-md border border-(--line) bg-(--paper) text-[11px] font-bold text-(--ink) flex items-center justify-center gap-1.5 hover:border-(--blue)/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <ArrowUpRight size={13} /> Out
+            </button>
+          </div>
+
+          {/* Call stack */}
+          <div>
+            <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">
+              Call stack
+            </label>
+            <div className="mt-1.5 rounded-lg border border-(--line) bg-(--paper) max-h-36 overflow-y-auto custom-scrollbar">
+              {frames.length === 0 ? (
+                <p className="font-mono text-[11px] text-(--muted) p-2.5">
+                  {paused ? 'No frames.' : 'Pause execution to inspect the stack.'}
+                </p>
+              ) : (
+                frames.map((f, i) => (
+                  <div
+                    key={`${f.callFrameId}-${i}`}
+                    className={`flex items-center gap-2 px-2.5 py-1.5 ${i > 0 ? 'border-t border-(--line)' : ''}`}
+                  >
+                    {i === 0 && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />}
+                    <span className="font-mono text-[12px] text-(--ink) truncate">{f.functionName}</span>
+                    <span className="font-mono text-[11px] text-(--muted) ml-auto">:{f.line}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Variables (top frame) */}
+          <div>
+            <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">
+              Variables — top frame
+            </label>
+            <div className="mt-1.5 rounded-lg border border-(--line) bg-(--paper) max-h-44 overflow-y-auto custom-scrollbar">
+              {variables.length === 0 ? (
+                <p className="font-mono text-[11px] text-(--muted) p-2.5">
+                  {paused ? 'No local variables.' : 'Pause execution to inspect variables.'}
+                </p>
+              ) : (
+                variables.map((v) => (
+                  <div
+                    key={v.name}
+                    className="flex items-baseline gap-2 px-2.5 py-1 border-t first:border-t-0 border-(--line)"
+                  >
+                    <span className="font-mono text-[12px] text-(--blue) shrink-0">{v.name}</span>
+                    <span className="font-mono text-[11px] text-(--muted) truncate" title={v.value}>
+                      {v.value}
+                    </span>
+                    <span className="font-mono text-[10px] text-(--muted) ml-auto shrink-0">{v.type}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Debug console */}
+      <div>
+        <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">
+          Debug console
+        </label>
+        <div
+          ref={consoleRef}
+          className="mt-1.5 rounded-lg border border-(--line) bg-[#0A0E17] p-2.5 h-44 overflow-y-auto custom-scrollbar font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap break-words"
+        >
+          {consoleLines.length === 0 ? (
+            <span className="text-(--muted)">stdout, stderr and console output appear here.</span>
+          ) : (
+            consoleLines.map((l, i) => (
+              <div key={i} className={lineColor(l.type)}>
+                {l.text}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Honest note */}
+      <p className="font-mono text-[10.5px] text-(--muted)">
+        Real Node.js inspector under the hood (node --inspect) — the yellow line in the editor is
+        where execution is paused. Solo runs your current files; room runs use the room&apos;s synced
+        files. Node must be installed on the host.
+      </p>
+    </div>
+  );
 }
 
 export default function DebugPanel({ onClose }) {
@@ -52,6 +468,7 @@ export default function DebugPanel({ onClose }) {
   const [debug, setDebug] = useState(prefs.debug);
   const [status, setStatus] = useState('');
   const [fileId, setFileId] = useState(null);
+  const [mode, setMode] = useState('terminal'); // 'terminal' | 'visual'
 
   // Default selection: active file if runnable, else the first runnable file
   useEffect(() => {
@@ -114,7 +531,32 @@ export default function DebugPanel({ onClose }) {
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 flex flex-col gap-4">
-        {runnable.length === 0 ? (
+        {/* Mode toggle */}
+        <div className="flex items-center gap-1 p-1 rounded-lg border border-(--line) bg-(--ink)/5 shrink-0">
+          {[
+            { id: 'terminal', label: 'Terminal' },
+            { id: 'visual', label: 'Visual (Node)' },
+          ].map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setMode(m.id)}
+              className={`flex-1 h-8 rounded-md text-[12px] font-extrabold transition-colors cursor-pointer ${
+                mode === m.id
+                  ? 'bg-(--paper) text-(--ink) border border-(--line) shadow-sm'
+                  : 'text-(--muted) hover:text-(--ink)'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        {mode === 'visual' ? (
+          <VisualDebug
+            jsFiles={runnable.filter((r) => VISUAL_EXTS.has(r.ext))}
+            files={files}
+          />
+        ) : runnable.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
             <TerminalSquare size={28} className="text-(--muted)" />
             <p className="text-[13px] font-bold text-(--ink)">Nothing runnable yet</p>

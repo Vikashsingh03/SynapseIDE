@@ -16,6 +16,10 @@ import { RenameSymbolHost } from '../components/RenameSymbolModal';
 import { DebugHost } from '../components/DebugPanel';
 import { ExtensionsHost } from '../components/ExtensionsPanel';
 import { NotebookHost } from '../components/NotebookPanel';
+import { RestHost } from '../components/RestPanel';
+import { DbHost } from '../components/DbPanel';
+import { DeployHost } from '../components/DeployPanel';
+import { DockerHost } from '../components/DockerPanel';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import CommandPalette from '../components/CommandPalette';
@@ -343,6 +347,10 @@ function EditorPage() {
                 <DebugHost />
         <ExtensionsHost />
         <NotebookHost />
+        <RestHost />
+        <DbHost />
+        <DeployHost />
+        <DockerHost />
 
         {/* Neura code review modal */}
         <CodeReviewModal
