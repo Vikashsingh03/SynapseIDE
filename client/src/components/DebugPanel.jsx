@@ -13,9 +13,10 @@ import {
 import { useFiles } from '../contexts/FileContext';
 import { createCollaborationSocket } from '../services/socket';
 import { getBreakpoints, subscribe as subscribeBreakpoints } from '../debug/breakpointsStore';
+import { findLaunchFile, parseLaunchConfig, relPathOf } from '../utils/launchConfig';
 
 const RUNNABLE = new Set(['js', 'mjs', 'cjs', 'py']);
-const VISUAL_EXTS = new Set(['js', 'mjs', 'cjs']);
+const VISUAL_EXTS = new Set(['js', 'mjs', 'cjs', 'py']);
 const PREFS_KEY = 'synapse-debug-prefs';
 
 function extOf(name) {
@@ -48,7 +49,7 @@ function loadPrefs() {
  * Breakpoints are toggled by clicking the editor's glyph margin (red dot)
  * and read from the shared breakpointsStore for the target file's relPath.
  */
-function VisualDebug({ jsFiles, files }) {
+function VisualDebug({ jsFiles, files, forcedFileId }) {
   const { activeFileId } = useFiles();
   const [fileId, setFileId] = useState(
     () => (jsFiles.find((r) => r.id === activeFileId) || jsFiles[0] || null)?.id ?? null
@@ -66,6 +67,13 @@ function VisualDebug({ jsFiles, files }) {
 
   const selected = jsFiles.find((r) => r.id === fileId) || null;
   const rel = selected?.rel || null;
+
+  // A launch config selected at the panel level pins the target file.
+  useEffect(() => {
+    if (forcedFileId && jsFiles.some((r) => r.id === forcedFileId)) {
+      setFileId(forcedFileId);
+    }
+  }, [forcedFileId, jsFiles]);
 
   // Keep the store's breakpoints for this file live (gutter clicks elsewhere update us).
   useEffect(() => {
@@ -220,6 +228,7 @@ function VisualDebug({ jsFiles, files }) {
   };
 
   const paused = status === 'paused';
+  const isPy = /\.py$/.test(selected?.rel || '');
   const statusLabel =
     status === 'running'
       ? 'Running…'
@@ -243,7 +252,7 @@ function VisualDebug({ jsFiles, files }) {
       <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center py-10">
         <FileCode2 size={28} className="text-(--muted)" />
         <p className="text-[13px] font-bold text-(--ink)">Nothing debuggable yet</p>
-        <p className="font-mono text-[11px] text-(--muted)">Create a .js file to visually debug</p>
+        <p className="font-mono text-[11px] text-(--muted)">Create a .js or .py file to visually debug</p>
       </div>
     );
   }
@@ -267,6 +276,11 @@ function VisualDebug({ jsFiles, files }) {
             </option>
           ))}
         </select>
+        {selected && (
+          <span className="mt-1.5 inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-bold bg-(--ink)/5 text-(--ink) border-(--line)">
+            {isPy ? 'Python (debugpy)' : 'Node (CDP)'}
+          </span>
+        )}
       </div>
 
       {/* Breakpoint summary */}
@@ -434,9 +448,11 @@ function VisualDebug({ jsFiles, files }) {
 
       {/* Honest note */}
       <p className="font-mono text-[10.5px] text-(--muted)">
-        Real Node.js inspector under the hood (node --inspect) — the yellow line in the editor is
+        Real Node.js inspector (node --inspect) or the Debug Adapter Protocol (debugpy — the same
+        adapter VS Code uses for Python) under the hood — the yellow line in the editor is
         where execution is paused. Solo runs your current files; room runs use the room&apos;s synced
-        files. Node must be installed on the host.
+        files. Node must be installed on the host; Python debugging needs debugpy on this machine
+        (one-time): <span className="text-(--ink)">pip install debugpy</span>.
       </p>
     </div>
   );
@@ -469,6 +485,41 @@ export default function DebugPanel({ onClose }) {
   const [status, setStatus] = useState('');
   const [fileId, setFileId] = useState(null);
   const [mode, setMode] = useState('terminal'); // 'terminal' | 'visual'
+  const [configName, setConfigName] = useState(''); // '' = Manual
+  const [programMissing, setProgramMissing] = useState(false);
+
+  // launch.json (`.synapse/launch.json` first, then root) → named run configs.
+  const launchConfigs = useMemo(() => {
+    const lf = findLaunchFile(files);
+    if (!lf) return { rel: null, configs: [] };
+    const list = parseLaunchConfig(lf.content || '').map((c) => {
+      let m = runnable.find((r) => r.rel === c.program);
+      if (!m) {
+        const tail = '/' + c.program;
+        const base = c.program.split('/').pop();
+        const cand = runnable.filter((r) => r.rel.endsWith(tail) || r.rel === base);
+        if (cand.length === 1) m = cand[0];
+      }
+      return { ...c, matchedId: m?.id ?? null };
+    });
+    return { rel: relPathOf(lf, files), configs: list };
+  }, [files, runnable]);
+
+  const selectedConfig = launchConfigs.configs.find((c) => c.name === configName) || null;
+
+  const applyConfig = (name) => {
+    setConfigName(name);
+    const cfg = launchConfigs.configs.find((c) => c.name === name) || null;
+    if (!cfg) {
+      setProgramMissing(false);
+      return;
+    }
+    setProgramMissing(!cfg.matchedId);
+    if (cfg.matchedId) {
+      setFileId(cfg.matchedId);
+      setArgs(cfg.args.join(' '));
+    }
+  };
 
   // Default selection: active file if runnable, else the first runnable file
   useEffect(() => {
@@ -535,7 +586,7 @@ export default function DebugPanel({ onClose }) {
         <div className="flex items-center gap-1 p-1 rounded-lg border border-(--line) bg-(--ink)/5 shrink-0">
           {[
             { id: 'terminal', label: 'Terminal' },
-            { id: 'visual', label: 'Visual (Node)' },
+            { id: 'visual', label: 'Visual' },
           ].map((m) => (
             <button
               key={m.id}
@@ -551,10 +602,39 @@ export default function DebugPanel({ onClose }) {
           ))}
         </div>
 
+        {/* Launch configuration (launch.json) — shared by both modes */}
+        {launchConfigs.configs.length > 0 && (
+          <div className="-mt-1">
+            <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">
+              Configuration
+            </label>
+            <select
+              value={configName}
+              onChange={(e) => applyConfig(e.target.value)}
+              title={launchConfigs.rel}
+              className="mt-1.5 w-full h-9 px-2.5 rounded-md border border-(--line) bg-(--paper) text-[13px] text-(--ink) font-mono outline-none focus:border-(--blue)/60 transition-colors cursor-pointer"
+            >
+              <option value="">Manual — pick file and args below</option>
+              {launchConfigs.configs.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name} ({c.type} · {c.program})
+                </option>
+              ))}
+            </select>
+            {programMissing && selectedConfig && (
+              <p className="font-mono text-[10.5px] text-amber-400 mt-1.5">
+                Program &quot;{selectedConfig.program}&quot; was not found in the project — select
+                the file manually.
+              </p>
+            )}
+          </div>
+        )}
+
         {mode === 'visual' ? (
           <VisualDebug
             jsFiles={runnable.filter((r) => VISUAL_EXTS.has(r.ext))}
             files={files}
+            forcedFileId={selectedConfig ? selectedConfig.matchedId : null}
           />
         ) : runnable.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">

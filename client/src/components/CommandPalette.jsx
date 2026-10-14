@@ -43,6 +43,7 @@ import {
   Database,
   Rocket,
   Container,
+  ListChecks,
 } from 'lucide-react';
 import { fontLabelFor } from '../hooks/useEditorSettings';
 import { getExtensionCommands } from '../extensions/registry';
@@ -259,6 +260,13 @@ export default function CommandPalette({
         run: () => window.dispatchEvent(new Event('synapse:open-docker')),
       },
       {
+        key: 'tasks',
+        icon: ListChecks,
+        label: 'Tasks: Run Task…',
+        hint: 'tasks.json',
+        run: () => window.dispatchEvent(new Event('synapse:open-tasks')),
+      },
+      {
         key: 'problems',
         icon: XCircle,
         label: 'Show Problems',
@@ -414,7 +422,7 @@ export default function CommandPalette({
     ];
     // Extensions (fail-safe: a registry error must never break the palette)
     try {
-      const extCtx = { files, activeFile, openTab, updateContent };
+      const extCtx = { files, activeFile, openTab, updateContent, createFile, createFolder };
       all.push(
         ...getExtensionCommands(extCtx).map((c) => ({
           key: c.key,
@@ -428,7 +436,7 @@ export default function CommandPalette({
       /* extensions never break the palette */
     }
     return all.filter((a) => !q || a.label.toLowerCase().includes(q));
-  }, [query, theme, settings, activeFile, copied, snapshotBusy, files, updateContent, openTab, onToggleTheme, onExit, onIncreaseFont, onDecreaseFont, onToggleWordWrap, onToggleMinimap, onCycleFontFamily, onCycleTabSize, onToggleFormatOnType, onToggleStickyScroll, onOpenReview]);
+  }, [query, theme, settings, activeFile, copied, snapshotBusy, files, updateContent, openTab, createFile, createFolder, onToggleTheme, onExit, onIncreaseFont, onDecreaseFont, onToggleWordWrap, onToggleMinimap, onCycleFontFamily, onCycleTabSize, onToggleFormatOnType, onToggleStickyScroll, onOpenReview]);
 
   const sections = useMemo(() => {
     const out = [];

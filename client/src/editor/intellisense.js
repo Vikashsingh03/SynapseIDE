@@ -382,6 +382,205 @@ function setupJson(monaco) {
 }
 
 // ---------------------------------------------------------------------------
+// 4. Project-aware IntelliSense (Wave 5): project files as extra libs
+// ---------------------------------------------------------------------------
+// The TS/JS worker only knows the open model + the React stubs above. This
+// keeps EVERY project .ts/.tsx/.mts/.cts/.js/.jsx file (incl. .d.ts — pure
+// gold for the worker) registered as an extra lib under a file:/// URI built
+// from its project-relative path, so the worker's module graph covers the
+// whole project: cross-file import resolution, hover types and go-to-
+// definition work across files — the same TypeScript compiler VS Code runs,
+// inside the browser worker.
+//
+// Routing decision: every eligible file is added to BOTH javascriptDefaults
+// AND typescriptDefaults. Mixed JS/TS projects are the norm here (a .jsx
+// file importing a .ts util is routine); Monaco keeps separate language
+// services, so each service needs the full graph to resolve cross-file
+// imports. URI collisions are avoided by construction: project libs live at
+// file:///<relPath> while the React stubs above use file:///node_modules/....
+//
+// Debounce decision: EditorPanel calls syncProjectFiles on every `files`
+// change (FileContext updates per keystroke), so the sync is ALWAYS trailing
+// debounced (400ms). The worker gets a fresh project graph when the user
+// pauses typing, without re-registering libs on every keystroke.
+
+const PROJECT_LIB_ELIGIBLE_RE = /\.(?:d\.ts|ts|tsx|mts|cts|js|jsx)$/;
+const MAX_PROJECT_LIB_BYTES = 200 * 1024;
+const PROJECT_SYNC_DEBOUNCE_MS = 400;
+
+function relPathOfFile(file, files) {
+  const byId = new Map();
+  for (const f of files || []) {
+    if (f && f.id != null) byId.set(f.id, f);
+  }
+  const parts = [];
+  const seen = new Set();
+  let cur = file;
+  while (cur && !seen.has(cur.id)) {
+    seen.add(cur.id);
+    parts.unshift(cur.name || 'untitled');
+    cur = cur.parentId != null ? byId.get(cur.parentId) : null;
+  }
+  return parts.join('/');
+}
+
+function uriForRelPath(relPath) {
+  return (
+    'file:///' +
+    String(relPath)
+      .split('/')
+      .map((seg) => encodeURIComponent(seg))
+      .join('/')
+  );
+}
+
+// Cheap signature: length + sampled charCode hash + first/last 50 chars.
+// Fast enough to run on a pause for the whole project.
+export function contentSignature(content) {
+  const n = content.length;
+  let h = 5381;
+  for (let i = 0; i < n; i += 97) {
+    h = ((h << 5) + h + content.charCodeAt(i)) >>> 0;
+  }
+  return n + ':' + h.toString(36) + ':' + content.slice(0, 50) + '|' + content.slice(-50);
+}
+
+// Pure: file list -> desired Map<uri, content>.
+export function projectLibsForFiles(files) {
+  const desired = new Map();
+  for (const f of files || []) {
+    if (!f || f.type === 'folder') continue;
+    const name = f.name || '';
+    if (!PROJECT_LIB_ELIGIBLE_RE.test(name)) continue;
+    const content = typeof f.content === 'string' ? f.content : '';
+    if (content.length > MAX_PROJECT_LIB_BYTES) continue;
+    const uri = uriForRelPath(relPathOfFile(f, files));
+    if (desired.has(uri)) continue; // safety net; relPaths are unique per tree
+    desired.set(uri, content);
+  }
+  return desired;
+}
+
+function addLibToDefaults(defaults, content, uri) {
+  const disposables = [];
+  for (const d of defaults) {
+    try {
+      const disp = d && d.addExtraLib ? d.addExtraLib(content, uri) : null;
+      if (disp) disposables.push(disp);
+    } catch {
+      /* ignore */
+    }
+  }
+  return {
+    dispose() {
+      for (const disp of disposables) {
+        try {
+          disp.dispose && disp.dispose();
+        } catch {
+          /* ignore */
+        }
+      }
+    },
+    // How many defaults actually accepted the lib (0 = nowhere registered).
+    count: disposables.length,
+  };
+}
+
+// Injectable core (unit-testable): desired-Map bookkeeping over N defaults.
+export function createSyncer(defaults) {
+  const live = new Map(); // uri -> { sig, disposable }
+  return {
+    sync(desired) {
+      try {
+        for (const [uri, entry] of Array.from(live)) {
+          if (!desired.has(uri)) {
+            try {
+              entry.disposable && entry.disposable.dispose();
+            } catch {}
+            live.delete(uri);
+          }
+        }
+        for (const [uri, content] of desired) {
+          const sig = contentSignature(content);
+          const entry = live.get(uri);
+          if (!entry) {
+            const disposable = addLibToDefaults(defaults, content, uri);
+            // If no default accepted the lib (e.g. no TS service), don't mark
+            // it live — the next sync will retry.
+            if (disposable.count > 0) live.set(uri, { sig, disposable });
+          } else if (entry.sig !== sig) {
+            try {
+              entry.disposable && entry.disposable.dispose();
+            } catch {}
+            const disposable = addLibToDefaults(defaults, content, uri);
+            if (disposable.count > 0) live.set(uri, { sig, disposable });
+            else live.delete(uri);
+          }
+        }
+      } catch {
+        /* never break the editor */
+      }
+    },
+    uris() {
+      return Array.from(live.keys());
+    },
+    size() {
+      return live.size;
+    },
+  };
+}
+
+function typescriptDefaultsFor(monaco) {
+  const ts = monaco && monaco.languages && monaco.languages.typescript;
+  return [ts && ts.javascriptDefaults, ts && ts.typescriptDefaults].filter(Boolean);
+}
+
+// Debounced project sync with injectable debounceMs (tests). The module
+// singleton exported below uses the default 400ms.
+export function createProjectSync(monaco, opts) {
+  const syncer = createSyncer(typescriptDefaultsFor(monaco));
+  const debounceMs =
+    opts && typeof opts.debounceMs === 'number' ? opts.debounceMs : PROJECT_SYNC_DEBOUNCE_MS;
+  let timer = null;
+  const applyNow = (files) => {
+    try {
+      syncer.sync(projectLibsForFiles(files));
+    } catch {}
+  };
+  return {
+    sync(files) {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        applyNow(files);
+      }, debounceMs);
+    },
+    flush(files) {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      applyNow(files);
+    },
+    uris: () => syncer.uris(),
+    size: () => syncer.size(),
+  };
+}
+
+let projectSyncSingleton = null;
+
+export function syncProjectFiles(monaco, files) {
+  try {
+    if (!projectSyncSingleton) {
+      projectSyncSingleton = createProjectSync(monaco);
+    }
+    projectSyncSingleton.sync(files);
+  } catch {
+    /* ignore */
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 export function registerIntellisense(monaco) {
   if (registered) return;

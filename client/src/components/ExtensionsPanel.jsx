@@ -13,12 +13,16 @@ import {
   Braces,
   BookOpen,
   WholeWord,
+  Wand2,
+  Table2,
+  ListTodo,
+  FileCode2,
   Info,
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
 
-const EXT_ICONS = { Highlighter, Braces, BookOpen, WholeWord };
+const EXT_ICONS = { Highlighter, Braces, BookOpen, WholeWord, Wand2, Table2, ListTodo, FileCode2 };
 
 function extIconComponent(name) {
   return EXT_ICONS[name] || Blocks;
@@ -194,6 +198,82 @@ function MarkdownPreviewDrawer({ onClose }) {
 }
 
 /* ------------------------------------------------------------------ */
+/* TODO explorer drawer                                            */
+/* ------------------------------------------------------------------ */
+
+function TodoExplorerDrawer({ items, onClose }) {
+  const { openTab } = useFiles();
+
+  const gotoItem = (it) => {
+    try {
+      openTab(it.fileId);
+      // The goto-line listener acts on the CURRENT editor; openTab switches
+      // the active file via state, so give React a tick to swap the editor
+      // before dispatching the line jump.
+      setTimeout(() => {
+        try {
+          window.dispatchEvent(
+            new CustomEvent('synapse:goto-line', { detail: { line: it.line } })
+          );
+        } catch {}
+      }, 150);
+    } catch {}
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-y-0 right-0 w-[480px] max-w-[94vw] z-[70] bg-(--paper-2) border-l border-(--line) flex flex-col shadow-[0_0_48px_rgba(0,0,0,0.45)] animate-fade-in">
+      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-(--line) shrink-0">
+        <span className="p-1.5 rounded-lg bg-(--acid)/10 border border-(--acid)/25 text-(--acid)">
+          <ListTodo size={16} />
+        </span>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-bold text-(--ink)">TODO Explorer</h2>
+          <p className="text-[11px] text-(--muted)">
+            {items.length} item{items.length === 1 ? '' : 's'} in project
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 rounded-md text-(--muted) hover:text-(--ink) hover:bg-(--ink)/5 transition-colors cursor-pointer"
+          aria-label="Close TODO explorer"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
+        {items.map((it, idx) => (
+          <button
+            key={`${it.fileId}-${it.line}-${idx}`}
+            onClick={() => gotoItem(it)}
+            className="w-full text-left rounded-lg border border-transparent hover:border-(--line) hover:bg-(--paper) px-3 py-2.5 transition-colors cursor-pointer group"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[12px] font-mono text-(--blue) truncate">
+                {it.fileName}
+                <span className="text-(--muted)">:{it.line}</span>
+              </span>
+              <span
+                className={`ml-auto shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                  it.kind === 'fixme'
+                    ? 'bg-red-500/10 text-red-400 border-red-500/30'
+                    : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                }`}
+              >
+                {it.kind === 'fixme' ? 'FIXME' : 'TODO'}
+              </span>
+            </div>
+            <p className="text-[12px] text-(--muted) mt-1 truncate group-hover:text-(--ink)">
+              {it.text}
+            </p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Toasts                                                              */
 /* ------------------------------------------------------------------ */
 
@@ -240,11 +320,16 @@ function ToastStack({ toasts }) {
 export function ExtensionsHost() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [mdOpen, setMdOpen] = useState(false);
+  const [todoItems, setTodoItems] = useState(null); // null = drawer closed
   const [toasts, setToasts] = useState([]);
 
   useEffect(() => {
     const openGallery = () => setGalleryOpen(true);
     const openMd = () => setMdOpen(true);
+    const openTodos = (e) => {
+      const items = e?.detail?.items;
+      if (items && items.length) setTodoItems(items);
+    };
     const onToast = (e) => {
       const { message, kind = 'info' } = e?.detail || {};
       if (!message) return;
@@ -256,10 +341,12 @@ export function ExtensionsHost() {
     };
     window.addEventListener('synapse:open-extensions', openGallery);
     window.addEventListener('synapse:ext-open-markdown', openMd);
+    window.addEventListener('synapse:ext-open-todos', openTodos);
     window.addEventListener('synapse:ext-toast', onToast);
     return () => {
       window.removeEventListener('synapse:open-extensions', openGallery);
       window.removeEventListener('synapse:ext-open-markdown', openMd);
+      window.removeEventListener('synapse:ext-open-todos', openTodos);
       window.removeEventListener('synapse:ext-toast', onToast);
     };
   }, []);
@@ -272,6 +359,9 @@ export function ExtensionsHost() {
         </div>
       )}
       {mdOpen && <MarkdownPreviewDrawer onClose={() => setMdOpen(false)} />}
+      {todoItems && (
+        <TodoExplorerDrawer items={todoItems} onClose={() => setTodoItems(null)} />
+      )}
       <ToastStack toasts={toasts} />
     </>
   );

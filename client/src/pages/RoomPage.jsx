@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import throttle from 'lodash.throttle';
 import debounce from 'lodash.debounce';
 import { useCallback } from 'react';
-import { Loader2, AlertTriangle, ArrowLeft, Phone } from 'lucide-react';
+import { Loader2, AlertTriangle, ArrowLeft, Phone, X } from 'lucide-react';
 import { FileProvider, useFiles } from '../contexts/FileContext';
 import { useAuth } from '../context/useAuth';
 import Sidebar from '../components/Sidebar';
@@ -23,6 +23,7 @@ import { RestHost } from '../components/RestPanel';
 import { DbHost } from '../components/DbPanel';
 import { DeployHost } from '../components/DeployPanel';
 import { DockerHost } from '../components/DockerPanel';
+import { TasksHost } from '../components/TasksPanel';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import VoiceChat from '../components/VoiceChat';
@@ -691,6 +692,43 @@ function RoomSession({ roomId }) {
     navigate('/dashboard');
   }, [navigate, roomId, roomReady]);
 
+  // ── Split editor (rooms) — Wave 5. Mirrors EditorPage's solo split:
+  // each pane binds its OWN file's Y.Text (two bindings on two different
+  // texts = the safe case; the duplication bug was two bindings on the SAME
+  // text+model). The toggle event is dispatched by TabBar's Columns2 button.
+  const [splitOn, setSplitOn] = useState(false);
+  const [splitFileId, setSplitFileId] = useState(null);
+
+  useEffect(() => {
+    const toggle = () => {
+      if (!splitOn && !splitFileId) {
+        // Default the split pane to the most recent other open tab,
+        // else the first file that isn't the active one.
+        const recentOther = [...openTabs].reverse().find((id) => id !== activeFileId);
+        const fallback = files.find((f) => f.id !== activeFileId)?.id || null;
+        setSplitFileId(recentOther || fallback);
+      }
+      setSplitOn((v) => !v);
+    };
+    window.addEventListener('synapse:toggle-split', toggle);
+    return () => window.removeEventListener('synapse:toggle-split', toggle);
+  }, [openTabs, activeFileId, files, splitOn, splitFileId]);
+
+  // Y.Text for the split pane's file — never the primary's sharedText.
+  const splitSharedText = splitFileId && yjsManager ? yjsManager.getText(splitFileId) : null;
+
+  // Remote peers filtered to the split file (mirrors activeRemotePeers).
+  const splitRemotePeers = useMemo(
+    () =>
+      Object.values(presence).filter(
+        (peer) =>
+          peer.userId !== user?.userId &&
+          (peer.position?.fileId === splitFileId ||
+            peer.selectionRange?.fileId === splitFileId)
+      ),
+    [splitFileId, presence, user?.userId]
+  );
+
   const activeRemotePeers = useMemo(
     () =>
       Object.values(presence).filter(
@@ -777,6 +815,7 @@ function RoomSession({ roomId }) {
         <DbHost />
         <DeployHost />
         <DockerHost />
+        <TasksHost />
 
         {!zenMode && (
           <Sidebar
@@ -792,24 +831,82 @@ function RoomSession({ roomId }) {
         )}
 
         <main className="flex-1 min-w-0 flex flex-col bg-[#121824] overflow-hidden rounded-xl border border-[#2b3546] min-h-0">
-          <TabBar theme={theme} roomId={roomId} fileLocks={fileLocks} currentUserId={user?.userId} />
+          <TabBar
+            theme={theme}
+            roomId={roomId}
+            fileLocks={fileLocks}
+            currentUserId={user?.userId}
+            showSplit
+            splitActive={splitOn}
+          />
           <Breadcrumbs />
 
-          <EditorPanel
-            theme={theme}
-            editorSettings={editorSettings}
-            onCursorMove={handleCursorMove}
-            onSelectionChange={handleSelectionChange}
-            onLocalChange={handleLocalChange}
-            sharedText={sharedText}
-            remotePeers={activeRemotePeers}
-            editingUsers={editingUsers}
-            activeFileId={activeFileId}
-            activeFileLock={activeFileLock}
-            isReadOnly={false}
-            lockedByOther={isActiveFileLockedByOther}
-            lockNotice={lockNotice}
-          />
+          {/* Editor row: primary + optional split pane */}
+          <div className="flex flex-1 min-h-0">
+            <div className="flex-1 min-w-0 flex flex-col">
+              <EditorPanel
+                theme={theme}
+                editorSettings={editorSettings}
+                onCursorMove={handleCursorMove}
+                onSelectionChange={handleSelectionChange}
+                onLocalChange={handleLocalChange}
+                sharedText={sharedText}
+                remotePeers={activeRemotePeers}
+                editingUsers={editingUsers}
+                activeFileId={activeFileId}
+                activeFileLock={activeFileLock}
+                isReadOnly={false}
+                lockedByOther={isActiveFileLockedByOther}
+                lockNotice={lockNotice}
+              />
+            </div>
+            {splitOn && (
+              <>
+                <div className="w-px shrink-0 bg-white/8" />
+                <div className="flex-1 min-w-0 flex flex-col">
+                  {/* Split file strip: pick which file the second pane shows */}
+                  <div className="h-[30px] flex items-center gap-2 px-2 bg-[#0D1220] border-b border-white/[0.06] shrink-0">
+                    <select
+                      value={splitFileId || ''}
+                      onChange={(e) => setSplitFileId(e.target.value || null)}
+                      className="flex-1 min-w-0 bg-transparent text-[11px] font-mono text-[#C9D4E6] outline-none cursor-pointer"
+                      aria-label="Split pane file"
+                    >
+                      {openTabs.map((id) => {
+                        const f = files.find((x) => x.id === id);
+                        if (!f) return null;
+                        return (
+                          <option key={id} value={id} className="bg-[#0D1220]">
+                            {f.name}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <button
+                      onClick={() => setSplitOn(false)}
+                      className="p-1 rounded text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/10 transition-colors cursor-pointer"
+                      title="Close split"
+                      aria-label="Close split editor"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                  <EditorPanel
+                    theme={theme}
+                    editorSettings={editorSettings}
+                    fileIdOverride={splitFileId}
+                    isPrimary={false}
+                    sharedText={splitSharedText}
+                    remotePeers={splitRemotePeers}
+                    editingUsers={editingUsers}
+                    activeFileId={splitFileId}
+                    onLocalChange={handleLocalChange}
+                    isReadOnly={false}
+                  />
+                </div>
+              </>
+            )}
+          </div>
 
           <OutputPanel theme={theme} output={output} roomId={roomId} />
         </main>

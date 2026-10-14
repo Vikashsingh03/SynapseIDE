@@ -4,7 +4,7 @@ import { MonacoBinding } from 'y-monaco';
 import { useFiles } from '../contexts/FileContext';
 import { getMonacoLanguage } from '../utils/languageMap';
 import { registerSnippetProvider, registerSnippetUseCommand } from '../services/snippetProvider';
-import { registerIntellisense } from '../editor/intellisense';
+import { registerIntellisense, syncProjectFiles } from '../editor/intellisense';
 import { registerEmmet } from '../editor/emmet';
 import { registerPremiumThemes } from '../editor/themes';
 import { setMonacoProblems } from '../diagnostics/problemsStore';
@@ -308,6 +308,18 @@ export default function EditorPanel({
     }
   }, [language]);
 
+  // Wave 5: keep the TS/JS worker's project graph in sync with the file tree.
+  // The sync itself is trailing-debounced (400ms) inside syncProjectFiles —
+  // this effect may fire on every keystroke (FileContext updates `files`
+  // per keystroke) without churning the worker.
+  useEffect(() => {
+    if (monacoRef.current) {
+      try {
+        syncProjectFiles(monacoRef.current, files);
+      } catch {}
+    }
+  }, [files]);
+
   // Breadcrumbs symbol click → jump the editor to that line.
   // Primary panel only — the split panel has its own pinned file and the
   // Breadcrumbs trail describes the primary file.
@@ -394,6 +406,19 @@ export default function EditorPanel({
     };
     window.addEventListener('synapse:neura-apply', onNeuraApply);
     return () => window.removeEventListener('synapse:neura-apply', onNeuraApply);
+  }, [isPrimary]);
+
+  // Extensions: 'Format Document' command → Monaco's built-in formatter
+  // for the active editor. Primary only.
+  useEffect(() => {
+    if (!isPrimary) return undefined;
+    const onFormat = () => {
+      try {
+        editorRef.current?.getAction('editor.action.formatDocument')?.run();
+      } catch {}
+    };
+    window.addEventListener('synapse:format-document', onFormat);
+    return () => window.removeEventListener('synapse:format-document', onFormat);
   }, [isPrimary]);
 
   // Visual debugger: highlight the line the debugger is paused on.
@@ -644,6 +669,37 @@ export default function EditorPanel({
             editorRef.current = editor;
             monacoRef.current = monaco;
 
+            // ─── Wave 5: give the editor model a file:/// URI matching the
+            // file's project path, so the TS worker resolves RELATIVE imports
+            // across project files (extraLibs alone can't: an inmemory://
+            // model resolves imports inside the inmemory scheme). Solo:
+            // FileContext stays the source of truth — a reused model is
+            // re-synced from it at mount (external edits while the file was
+            // closed: Replace All, git resolve, Neura). Rooms: skipped —
+            // the MonacoBinding re-syncs the model from its Y.Text.
+            try {
+              if (effectiveFile) {
+                const rel = relPathOf(effectiveFile, files);
+                const uri = monaco.Uri.parse(
+                  'file:///' + rel.split('/').map(encodeURIComponent).join('/')
+                );
+                let model = monaco.editor.getModel(uri);
+                if (!model) {
+                  model = monaco.editor.createModel(
+                    sharedText ? '' : effectiveFile.content || '',
+                    language,
+                    uri
+                  );
+                } else {
+                  monaco.editor.setModelLanguage(model, language);
+                  if (!sharedText && model.getValue() !== (effectiveFile.content || '')) {
+                    model.setValue(effectiveFile.content || '');
+                  }
+                }
+                if (editor.getModel() !== model) editor.setModel(model);
+              }
+            } catch {}
+
             // Register custom color themes (Dracula, Monokai, Night Owl, GitHub Dark)
             defineCustomEditorThemes(monaco);
             try {
@@ -660,6 +716,7 @@ export default function EditorPanel({
             // ─── VS Code Wave 1: IntelliSense (React/Tailwind/JSON) + Emmet ───
             try {
               registerIntellisense(monaco);
+              syncProjectFiles(monaco, files); // Wave 5: first project-graph sync
             } catch {}
             try {
               registerEmmet(editor, monaco);

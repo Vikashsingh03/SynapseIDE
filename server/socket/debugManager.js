@@ -11,6 +11,7 @@
  */
 const path = require('path');
 const { DebugSession } = require('../services/debugBridge');
+const { PythonDebugSession } = require('../services/pythonDebugBridge');
 const { prepareWorkspace } = require('./terminalManager');
 
 // socket.id -> DebugSession (one active session max per socket)
@@ -25,12 +26,12 @@ function stopSession(socket) {
   sessions.delete(socket.id);
 }
 
-// filePath must be a plain relative JS path inside the workspace.
+// filePath must be a plain relative JS or Python path inside the workspace.
 function sanitizeFilePath(filePath) {
   const raw = String(filePath || '').replace(/\\/g, '/').trim();
   if (!raw || raw.length > 256) return null;
   if (raw.startsWith('/') || raw.includes('..')) return null;
-  if (!/^[A-Za-z0-9_][A-Za-z0-9_./-]*\.(mjs|cjs|js)$/.test(raw)) return null;
+  if (!/^[A-Za-z0-9_][A-Za-z0-9_./-]*\.(mjs|cjs|js|py)$/.test(raw)) return null;
   if (/[~^?*:|<>]/.test(raw)) return null;
   return raw;
 }
@@ -42,7 +43,7 @@ async function startSession(socket, { roomId, filePath, breakpoints, files } = {
   if (!safePath) {
     socket.emit('debug:event', {
       kind: 'error',
-      message: 'Invalid debug target. Pick a .js/.mjs/.cjs file in the workspace.',
+      message: 'Invalid debug target. Pick a .js/.mjs/.cjs/.py file in the workspace.',
     });
     return;
   }
@@ -53,7 +54,9 @@ async function startSession(socket, { roomId, filePath, breakpoints, files } = {
     (await prepareWorkspace(roomId, files, socket.data.user?.userId)) ||
     path.join(__dirname, '..', '..');
 
-  const session = new DebugSession();
+  // Python files go through the real Debug Adapter Protocol (debugpy —
+  // the same adapter VS Code uses); JS-family files use the CDP bridge.
+  const session = safePath.endsWith('.py') ? new PythonDebugSession() : new DebugSession();
   sessions.set(socket.id, session);
   session.onEvent = (evt) => {
     try {
