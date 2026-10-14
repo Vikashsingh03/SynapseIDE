@@ -44,9 +44,14 @@ import {
   Rocket,
   Container,
   ListChecks,
+  Ghost,
+  Monitor,
+  FlaskConical,
+  History,
 } from 'lucide-react';
 import { fontLabelFor } from '../hooks/useEditorSettings';
 import { getExtensionCommands } from '../extensions/registry';
+import { ghostTextEnabled, setGhostTextEnabled } from '../editor/ghostText';
 
 /**
  * VS Code-style command palette (Ctrl/⌘ + K).
@@ -258,6 +263,34 @@ export default function CommandPalette({
         label: 'Docker',
         hint: 'containers · images · logs',
         run: () => window.dispatchEvent(new Event('synapse:open-docker')),
+      },
+      {
+        key: 'live-preview',
+        icon: Monitor,
+        label: 'Live Preview',
+        hint: 'html preview',
+        run: () => window.dispatchEvent(new Event('synapse:open-preview')),
+      },
+      {
+        key: 'tests',
+        icon: FlaskConical,
+        label: 'Test Explorer',
+        hint: 'node:test',
+        run: () => window.dispatchEvent(new Event('synapse:open-tests')),
+      },
+      {
+        key: 'timeline',
+        icon: History,
+        label: 'Timeline: Local History',
+        hint: 'file versions',
+        run: () => window.dispatchEvent(new Event('synapse:open-timeline')),
+      },
+      {
+        key: 'ghost-text',
+        icon: Ghost,
+        label: 'Toggle AI Completions (Ghost Text)',
+        hint: ghostTextEnabled() ? 'on' : 'off',
+        run: () => setGhostTextEnabled(!ghostTextEnabled()),
       },
       {
         key: 'tasks',

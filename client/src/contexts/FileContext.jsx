@@ -2,8 +2,32 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { LANGUAGES, getLanguageByExtension } from '../utils/languageMap';
 import { readStorage, writeStorage } from '../utils/storage';
+import { recordSnapshot } from '../history/historyStore';
 
 const FileContext = createContext();
+
+// Local History (Timeline): debounce per file so keystrokes collapse into one
+// snapshot 2.5s after typing pauses. Module-level so it survives re-renders;
+// guarded so history can never break editing.
+const historyTimers = new Map();
+const historyLatestContent = new Map();
+const HISTORY_DEBOUNCE_MS = 2500;
+
+function scheduleHistorySnapshot(id, content) {
+  if (!id || typeof content !== 'string') return;
+  historyLatestContent.set(id, content);
+  const prev = historyTimers.get(id);
+  if (prev) clearTimeout(prev);
+  historyTimers.set(
+    id,
+    setTimeout(() => {
+      historyTimers.delete(id);
+      try {
+        recordSnapshot(id, historyLatestContent.get(id));
+      } catch {}
+    }, HISTORY_DEBOUNCE_MS)
+  );
+}
 
 const DEFAULT_FILE = {
   id: 'welcome-py',
@@ -273,6 +297,10 @@ export function FileProvider({ children, storageKey = STORAGE_KEY }) {
           : file
       )
     );
+    // Local History: snapshot (debounced) — editing behavior untouched.
+    try {
+      scheduleHistorySnapshot(id, content);
+    } catch {}
   }, []);
 
   const openTab = useCallback((id) => {

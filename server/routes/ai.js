@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/auth');
 const { aiChatLimiter } = require('../middleware/rateLimits');
-const { requestAIChat } = require('../services/aiProvider');
+const { requestAIChat, requestAICompletion } = require('../services/aiProvider');
 const { extractAgentActions } = require('../services/agentActions');
 const Conversation = require('../models/Conversation');
 const AIMessage = require('../models/AIMessage');
@@ -45,6 +45,61 @@ async function getOwnedConversation(conversationId, userId) {
 }
 
 router.use(authMiddleware);
+
+// ── Ghost text (inline completions) ───────────────────────────────────
+// Completions fire on every typing pause, so instead of the hourly chat
+// limiter this endpoint uses a lightweight per-user minimum gap. It is
+// stateless (no DB writes) — ensureDatabaseReady is intentionally skipped.
+/** userId -> timestamp of last accepted completion call */
+const completionLastCall = new Map();
+const COMPLETION_MIN_GAP_MS = 300;
+
+function completionThrottleOk(userId) {
+  const now = Date.now();
+  const last = completionLastCall.get(userId) || 0;
+  if (now - last < COMPLETION_MIN_GAP_MS) return false;
+  completionLastCall.set(userId, now);
+  return true;
+}
+
+router.post('/complete', async (req, res) => {
+  try {
+    const { prefix, suffix, language } = req.body || {};
+
+    if (typeof prefix !== 'string' || prefix.length === 0) {
+      return res.status(400).json({ error: 'A code prefix is required.' });
+    }
+
+    const userId = (req.user && (req.user.userId || req.user.id)) || 'anonymous';
+    if (!completionThrottleOk(userId)) {
+      // Over-throttled: a silent empty suggestion, not an error — the
+      // client keeps typing and retries on the next pause.
+      return res.json({ completion: '' });
+    }
+
+    // Defensive caps: keep the tail of the prefix and the head of the suffix.
+    const safePrefix = prefix.length > 8000 ? prefix.slice(-4000) : prefix;
+    const safeSuffix = typeof suffix === 'string' ? suffix.slice(0, 1500) : '';
+    const safeLanguage =
+      typeof language === 'string' ? language.slice(0, 40) : 'plaintext';
+
+    const completion = await requestAICompletion({
+      prefix: safePrefix,
+      suffix: safeSuffix,
+      language: safeLanguage,
+    });
+
+    return res.json({ completion: completion || '' });
+  } catch (error) {
+    console.error('AI completion error:', error.response?.data || error.message);
+    return res.status(502).json({
+      error:
+        error.response?.data?.error?.message ||
+        error.message ||
+        'Completion failed.',
+    });
+  }
+});
 
 router.post('/new', async (req, res) => {
   try {

@@ -22,6 +22,8 @@ const typecheckRoute = require('./routes/typecheck');
 const proxyRoute = require('./routes/proxy');
 const dbRoute = require('./routes/db');
 const dockerRoute = require('./routes/docker');
+const previewRoute = require('./routes/preview');
+const testrunRoute = require('./routes/testrun');
 const { globalLimiter } = require('./middleware/rateLimits');
 const { createSocketServer } = require('./socket/socketManager');
 
@@ -72,6 +74,8 @@ app.use('/api', typecheckRoute);
 app.use('/api', proxyRoute);
 app.use('/api/db', dbRoute);
 app.use('/api/docker', dockerRoute);
+app.use('/api', previewRoute);
+app.use('/api', testrunRoute);
 
 app.get('/api/health', (req, res) => {
   res.json({

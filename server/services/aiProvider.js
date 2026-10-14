@@ -13,6 +13,7 @@
  */
 const axios = require('axios');
 const { AGENT_SYSTEM_SUFFIX } = require('./agentActions');
+const { sanitizeCompletion } = require('./completionSanitize');
 
 const PROVIDERS = {
   groq: {
@@ -166,8 +167,69 @@ async function requestAIChat({ message, history, context, agent = false }) {
   );
 }
 
+const COMPLETION_SYSTEM_PROMPT = [
+  'You are a code completion engine inside an IDE.',
+  'You receive code before and after the cursor.',
+  'Output ONLY the code that belongs at the cursor — no explanations,',
+  'no markdown fences, no repeating the surrounding code.',
+  'Keep it short (at most ~6 lines).',
+  'If nothing sensible completes the code, output nothing.',
+].join(' ');
+
+/**
+ * Fill-in-the-middle style completion over the existing chat transport.
+ *
+ * @param {string} prefix   code before the cursor (tail-capped by the caller)
+ * @param {string} suffix   code after the cursor (head-capped by the caller)
+ * @param {string} language monaco language id, e.g. 'javascript', 'python'
+ * @returns {Promise<string>} sanitized completion ('' when empty)
+ */
+async function requestAICompletion({ prefix, suffix, language }) {
+  const cfg = getProviderConfig();
+
+  const userPrompt = [
+    `Language: ${String(language || 'plaintext')}`,
+    '<code_before_cursor>',
+    String(prefix || ''),
+    '</code_before_cursor>',
+    '<code_after_cursor>',
+    String(suffix || ''),
+    '</code_after_cursor>',
+    'Write the completion:',
+  ].join('\n');
+
+  const response = await axios.post(
+    cfg.baseUrl,
+    {
+      model: cfg.model,
+      temperature: 0.15,
+      max_tokens: 160,
+      messages: [
+        { role: 'system', content: COMPLETION_SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${cfg.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      // Ignore broken global proxy env vars when talking to the provider directly.
+      proxy: false,
+      timeout: 20000,
+    }
+  );
+
+  const raw = response.data?.choices?.[0]?.message?.content || '';
+  return sanitizeCompletion(raw, prefix);
+}
+
 module.exports = {
   requestAIChat,
+  // Copilot-style inline completions (Wave 6). Same provider transport as
+  // chat, but with completion-tuned temperature/token budget. Returns the
+  // sanitized completion string ('' when there is nothing sensible).
+  requestAICompletion,
   // Backwards-compatible alias (old route code used this name).
   requestGroqChat: requestAIChat,
   getProviderConfig,

@@ -24,6 +24,9 @@ import { DbHost } from '../components/DbPanel';
 import { DeployHost } from '../components/DeployPanel';
 import { DockerHost } from '../components/DockerPanel';
 import { TasksHost } from '../components/TasksPanel';
+import { PreviewHost } from '../components/PreviewPanel';
+import { TestHost } from '../components/TestPanel';
+import { TimelineHost } from '../components/TimelinePanel';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import VoiceChat from '../components/VoiceChat';
@@ -816,6 +819,9 @@ function RoomSession({ roomId }) {
         <DeployHost />
         <DockerHost />
         <TasksHost />
+        <PreviewHost />
+        <TestHost />
+        <TimelineHost />
 
         {!zenMode && (
           <Sidebar

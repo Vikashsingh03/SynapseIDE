@@ -5,9 +5,11 @@ import { useFiles } from '../contexts/FileContext';
 import { getMonacoLanguage } from '../utils/languageMap';
 import { registerSnippetProvider, registerSnippetUseCommand } from '../services/snippetProvider';
 import { registerIntellisense, syncProjectFiles } from '../editor/intellisense';
+import { registerGhostText } from '../editor/ghostText';
 import { registerEmmet } from '../editor/emmet';
 import { registerPremiumThemes } from '../editor/themes';
 import { setMonacoProblems } from '../diagnostics/problemsStore';
+import { registerPrettierFormattingProvider, formatWithPrettier } from '../editor/prettierFormat';
 import {
   getBreakpoints,
   toggleBreakpoint,
@@ -258,6 +260,12 @@ export default function EditorPanel({
   const monacoRef = useRef(null);
   const decorationsRef = useRef([]);
   const bindingRef = useRef(null);
+  // Latest FileContext files, for the async Prettier config lookup
+  // (the format listener below reads it via ref so it registers once).
+  const filesRef = useRef([]);
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
 
   // ── Split-editor support (solo page only) ──
   // effectiveFile is the file THIS panel instance renders: normally the
@@ -408,13 +416,39 @@ export default function EditorPanel({
     return () => window.removeEventListener('synapse:neura-apply', onNeuraApply);
   }, [isPrimary]);
 
-  // Extensions: 'Format Document' command → Monaco's built-in formatter
-  // for the active editor. Primary only.
+  // Extensions: 'Format Document' command → REAL Prettier formatting
+  // (what VS Code users actually run) for JS/TS/JSON/CSS/HTML.
+  // Undo-friendly executeEdits keep undo + the Yjs binding in sync.
+  // Falls back to Monaco's built-in formatter when Prettier can't handle
+  // the file (unsupported extension / syntax error). Primary only;
+  // registers once ([isPrimary] deps) and reads fresh state via refs.
   useEffect(() => {
     if (!isPrimary) return undefined;
-    const onFormat = () => {
+    const onFormat = async () => {
       try {
-        editorRef.current?.getAction('editor.action.formatDocument')?.run();
+        const editor = editorRef.current;
+        if (!editor) return;
+        const model = editor.getModel();
+        if (!model) return;
+        const info = activeFileForProblemsRef.current; // { id, name }, primary-only fresh
+        const fileName = (info && info.name) || '';
+        const current = model.getValue();
+        let result = null;
+        try {
+          result = await formatWithPrettier(current, fileName, filesRef.current);
+        } catch {
+          result = null;
+        }
+        if (result && result !== current) {
+          editor.pushUndoStop();
+          editor.executeEdits('prettier-format', [
+            { range: model.getFullModelRange(), text: result, forceMoveMarkers: true },
+          ]);
+          editor.pushUndoStop();
+          editor.focus();
+        } else if (result === null) {
+          editor.getAction('editor.action.formatDocument')?.run();
+        }
       } catch {}
     };
     window.addEventListener('synapse:format-document', onFormat);
@@ -717,9 +751,18 @@ export default function EditorPanel({
             try {
               registerIntellisense(monaco);
               syncProjectFiles(monaco, files); // Wave 5: first project-graph sync
+            try {
+              // Wave 6: Prettier DocumentFormattingEditProvider (Shift+Alt+F).
+              // Global per language; internally once-guarded.
+              registerPrettierFormattingProvider(monaco, () => filesRef.current);
+            } catch {}
             } catch {}
             try {
               registerEmmet(editor, monaco);
+            } catch {}
+            // ─── Wave 6: Copilot-style ghost text (inline completions) ───
+            try {
+              registerGhostText(monaco);
             } catch {}
 
             // ─── Problems bridge: Monaco markers → problems store (primary only) ───
@@ -926,6 +969,7 @@ export default function EditorPanel({
             insertSpaces: true,
             scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10, useShadows: false },
             suggest: { showIcons: true, showStatusBar: true, preview: true },
+            inlineSuggest: { enabled: true, mode: 'subwordSmart' },
           }}
         />
       </div>

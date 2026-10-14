@@ -21,6 +21,9 @@ import { DbHost } from '../components/DbPanel';
 import { DeployHost } from '../components/DeployPanel';
 import { DockerHost } from '../components/DockerPanel';
 import { TasksHost } from '../components/TasksPanel';
+import { PreviewHost } from '../components/PreviewPanel';
+import { TestHost } from '../components/TestPanel';
+import { TimelineHost } from '../components/TimelinePanel';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import CommandPalette from '../components/CommandPalette';
@@ -353,6 +356,9 @@ function EditorPage() {
         <DeployHost />
         <DockerHost />
         <TasksHost />
+        <PreviewHost />
+        <TestHost />
+        <TimelineHost />
 
         {/* Neura code review modal */}
         <CodeReviewModal
