@@ -49,7 +49,7 @@ export default function TerminalPanel({ roomId } = {}) {
   let localFiles = [];
   try {
     const ctx = useFiles();
-    localFiles = (ctx?.files || []).map((f) => ({ name: f.name, content: f.content ?? '' }));
+    localFiles = (ctx?.files || []).map((f) => ({ id: f.id, name: f.name, type: f.type, parentId: f.parentId, content: f.content ?? '' }));
   } catch {}
   const localFilesRef = useRef(localFiles);
   localFilesRef.current = localFiles;

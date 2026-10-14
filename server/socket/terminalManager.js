@@ -62,6 +62,75 @@ function killAllSessions(socket) {
   sessions.delete(socket.id);
 }
 
+// ─── Folder-aware workspace writing ─────────────────────────────────────────
+// File/folder names are single segments; anything path-like is sanitized so a
+// name can never escape the workspace directory.
+function sanitizeSegment(name) {
+  const clean = String(name || '')
+    .replace(/[\\/:*?"<>|\x00-\x1f]/g, '_')
+    .trim();
+  if (!clean || clean === '.' || clean === '..') return '';
+  return clean;
+}
+
+// Root-first folder path for an item, following its parentId chain.
+// Returns [] for root items, null if the chain has a cycle.
+function folderPathFor(item, byId) {
+  const parts = [];
+  const seen = new Set([item.id]);
+  let parentId = item.parentId || null;
+  while (parentId) {
+    if (seen.has(parentId)) return null;
+    seen.add(parentId);
+    const parent = byId.get(parentId);
+    if (!parent || parent.type !== 'folder') break;
+    const seg = sanitizeSegment(parent.name);
+    if (seg) parts.unshift(seg);
+    parentId = parent.parentId || null;
+  }
+  return parts;
+}
+
+function cleanWorkspaceDir(dir) {
+  for (const entry of fs.readdirSync(dir)) {
+    fs.rmSync(path.join(dir, entry), { recursive: true, force: true });
+  }
+}
+
+// Writes files at their folder paths (creating folders, incl. empty ones).
+// Two files with the same name in different folders no longer overwrite
+// each other. Returns the number of files written.
+function writeWorkspaceTree(dir, files) {
+  const list = Array.isArray(files) ? files : [];
+  const byId = new Map(list.map((f) => [f.id, f]));
+  const root = path.resolve(dir);
+  let count = 0;
+
+  for (const f of list) {
+    if (f.type !== 'folder') continue;
+    const parts = folderPathFor(f, byId);
+    const own = sanitizeSegment(f.name);
+    if (!parts || !own) continue;
+    const target = path.resolve(root, ...parts, own);
+    if (target.startsWith(root + path.sep)) {
+      fs.mkdirSync(target, { recursive: true });
+    }
+  }
+
+  for (const f of list) {
+    if (f.type && f.type !== 'file') continue;
+    const base = path.basename(String(f.name || ''));
+    if (!base || base.startsWith('.')) continue;
+    const parts = folderPathFor(f, byId) || [];
+    const target = path.resolve(root, ...parts, base);
+    if (!target.startsWith(root + path.sep)) continue;
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, String(f.content ?? ''));
+    count++;
+  }
+  return count;
+}
+
 /**
  * Write the room's files to a real folder on disk so the terminal
  * shows the user's project (main.py, …) instead of Synapse's own code.
@@ -73,17 +142,8 @@ async function prepareWorkspace(roomId, clientFiles, userId) {
     try {
       const dir = path.join(__dirname, '..', 'workspaces', 'solo-' + safeUser);
       fs.mkdirSync(dir, { recursive: true });
-      for (const f of fs.readdirSync(dir)) {
-        const fp = path.join(dir, f);
-        if (fs.statSync(fp).isFile()) fs.unlinkSync(fp);
-      }
-      let count = 0;
-      for (const file of clientFiles) {
-        const safeName = path.basename(String(file.name || ''));
-        if (!safeName || safeName.startsWith('.')) continue;
-        fs.writeFileSync(path.join(dir, safeName), String(file.content ?? ''));
-        count++;
-      }
+      cleanWorkspaceDir(dir);
+      const count = writeWorkspaceTree(dir, clientFiles);
       console.log(`[terminal] solo workspace: wrote ${count} file(s)`);
       return dir;
     } catch (err) {
@@ -97,18 +157,8 @@ async function prepareWorkspace(roomId, clientFiles, userId) {
     const room = await RoomModel.findOne({ roomId: cleanId }).select('files').lean();
     const dir = path.join(__dirname, '..', 'workspaces', cleanId);
     fs.mkdirSync(dir, { recursive: true });
-    for (const f of fs.readdirSync(dir)) {
-      const fp = path.join(dir, f);
-      if (fs.statSync(fp).isFile()) fs.unlinkSync(fp);
-    }
-    let count = 0;
-    for (const file of room?.files || []) {
-      if (file.type && file.type !== 'file') continue;
-      const safeName = path.basename(String(file.name || ''));
-      if (!safeName || safeName.startsWith('.')) continue;
-      fs.writeFileSync(path.join(dir, safeName), String(file.content ?? ''));
-      count++;
-    }
+    cleanWorkspaceDir(dir);
+    const count = writeWorkspaceTree(dir, room?.files || []);
     console.log(`[terminal] workspace ${cleanId}: wrote ${count} file(s)`);
     return dir;
   } catch (err) {
@@ -191,4 +241,4 @@ function registerTerminalHandlers(io, socket) {
   socket.on('disconnect', () => killAllSessions(socket));
 }
 
-module.exports = { registerTerminalHandlers };
+module.exports = { registerTerminalHandlers, prepareWorkspace, writeWorkspaceTree };
