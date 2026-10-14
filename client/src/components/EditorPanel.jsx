@@ -244,23 +244,34 @@ export default function EditorPanel({
   isReadOnly = false,
   lockedByOther = false,
   lockNotice = '',
+  fileIdOverride = null,
+  isPrimary = true,
 }) {
-  const { activeFile, updateContent, jumpTarget } = useFiles();
+  const { activeFile, updateContent, jumpTarget, files } = useFiles();
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const decorationsRef = useRef([]);
   const bindingRef = useRef(null);
 
+  // ── Split-editor support (solo page only) ──
+  // effectiveFile is the file THIS panel instance renders: normally the
+  // global activeFile, or the pinned split file when fileIdOverride is set.
+  // fileIdOverride is never passed in rooms, so the room path is untouched.
+  const effectiveFile =
+    fileIdOverride != null
+      ? files.find((f) => f.id === fileIdOverride) || null
+      : activeFile;
+
   // ── Empty-file watermark: show a premium overlay when the file has no content ──
   const [isEmpty, setIsEmpty] = useState(
-    () => !(activeFile?.content && activeFile.content.trim())
+    () => !(effectiveFile?.content && effectiveFile.content.trim())
   );
   useEffect(() => {
     // Reset on file switch; check initial content (non-Yjs path)
     if (!sharedText) {
-      setIsEmpty(!(activeFile?.content && activeFile.content.trim()));
+      setIsEmpty(!(effectiveFile?.content && effectiveFile.content.trim()));
     }
-  }, [activeFile?.id, sharedText]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [effectiveFile?.id, sharedText]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Observe Yjs shared text so remote edits also dismiss the watermark
     if (!sharedText) return;
@@ -274,7 +285,7 @@ export default function EditorPanel({
   // effect re-run AFTER the editor reference is set.
   const [editorMountKey, setEditorMountKey] = useState(0);
 
-  const activeFileId = activeFileIdProp || activeFile?.id;
+  const activeFileId = activeFileIdProp || effectiveFile?.id;
   const t = getThemeClasses(theme);
   const monacoTheme =
     editorSettings?.editorTheme && editorSettings.editorTheme !== 'auto'
@@ -282,7 +293,7 @@ export default function EditorPanel({
       : theme === 'dark'
         ? 'vs-dark'
         : 'vs';
-  const language = activeFile ? getMonacoLanguage(activeFile.name) : 'plaintext';
+  const language = effectiveFile ? getMonacoLanguage(effectiveFile.name) : 'plaintext';
 
   // Re-register snippet provider when the file language changes
   useEffect(() => {
@@ -291,8 +302,11 @@ export default function EditorPanel({
     }
   }, [language]);
 
-  // Breadcrumbs symbol click → jump the editor to that line
+  // Breadcrumbs symbol click → jump the editor to that line.
+  // Primary panel only — the split panel has its own pinned file and the
+  // Breadcrumbs trail describes the primary file.
   useEffect(() => {
+    if (!isPrimary) return;
     const onGotoLine = (e) => {
       const editor = editorRef.current;
       const line = e?.detail?.line;
@@ -305,20 +319,26 @@ export default function EditorPanel({
     };
     window.addEventListener('synapse:goto-line', onGotoLine);
     return () => window.removeEventListener('synapse:goto-line', onGotoLine);
-  }, []);
+  }, [isPrimary]);
 
-  // Keep the active file identity fresh for the problems bridge below
+  // Keep the active file identity fresh for the problems bridge below.
+  // Primary panel only — the split panel never feeds the problems store
+  // (the primary owns the status bar + problems attribution).
   const activeFileForProblemsRef = useRef(null);
+  // Extensions decorations bridge state: last 'synapse:ext-decorations'
+  // payload + the live Monaco decorations collection for the current editor.
+  const extDecoRef = useRef({ detail: null, collection: null, collectionFor: null, cleanup: null });
   useEffect(() => {
-    activeFileForProblemsRef.current = activeFile
-      ? { id: activeFile.id, name: activeFile.name }
+    if (!isPrimary) return;
+    activeFileForProblemsRef.current = effectiveFile
+      ? { id: effectiveFile.id, name: effectiveFile.name }
       : null;
-    if (!activeFile) {
+    if (!effectiveFile) {
       try {
         setMonacoProblems([]);
       } catch {}
     }
-  }, [activeFile]);
+  }, [effectiveFile, isPrimary]);
 
   // Collect current selection for "save as snippet"
   useEffect(() => {
@@ -371,7 +391,7 @@ export default function EditorPanel({
   //   render, which re-runs this effect — now with a valid editorRef.current.
   //
   // WHY activeFileId is in the deps:
-  //   <Editor key={activeFile.id}> remounts Monaco on file switch, so
+  //   <Editor key={effectiveFile.id}> remounts Monaco on file switch, so
   //   editorMountKey increments again via onMount, and we recreate the binding
   //   for the new file's Y.Text.
   useEffect(() => {
@@ -456,17 +476,25 @@ export default function EditorPanel({
     };
   }, [remotePeers, activeFileId]);
 
-  // ─── Scroll to line on jumpTarget change ────────────────────────────────────
+  // ─── Scroll to line on jumpTarget change (primary panel only) ────────────────
   useEffect(() => {
+    if (!isPrimary) return;
     if (!editorRef.current || !jumpTarget || jumpTarget.fileId !== activeFileId) return;
 
     editorRef.current.revealLineInCenter(jumpTarget.line);
     editorRef.current.setPosition({ lineNumber: jumpTarget.line, column: 1 });
     editorRef.current.focus();
-  }, [jumpTarget, activeFileId, editorMountKey]);
+  }, [jumpTarget, activeFileId, editorMountKey, isPrimary]);
 
-  if (!activeFile) {
-    return <EditorEmptyState />;
+  if (!effectiveFile) {
+    // Primary keeps the full premium empty state; the split pane renders a
+    // slim placeholder until a file is picked from its strip.
+    if (isPrimary) return <EditorEmptyState />;
+    return (
+      <div className={`flex-1 overflow-hidden flex items-center justify-center min-h-0 ${t.editorBg}`}>
+        <p className="text-xs font-mono text-[#5a6a85]">Choose a file to open here</p>
+      </div>
+    );
   }
 
   return (
@@ -502,11 +530,11 @@ export default function EditorPanel({
           </div>
         )}
         <Editor
-          key={activeFile.id}
+          key={effectiveFile.id}
           height="100%"
           language={language}
           theme={monacoTheme}
-          defaultValue={sharedText ? '' : activeFile.content}
+          defaultValue={sharedText ? '' : effectiveFile.content}
           onChange={(value) => {
             setIsEmpty(!(value && value.trim()));
             if (!sharedText && activeFileId && updateContent) {
@@ -528,7 +556,7 @@ export default function EditorPanel({
 
             // ─── Snippet Tab-completion (VS Code style) ───
             try {
-              const mLang = getMonacoLanguage(activeFile?.name || '');
+              const mLang = getMonacoLanguage(effectiveFile?.name || '');
               registerSnippetProvider(monaco, mLang);
               registerSnippetUseCommand(editor);
             } catch {}
@@ -541,7 +569,8 @@ export default function EditorPanel({
               registerEmmet(editor, monaco);
             } catch {}
 
-            // ─── Problems bridge: Monaco markers → problems store ───
+            // ─── Problems bridge: Monaco markers → problems store (primary only) ───
+            if (isPrimary) {
             try {
               const modelUri = editor.getModel()?.uri?.toString();
               const pushMarkers = () => {
@@ -572,6 +601,48 @@ export default function EditorPanel({
               monaco.editor.onDidChangeMarkers(() => pushMarkers());
               pushMarkers();
             } catch {}
+            }
+
+            // ─── Extensions decorations bridge: extension line highlights ───
+            // (e.g. TODO highlighter) applied to this editor's file only.
+            // The last payload is kept in a ref and re-applied on every
+            // editor mount, so highlights survive file switches.
+            if (isPrimary) {
+            try {
+              extDecoRef.current.cleanup?.();
+              const applyExt = () => {
+                try {
+                  const ed = editorRef.current;
+                  if (!ed) return;
+                  if (extDecoRef.current.collectionFor !== ed) {
+                    extDecoRef.current.collection = ed.createDecorationsCollection([]);
+                    extDecoRef.current.collectionFor = ed;
+                  }
+                  const fid = effectiveFile?.id;
+                  const list = (extDecoRef.current.detail?.items || []).filter(
+                    (it) => !fid || it.fileId === fid
+                  );
+                  extDecoRef.current.collection.set(
+                    list.map((it) => ({
+                      range: new monaco.Range(it.line, 1, it.line, 1),
+                      options: {
+                        isWholeLine: true,
+                        className: it.kind === 'fixme' ? 'synapse-fixme-line' : 'synapse-todo-line',
+                      },
+                    }))
+                  );
+                } catch {}
+              };
+              const onExt = (e) => {
+                extDecoRef.current.detail = e.detail || null;
+                applyExt();
+              };
+              window.addEventListener('synapse:ext-decorations', onExt);
+              extDecoRef.current.cleanup = () =>
+                window.removeEventListener('synapse:ext-decorations', onExt);
+              applyExt();
+            } catch {}
+            }
 
             // The binding is created ONLY by the binding useEffect below (it
             // re-runs on the editorMountKey bump). Creating one here as well
@@ -585,7 +656,10 @@ export default function EditorPanel({
 
             editor.onDidChangeCursorSelection((event) => {
               onCursorMove?.(event.selection.getPosition());
-              // Bridge for StatusBar + Breadcrumbs (VS Code chrome)
+              // Bridge for StatusBar + Breadcrumbs (VS Code chrome).
+              // Primary panel only — the split panel must not hijack the
+              // status bar or the symbol tracking.
+              if (isPrimary) {
               try {
                 const sel = event.selection;
                 let selectedChars = 0;
@@ -603,6 +677,7 @@ export default function EditorPanel({
                   })
                 );
               } catch {}
+              }
               onSelectionChange?.({
                 startLineNumber: event.selection.startLineNumber,
                 startColumn: event.selection.startColumn,

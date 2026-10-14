@@ -14,6 +14,8 @@ import { PracticeHost } from '../components/PracticePanel';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { RenameSymbolHost } from '../components/RenameSymbolModal';
 import { DebugHost } from '../components/DebugPanel';
+import { ExtensionsHost } from '../components/ExtensionsPanel';
+import { NotebookHost } from '../components/NotebookPanel';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import CommandPalette from '../components/CommandPalette';
@@ -21,6 +23,91 @@ import CodeReviewModal from '../components/CodeReviewModal';
 import { useEditorSettings } from '../hooks/useEditorSettings';
 import { readStorage, writeStorage } from '../utils/storage';
 import { getThemeClasses } from '../utils/theme';
+import { useFiles } from '../contexts/FileContext';
+
+/** Editor column of the IDE frame: tabs, breadcrumbs, editor (+split), output.
+ *  Lives inside <FileProvider> so it can read openTabs/activeFileId/files. */
+function EditorWorkspace({ theme, editorSettings, output }) {
+  const { openTabs, activeFileId, files } = useFiles();
+  const [splitOn, setSplitOn] = useState(false);
+  const [splitFileId, setSplitFileId] = useState(null);
+
+  // Split toggle dispatched from TabBar's Columns2 button
+  useEffect(() => {
+    const toggle = () => {
+      if (!splitOn && !splitFileId) {
+        // Default the split pane to the most recent other open tab,
+        // else the first file that isn't the active one.
+        const recentOther = [...openTabs].reverse().find((id) => id !== activeFileId);
+        const fallback = files.find((f) => f.id !== activeFileId)?.id || null;
+        setSplitFileId(recentOther || fallback);
+      }
+      setSplitOn((v) => !v);
+    };
+    window.addEventListener('synapse:toggle-split', toggle);
+    return () => window.removeEventListener('synapse:toggle-split', toggle);
+  }, [openTabs, activeFileId, files, splitOn, splitFileId]);
+
+  return (
+    <div
+      className="flex flex-col flex-1 min-w-0 overflow-hidden rounded-xl border border-[#2b3546] bg-[#121824] min-h-0"
+    >
+      {/* Tab bar */}
+      <TabBar theme={theme} showSplit splitActive={splitOn} />
+      <Breadcrumbs />
+
+      {/* Editor row: primary + optional split pane */}
+      <div className="flex flex-1 min-h-0">
+        <div className="flex-1 min-w-0 flex flex-col">
+          <EditorPanel theme={theme} editorSettings={editorSettings} />
+        </div>
+        {splitOn && (
+          <>
+            <div className="w-px shrink-0 bg-white/8" />
+            <div className="flex-1 min-w-0 flex flex-col">
+              {/* Split file strip: pick which file the second pane shows */}
+              <div className="h-[30px] flex items-center gap-2 px-2 bg-[#0D1220] border-b border-white/[0.06] shrink-0">
+                <select
+                  value={splitFileId || ''}
+                  onChange={(e) => setSplitFileId(e.target.value || null)}
+                  className="flex-1 min-w-0 bg-transparent text-[11px] font-mono text-[#C9D4E6] outline-none cursor-pointer"
+                  aria-label="Split pane file"
+                >
+                  {openTabs.map((id) => {
+                    const f = files.find((x) => x.id === id);
+                    if (!f) return null;
+                    return (
+                      <option key={id} value={id} className="bg-[#0D1220]">
+                        {f.name}
+                      </option>
+                    );
+                  })}
+                </select>
+                <button
+                  onClick={() => setSplitOn(false)}
+                  className="p-1 rounded text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Close split"
+                  aria-label="Close split editor"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+              <EditorPanel
+                theme={theme}
+                editorSettings={editorSettings}
+                fileIdOverride={splitFileId}
+                isPrimary={false}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Output */}
+      <OutputPanel theme={theme} output={output} />
+    </div>
+  );
+}
 
 function EditorPage() {
   const navigate = useNavigate();
@@ -167,19 +254,7 @@ function EditorPage() {
           )}
 
           {/* Editor + Output — dark IDE frame (always dark, like a real IDE) */}
-          <div
-            className="flex flex-col flex-1 min-w-0 overflow-hidden rounded-xl border border-[#2b3546] bg-[#121824] min-h-0"
-          >
-            {/* Tab bar */}
-            <TabBar theme={theme} />
-            <Breadcrumbs />
-
-            {/* Editor */}
-            <EditorPanel theme={theme} editorSettings={editorSettings} />
-
-            {/* Output */}
-            <OutputPanel theme={theme} output={output} />
-          </div>
+          <EditorWorkspace theme={theme} editorSettings={editorSettings} output={output} />
 
           {/* Neura AI Sidebar — desktop inline, mobile drawer */}
           {!zenMode && (
@@ -265,7 +340,9 @@ function EditorPage() {
         <ProjectTemplatesHost theme={theme} />
         <PracticeHost theme={theme} />
         <RenameSymbolHost />
-        <DebugHost />
+                <DebugHost />
+        <ExtensionsHost />
+        <NotebookHost />
 
         {/* Neura code review modal */}
         <CodeReviewModal

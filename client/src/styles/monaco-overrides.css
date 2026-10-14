@@ -265,3 +265,12 @@
   color: var(--m-acid);
   font-weight: inherit;
 }
+
+/* ── Extensions: TODO / FIXME line highlights ─────────────────────── */
+.monaco-editor .synapse-todo-line {
+  background: rgba(255, 196, 0, 0.09);
+}
+
+.monaco-editor .synapse-fixme-line {
+  background: rgba(248, 113, 113, 0.12);
+}

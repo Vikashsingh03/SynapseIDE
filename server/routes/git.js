@@ -221,4 +221,195 @@ router.get('/diff', async (req, res) => {
   }
 });
 
+// ─── Wave 3: Git superpowers (branches, stash, merge-conflict file I/O) ───
+// All routes below mirror the existing conventions: same auth middleware,
+// workspaceOf(req) resolution (roomId from query for GETs, body for POSTs),
+// execFile('git', ...) via the git() helper, path-sanitized file params.
+
+const BRANCH_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
+
+function validBranchName(name) {
+  const s = String(name || '');
+  return s.length > 0 && s.length <= 120 && BRANCH_NAME_RE.test(s) && !s.includes('..');
+}
+
+function gitErr(r, fallback) {
+  return (r.stderr || r.stdout || fallback).trim().slice(0, 400) || fallback;
+}
+
+function repoDir(cwd) {
+  return fs.existsSync(path.join(cwd, '.git')) ? cwd : null;
+}
+
+// GET /api/git/branches?roomId=XXX → { branches: [{name, current}], current }
+router.get('/branches', async (req, res) => {
+  try {
+    const cwd = workspaceOf(req);
+    if (!repoDir(cwd)) return res.json({ branches: [], current: null });
+
+    let current = (await git(cwd, ['branch', '--show-current'])).stdout.trim();
+    const list = await git(cwd, ['branch', '--format=%(refname:short)']);
+    if (!list.ok) return res.status(500).json({ error: gitErr(list, 'Could not read branches.') });
+
+    const names = list.stdout.split('\n').map((s) => s.trim()).filter(Boolean);
+
+    // Fallback: parse '* <name>' from plain `git branch` (detached HEAD, old git)
+    if (!current) {
+      const raw = await git(cwd, ['branch']);
+      const star = raw.stdout.split('\n').map((s) => s.trim()).find((s) => s.startsWith('* '));
+      current = star ? star.slice(2).trim() : '';
+    }
+
+    res.json({
+      branches: names.map((name) => ({ name, current: name === current })),
+      current: current || null,
+    });
+  } catch {
+    res.status(500).json({ error: 'Could not read branches.' });
+  }
+});
+
+// POST /api/git/branch/create { roomId, name }
+router.post('/branch/create', async (req, res) => {
+  try {
+    const cwd = workspaceOf(req);
+    if (!repoDir(cwd)) return res.status(400).json({ error: 'Not a git repository.' });
+    const name = String(req.body?.name || '').trim();
+    if (!validBranchName(name)) return res.status(400).json({ error: 'Invalid branch name.' });
+    const r = await git(cwd, ['branch', name]);
+    if (!r.ok) return res.status(400).json({ error: gitErr(r, 'Could not create branch.') });
+    res.json({ ok: true, name });
+  } catch {
+    res.status(500).json({ error: 'Could not create branch.' });
+  }
+});
+
+// POST /api/git/branch/checkout { roomId, name }
+// Checkout failures (dirty tree, conflicts) come back as 409 with git's message.
+router.post('/branch/checkout', async (req, res) => {
+  try {
+    const cwd = workspaceOf(req);
+    if (!repoDir(cwd)) return res.status(400).json({ error: 'Not a git repository.' });
+    const name = String(req.body?.name || '').trim();
+    if (!validBranchName(name)) return res.status(400).json({ error: 'Invalid branch name.' });
+    const r = await git(cwd, ['checkout', name]);
+    if (!r.ok) return res.status(409).json({ error: gitErr(r, 'Could not switch branch.') });
+    res.json({ ok: true, name });
+  } catch {
+    res.status(500).json({ error: 'Could not switch branch.' });
+  }
+});
+
+// POST /api/git/branch/delete { roomId, name } — safe delete (-d) only, never current
+router.post('/branch/delete', async (req, res) => {
+  try {
+    const cwd = workspaceOf(req);
+    if (!repoDir(cwd)) return res.status(400).json({ error: 'Not a git repository.' });
+    const name = String(req.body?.name || '').trim();
+    if (!validBranchName(name)) return res.status(400).json({ error: 'Invalid branch name.' });
+    const current = (await git(cwd, ['branch', '--show-current'])).stdout.trim();
+    if (name === current) return res.status(400).json({ error: 'Cannot delete the current branch.' });
+    const r = await git(cwd, ['branch', '-d', name]);
+    if (!r.ok) return res.status(400).json({ error: gitErr(r, 'Could not delete branch.') });
+    res.json({ ok: true, name });
+  } catch {
+    res.status(500).json({ error: 'Could not delete branch.' });
+  }
+});
+
+// POST /api/git/stash { roomId, action: 'push'|'pop'|'list', message?, index? }
+router.post('/stash', async (req, res) => {
+  try {
+    const cwd = workspaceOf(req);
+    if (!repoDir(cwd)) return res.status(400).json({ error: 'Not a git repository.' });
+    const action = String(req.body?.action || '');
+
+    if (action === 'list') {
+      const r = await git(cwd, ['stash', 'list']);
+      if (!r.ok) return res.status(500).json({ error: gitErr(r, 'Could not read stash list.') });
+      const stashes = r.stdout
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => {
+          const m = line.match(/^stash@{(\d+)}:\s*(.*)$/);
+          if (!m) return null;
+          const message = m[2].replace(/^WIP on [^:]+:\s*/, '').trim() || 'stash';
+          return { index: Number(m[1]), message };
+        })
+        .filter(Boolean);
+      return res.json({ stashes });
+    }
+
+    if (action === 'push') {
+      const message = String(req.body?.message || 'synapse stash').trim().slice(0, 200) || 'synapse stash';
+      const r = await git(cwd, ['stash', 'push', '-m', message]);
+      const out = gitErr(r, 'Could not stash changes.');
+      // Some git versions exit 0 with "No local changes to save" when only untracked files exist
+      if (/no local changes/i.test(out)) {
+        return res.status(400).json({ error: 'Nothing to stash — working tree is clean.' });
+      }
+      if (!r.ok) return res.status(400).json({ error: out });
+      return res.json({ ok: true });
+    }
+
+    if (action === 'pop') {
+      const idx = req.body?.index;
+      const args =
+        Number.isInteger(idx) && idx >= 0 ? ['stash', 'pop', `stash@{${idx}}`] : ['stash', 'pop'];
+      const r = await git(cwd, ['stash', 'pop', ...args.slice(2)]);
+      if (!r.ok) return res.status(409).json({ error: gitErr(r, 'Could not pop stash.') });
+      return res.json({ ok: true });
+    }
+
+    return res.status(400).json({ error: 'Invalid stash action.' });
+  } catch {
+    res.status(500).json({ error: 'Stash operation failed.' });
+  }
+});
+
+function safeWorkspaceFile(cwd, file) {
+  const f = String(file || '');
+  if (!f || f.includes('..') || path.isAbsolute(f)) return null;
+  const abs = path.join(cwd, f);
+  if (!abs.startsWith(cwd + path.sep)) return null;
+  return abs;
+}
+
+// GET /api/git/file-content?roomId=XXX&file=xxx — raw working-tree file (for the conflict resolver)
+router.get('/file-content', async (req, res) => {
+  try {
+    const cwd = workspaceOf(req);
+    const abs = safeWorkspaceFile(cwd, req.query.file);
+    if (!abs) return res.status(400).json({ error: 'Invalid file.' });
+    let stat;
+    try {
+      stat = fs.statSync(abs);
+    } catch {
+      return res.status(404).json({ error: 'File not found in the workspace.' });
+    }
+    if (!stat.isFile()) return res.status(400).json({ error: 'Not a file.' });
+    if (stat.size > 512 * 1024) return res.status(400).json({ error: 'File too large to edit here.' });
+    res.json({ content: fs.readFileSync(abs, 'utf8') });
+  } catch {
+    res.status(500).json({ error: 'Could not read file.' });
+  }
+});
+
+// POST /api/git/file-content { roomId, file, content } — write to the working tree (conflict resolutions)
+router.post('/file-content', async (req, res) => {
+  try {
+    const cwd = workspaceOf(req);
+    const abs = safeWorkspaceFile(cwd, req.body?.file);
+    if (!abs) return res.status(400).json({ error: 'Invalid file.' });
+    const content = req.body?.content;
+    if (typeof content !== 'string') return res.status(400).json({ error: 'Content is required.' });
+    if (content.length > 1024 * 1024) return res.status(400).json({ error: 'Content too large.' });
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, content, 'utf8');
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Could not write file.' });
+  }
+});
+
 module.exports = router;

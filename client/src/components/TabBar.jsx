@@ -1,10 +1,10 @@
 import { useState, useLayoutEffect, useRef } from 'react';
 import { useFiles } from '../contexts/FileContext';
 import { copyText } from '../utils/clipboard';
-import { X, ChevronRight, Lock, Copy, Check, Download } from 'lucide-react';
+import { X, ChevronRight, Lock, Copy, Check, Download, Columns2 } from 'lucide-react';
 import FileIcon from './FileIcon';
 
-export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, currentUserId }) {
+export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, currentUserId, showSplit = false, splitActive = false }) {
   const { files, openTabs, activeFileId, openTab, closeTab } = useFiles();
   const [copied, setCopied] = useState(false);
 
@@ -132,25 +132,41 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
       <div className="flex items-center gap-1.5 px-4 py-2 text-[11px] text-[#8290a8] bg-[#121824] border-b border-[#2b3546] shrink-0 font-mono">
         <span className="font-medium tracking-wide">{roomId}</span>
 
-        {/* Quick actions: copy + download active file */}
-        {activeFile && (
-          <span className="ml-auto flex items-center gap-0.5">
+        {/* Right-side actions: split toggle (solo only) + copy/download active file */}
+        <span className="ml-auto flex items-center gap-0.5">
+          {showSplit && (
             <button
-              onClick={handleCopyCode}
-              className="p-1.5 rounded-md text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/6 transition-colors cursor-pointer"
-              title="Copy file code"
+              onClick={() => window.dispatchEvent(new Event('synapse:toggle-split'))}
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                splitActive
+                  ? 'text-[#58A6FF] bg-white/8'
+                  : 'text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/6'
+              }`}
+              title="Split editor"
+              aria-label="Toggle split editor"
             >
-              {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+              <Columns2 size={13} />
             </button>
-            <button
-              onClick={handleDownload}
-              className="p-1.5 rounded-md text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/6 transition-colors cursor-pointer"
-              title={`Download ${activeFile.name}`}
-            >
-              <Download size={13} />
-            </button>
-          </span>
-        )}
+          )}
+          {activeFile && (
+            <>
+              <button
+                onClick={handleCopyCode}
+                className="p-1.5 rounded-md text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/6 transition-colors cursor-pointer"
+                title="Copy file code"
+              >
+                {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+              </button>
+              <button
+                onClick={handleDownload}
+                className="p-1.5 rounded-md text-[#8290a8] hover:text-[#dce5f3] hover:bg-white/6 transition-colors cursor-pointer"
+                title={`Download ${activeFile.name}`}
+              >
+                <Download size={13} />
+              </button>
+            </>
+          )}
+        </span>
       </div>
     </>
   );

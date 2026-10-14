@@ -36,8 +36,12 @@ import {
   Bug,
   XCircle,
   Type,
+  Puzzle,
+  Blocks,
+  NotebookPen,
 } from 'lucide-react';
 import { fontLabelFor } from '../hooks/useEditorSettings';
+import { getExtensionCommands } from '../extensions/registry';
 
 /**
  * VS Code-style command palette (Ctrl/⌘ + K).
@@ -66,7 +70,7 @@ export default function CommandPalette({
   onToggleStickyScroll,
   onOpenReview,
 }) {
-  const { files, activeFile, createFile, createFolder, openTab } = useFiles();
+  const { files, activeFile, createFile, createFolder, openTab, updateContent } = useFiles();
   const t = getThemeClasses(theme);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
@@ -207,6 +211,20 @@ export default function CommandPalette({
         label: 'Run & Debug',
         hint: 'terminal',
         run: () => window.dispatchEvent(new Event('synapse:open-debug')),
+      },
+      {
+        key: 'extensions',
+        icon: Blocks,
+        label: 'Extensions',
+        hint: 'built-in',
+        run: () => window.dispatchEvent(new Event('synapse:open-extensions')),
+      },
+      {
+        key: 'notebook',
+        icon: NotebookPen,
+        label: 'Open Notebook',
+        hint: 'cells · python/js',
+        run: () => window.dispatchEvent(new Event('synapse:open-notebook')),
       },
       {
         key: 'problems',
@@ -362,8 +380,23 @@ export default function CommandPalette({
           ]
         : []),
     ];
+    // Extensions (fail-safe: a registry error must never break the palette)
+    try {
+      const extCtx = { files, activeFile, openTab, updateContent };
+      all.push(
+        ...getExtensionCommands(extCtx).map((c) => ({
+          key: c.key,
+          icon: Puzzle,
+          label: c.label,
+          hint: c.hint || '',
+          run: c.run,
+        }))
+      );
+    } catch {
+      /* extensions never break the palette */
+    }
     return all.filter((a) => !q || a.label.toLowerCase().includes(q));
-  }, [query, theme, settings, activeFile, copied, snapshotBusy, onToggleTheme, onExit, onIncreaseFont, onDecreaseFont, onToggleWordWrap, onToggleMinimap, onCycleFontFamily, onCycleTabSize, onToggleFormatOnType, onToggleStickyScroll, onOpenReview]);
+  }, [query, theme, settings, activeFile, copied, snapshotBusy, files, updateContent, openTab, onToggleTheme, onExit, onIncreaseFont, onDecreaseFont, onToggleWordWrap, onToggleMinimap, onCycleFontFamily, onCycleTabSize, onToggleFormatOnType, onToggleStickyScroll, onOpenReview]);
 
   const sections = useMemo(() => {
     const out = [];

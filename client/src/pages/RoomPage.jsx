@@ -17,6 +17,8 @@ import { PracticeHost } from '../components/PracticePanel';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { RenameSymbolHost } from '../components/RenameSymbolModal';
 import { DebugHost } from '../components/DebugPanel';
+import { ExtensionsHost } from '../components/ExtensionsPanel';
+import { NotebookHost } from '../components/NotebookPanel';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import VoiceChat from '../components/VoiceChat';
@@ -765,6 +767,8 @@ function RoomSession({ roomId }) {
         <PracticeHost theme={theme} />
         <RenameSymbolHost />
         <DebugHost />
+        <ExtensionsHost />
+        <NotebookHost />
 
         {!zenMode && (
           <Sidebar
