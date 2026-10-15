@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { XCircle, AlertTriangle, Info, CheckCircle2, RefreshCw, Loader2 } from 'lucide-react';
+import { XCircle, AlertTriangle, Info, CheckCircle2, RefreshCw, Loader2, Wand2 } from 'lucide-react';
 import { useFiles } from '../contexts/FileContext';
 import FileIcon from './FileIcon';
 import { API_BASE } from '../config/apiConfig';
@@ -143,6 +143,21 @@ export default function ProblemsPanel() {
     }, 160);
   };
 
+  const fixWithNeura = (p) => {
+    window.dispatchEvent(
+      new CustomEvent('synapse:neura-fix', {
+        detail: {
+          fileId: p.fileId || null,
+          relPath: p.path || null,
+          fileName: p.fileName || 'unknown',
+          line: p.line,
+          column: p.column,
+          message: p.message,
+        },
+      })
+    );
+  };
+
   return (
     <div className="h-full flex flex-col min-h-0 bg-[#0B0F16] text-[#C7D3E8]">
       {/* ─── Header ─── */}
@@ -203,30 +218,47 @@ export default function ProblemsPanel() {
                 </span>
               </div>
               {list.map((p, i) => (
-                <button
-                  key={`${p.fileId || p.path || ''}-${p.line}-${p.column}-${i}`}
-                  onClick={() => jumpToProblem(p)}
-                  className={`w-full text-left flex items-start gap-2 px-3.5 py-[7px] hover:bg-white/[0.04] transition-colors ${
-                    p.fileId ? 'cursor-pointer' : 'cursor-default'
-                  }`}
-                >
-                  <span className="mt-[1px]">
-                    <SeverityIcon severity={p.severity} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[12px] leading-snug text-[#C7D3E8] break-words">
-                      {p.message}
+                <div key={`${p.fileId || p.path || ''}-${p.line}-${p.column}-${i}`} className="relative group/row">
+                  <button
+                    onClick={() => jumpToProblem(p)}
+                    className={`w-full text-left flex items-start gap-2 px-3.5 py-[7px] ${
+                      p.fileId || p.path ? 'pr-[88px]' : ''
+                    } hover:bg-white/[0.04] transition-colors ${
+                      p.fileId ? 'cursor-pointer' : 'cursor-default'
+                    }`}
+                  >
+                    <span className="mt-[1px]">
+                      <SeverityIcon severity={p.severity} />
                     </span>
-                  </span>
-                  <span className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9.5px] font-semibold uppercase tracking-wide text-[#5C6B82] border border-white/[0.08] rounded px-1 py-px">
-                      {p.source === 'typecheck' ? 'tsc' : 'editor'}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[12px] leading-snug text-[#C7D3E8] break-words">
+                        {p.message}
+                      </span>
                     </span>
-                    <span className="text-[10.5px] text-[#5C6B82] font-mono tabular-nums whitespace-nowrap">
-                      Ln {p.line}, Col {p.column}
+                    <span className="flex items-center gap-2 shrink-0">
+                      <span className="text-[9.5px] font-semibold uppercase tracking-wide text-[#5C6B82] border border-white/[0.08] rounded px-1 py-px">
+                        {p.source === 'typecheck' ? 'tsc' : 'editor'}
+                      </span>
+                      <span className="text-[10.5px] text-[#5C6B82] font-mono tabular-nums whitespace-nowrap">
+                        Ln {p.line}, Col {p.column}
+                      </span>
                     </span>
-                  </span>
-                </button>
+                  </button>
+                  {(p.fileId || p.path) && (
+                    <button
+                      type="button"
+                      title="Fix with Neura"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fixWithNeura(p);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover/row:flex items-center gap-1.5 rounded-md border border-[#D9FF3F]/30 bg-[#D9FF3F]/10 px-2 py-1 font-mono text-[10px] font-bold text-[#D9FF3F] hover:bg-[#D9FF3F]/20 transition-colors cursor-pointer"
+                    >
+                      <Wand2 size={12} />
+                      Fix
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           ))

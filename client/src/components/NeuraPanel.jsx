@@ -35,10 +35,26 @@ import {
 import { API_BASE } from '../config/apiConfig';
 import { getToken } from '../services/authService';
 import { copyText } from '../utils/clipboard';
+import { buildFixPrompt } from '../utils/neuraFix';
 
 const PANEL_WIDTH_KEY = 'synapse-neura-width';
 const MIN_PANEL_WIDTH = 300;
 const MAX_PANEL_WIDTH = 720;
+
+/** Project-relative path for a file, built from parentId chains. Pure in the
+ *  file list, so it is safe to call from stale closures (e.g. window events).
+ */
+function buildRelPath(file, list) {
+  const parts = [];
+  let cur = file;
+  const seen = new Set();
+  while (cur && !seen.has(cur.id)) {
+    seen.add(cur.id);
+    parts.unshift(cur.name);
+    cur = (list || []).find((x) => x.id === cur.parentId);
+  }
+  return parts.join('/');
+}
 
 function formatConversationTime(value) {
   if (!value) return '';
@@ -493,17 +509,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
 
   // ─── Agent mode: file action resolution ────────────────────────────
   // Project-relative path for a file, built from parentId chains.
-  const fileRelPath = (file) => {
-    const parts = [];
-    let cur = file;
-    const seen = new Set();
-    while (cur && !seen.has(cur.id)) {
-      seen.add(cur.id);
-      parts.unshift(cur.name);
-      cur = files.find((x) => x.id === cur.parentId);
-    }
-    return parts.join('/');
-  };
+  const fileRelPath = (file) => buildRelPath(file, files);
 
   const findActionTarget = (actionPath) => {
     const target = String(actionPath || '').toLowerCase();
@@ -670,10 +676,15 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
   };
 
   // ─── Collapsed rail ────────────────────────────────────────────────
-  // External triggers (e.g. "Explain with Neura" from the output panel):
-  // open the panel and send the prompt as a chat message.
+  // External triggers (e.g. "Explain with Neura" from the output panel, or
+  // "Fix with Neura" from the Problems panel): open the panel and send the
+  // prompt as a chat message.
   const handleSendRef = useRef(null);
   handleSendRef.current = handleSend;
+  const filesRef = useRef(files);
+  filesRef.current = files;
+  const isSendingRef = useRef(isSending);
+  isSendingRef.current = isSending;
   useEffect(() => {
     const onAskNeura = (e) => {
       const prompt = e?.detail?.prompt;
@@ -682,8 +693,69 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
       // Defer a tick so the panel opens before the message streams in.
       setTimeout(() => handleSendRef.current?.(prompt), 60);
     };
+    const onNeuraFix = (e) => {
+      const d = e?.detail || {};
+      const list = filesRef.current || [];
+      const norm = (s) => String(s || '').toLowerCase();
+      let target = null;
+      if (d.fileId) target = list.find((x) => x.id === d.fileId) || null;
+      if (!target && d.relPath) {
+        const t = norm(d.relPath);
+        target = list.find((x) => x.type === 'file' && norm(buildRelPath(x, list)) === t) || null;
+      }
+      if (!target && d.fileName) {
+        const cands = list.filter((x) => x.type === 'file' && norm(x.name) === norm(d.fileName));
+        target = cands.length === 1 ? cands[0] : null;
+      }
+
+      setIsOpen(true);
+
+      const pushLocalNote = (content) => {
+        setMessages((current) => [
+          ...current.filter((m) => m._id !== 'welcome'),
+          {
+            _id: `local-note-${Date.now()}`,
+            role: 'assistant',
+            content,
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+      };
+
+      if (!target || typeof target.content !== 'string') {
+        setTimeout(
+          () => pushLocalNote('That file is no longer in the project — reopen Problems and try again.'),
+          60
+        );
+        return;
+      }
+      if (isSendingRef.current) {
+        setTimeout(
+          () => pushLocalNote('Neura is finishing the current reply — try Fix again in a moment.'),
+          60
+        );
+        return;
+      }
+
+      // Fix with Neura always goes through Agent mode so the reply comes back
+      // as reviewable Apply/Reject action cards.
+      setAgentMode(true);
+      const prompt = buildFixPrompt({
+        fileName: target.name,
+        relPath: buildRelPath(target, list),
+        line: Number(d.line) || 1,
+        column: Number(d.column) || 1,
+        message: d.message || '',
+        fileContent: target.content || '',
+      });
+      setTimeout(() => handleSendRef.current?.(prompt), 60);
+    };
     window.addEventListener('synapse:ask-neura', onAskNeura);
-    return () => window.removeEventListener('synapse:ask-neura', onAskNeura);
+    window.addEventListener('synapse:neura-fix', onNeuraFix);
+    return () => {
+      window.removeEventListener('synapse:ask-neura', onAskNeura);
+      window.removeEventListener('synapse:neura-fix', onNeuraFix);
+    };
   }, []);
 
   if (!actuallyOpen) {

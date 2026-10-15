@@ -320,6 +320,18 @@ router.post('/chat', aiChatLimiter, async (req, res) => {
       actions = extracted.actions;
     }
 
+    // Persistence guard: an agent reply made ONLY of action blocks leaves
+    // cleanText empty, and AIMessage.content is required — saving '' fails
+    // validation and would kill the whole request (the user never sees the
+    // cards). Persist a readable placeholder instead; the actions still
+    // reach the client in the response below.
+    const persistedAssistantContent =
+      assistantContent && assistantContent.trim()
+        ? assistantContent
+        : actions.length > 0
+          ? 'Proposed changes are ready below — review each card and Apply the ones you want.'
+          : 'Done.';
+
     const existingMessageCount = await AIMessage.countDocuments({
       conversationId: conversation._id,
     });
@@ -333,7 +345,7 @@ router.post('/chat', aiChatLimiter, async (req, res) => {
       {
         conversationId: conversation._id,
         role: 'assistant',
-        content: assistantContent,
+        content: persistedAssistantContent,
       },
     ]);
 
