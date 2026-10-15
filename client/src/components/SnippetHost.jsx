@@ -4,15 +4,15 @@ import { trackSnippetUse } from '../services/snippetService';
 import { getMonacoLanguage } from '../utils/languageMap';
 import { useFiles } from '../contexts/FileContext';
 
-/**
- * Global snippet host — listens for snippet events and renders the manager.
- * Place once near the app root (inside FileProvider).
- *
- * Events:
- * - synapse:open-snippets → open manager
- * - synapse:save-snippet { code } → open manager with code prefilled
- * - synapse:insert-snippet { code, id } → handled by EditorPanel
- */
+
+
+
+
+
+
+
+
+
 export default function SnippetHost({ theme }) {
   const [open, setOpen] = useState(false);
   const [initialCode, setInitialCode] = useState('');
@@ -56,7 +56,7 @@ export default function SnippetHost({ theme }) {
 
   if (!open) return null;
 
-  // Key forces fresh state when switching between open/save modes
+  
   return (
     <SnippetManager
       key={initialCode ? 'save' : 'browse'}

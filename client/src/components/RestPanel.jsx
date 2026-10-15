@@ -45,9 +45,9 @@ function statusClass(status) {
   return 'text-slate-300 bg-white/5 border-white/10';
 }
 
-/* ------------------------------------------------------------------ */
-/* Default export — the drawer body (also rendered by RestHost)        */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 export default function RestPanel({ onClose }) {
   const { files } = useFiles();
@@ -57,11 +57,11 @@ export default function RestPanel({ onClose }) {
   const [headerRows, setHeaderRows] = useState([{ key: '', value: '' }]);
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(false);
-  const [resp, setResp] = useState(null); // { status, statusText, headers, body, isJson, timeMs, sizeBytes } | { error }
-  const [view, setView] = useState('body'); // 'body' | 'headers'
+  const [resp, setResp] = useState(null); 
+  const [view, setView] = useState('body'); 
   const [history, setHistory] = useState(readHistory);
   const [httpFileId, setHttpFileId] = useState('');
-  const [fileRequests, setFileRequests] = useState(null); // parsed requests of the selected .http file
+  const [fileRequests, setFileRequests] = useState(null); 
 
   const httpFiles = useMemo(
     () =>
@@ -81,7 +81,7 @@ export default function RestPanel({ onClose }) {
     [selectedFile]
   );
 
-  // Parse the chosen .http file into runnable requests
+  
   useEffect(() => {
     if (!selectedFile) {
       setFileRequests(null);
@@ -144,7 +144,7 @@ export default function RestPanel({ onClose }) {
         setResp({ error: data.error });
       } else {
         setResp(data);
-        // Save successful sends to history (last 20)
+        
         const entry = {
           method,
           url: trimmedUrl,
@@ -190,7 +190,7 @@ export default function RestPanel({ onClose }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-(--line) shrink-0">
         <span className="p-1.5 rounded-lg bg-(--blue)/10 border border-(--blue)/25 text-(--blue)">
           <Globe size={16} />
@@ -209,7 +209,7 @@ export default function RestPanel({ onClose }) {
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {/* Composer */}
+        { }
         <div className="p-4 space-y-3 border-b border-(--line)">
           <div className="flex gap-2">
             <select
@@ -244,7 +244,7 @@ export default function RestPanel({ onClose }) {
             </button>
           </div>
 
-          {/* Headers editor */}
+          { }
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-(--muted) mb-1.5">
               Headers
@@ -288,7 +288,7 @@ export default function RestPanel({ onClose }) {
             </div>
           </div>
 
-          {/* Body */}
+          { }
           {method !== 'GET' && (
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-(--muted) mb-1.5">
@@ -306,7 +306,7 @@ export default function RestPanel({ onClose }) {
           )}
         </div>
 
-        {/* Response */}
+        { }
         {resp && (
           <div className="p-4 border-b border-(--line)">
             {resp.error ? (
@@ -372,7 +372,7 @@ export default function RestPanel({ onClose }) {
           </div>
         )}
 
-        {/* From .http file */}
+        { }
         {httpFiles.length > 0 && (
           <div className="p-4 border-b border-(--line)">
             <div className="flex items-center gap-2 mb-2">
@@ -426,7 +426,7 @@ export default function RestPanel({ onClose }) {
           </div>
         )}
 
-        {/* History */}
+        { }
         <div className="p-4">
           <div className="flex items-center gap-2 mb-2">
             <Clock size={13} className="text-(--muted)" />
@@ -478,9 +478,9 @@ export default function RestPanel({ onClose }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Host — mounts once per app shell; listens for window events          */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 export function RestHost() {
   const [open, setOpen] = useState(false);

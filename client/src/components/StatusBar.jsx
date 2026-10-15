@@ -4,18 +4,18 @@ import { useFiles } from '../contexts/FileContext';
 import FileIcon from './FileIcon';
 import { getCounts, subscribe as subscribeProblems } from '../diagnostics/problemsStore';
 
-/**
- * StatusBar — VS Code-style bottom status bar, premium edition.
- *
- * - LEFT:  a filled accent segment (room/Synapse identity) + active file
- *           with its real Material Icon Theme icon + language label.
- * - RIGHT: cursor position (Ln/Col + selected count) from the
- *           `synapse:cursor` window event, language label, `UTF-8`, and a
- *           `Ready` indicator.
- *
- * Fully self-contained: it pulls the active file from FileContext and the
- * cursor from a window CustomEvent — the parent only passes contextLabel.
- */
+
+
+
+
+
+
+
+
+
+
+
+
 
 const EXT_LANGUAGE = {
   js: 'JavaScript',
@@ -67,7 +67,7 @@ function languageLabel(fileName) {
   const base = fileName.split('/').pop();
   const dot = base.lastIndexOf('.');
   if (dot <= 0) {
-    // dotfiles / extensionless — special names
+    
     const lower = base.toLowerCase();
     if (lower.startsWith('dockerfile')) return 'Docker';
     if (lower === 'makefile') return 'Makefile';
@@ -82,7 +82,7 @@ export default function StatusBar({ contextLabel }) {
   const { files, activeFileId } = useFiles();
   const activeFile = files.find((f) => f.id === activeFileId && f.type === 'file') || null;
 
-  const [cursor, setCursor] = useState(null); // { line, column, selectedChars }
+  const [cursor, setCursor] = useState(null); 
   const [counts, setCounts] = useState(() => getCounts());
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export default function StatusBar({ contextLabel }) {
       role="statusbar"
       aria-label="Status bar"
     >
-      {/* ─── LEFT ─── */}
+      { }
       <div className="flex items-stretch min-w-0">
         <div
           className="flex items-center gap-1.5 px-2.5 font-semibold text-white text-[11px] tracking-wide whitespace-nowrap"
@@ -143,7 +143,7 @@ export default function StatusBar({ contextLabel }) {
         )}
       </div>
 
-      {/* ─── RIGHT ─── */}
+      { }
       <div className="flex items-stretch">
         {counts.errors + counts.warnings > 0 && (
           <span

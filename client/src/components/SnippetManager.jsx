@@ -140,7 +140,7 @@ export default function SnippetManager({ theme, language, onInsert, onClose, ini
   const [query, setQuery] = useState('');
   const [langFilter, setLangFilter] = useState(language || 'all');
   const [showCustomOnly, setShowCustomOnly] = useState(false);
-  const [editing, setEditing] = useState(null); // null | 'new' | snippet
+  const [editing, setEditing] = useState(null); 
   const [expanded, setExpanded] = useState(null);
 
   const load = async () => {
@@ -160,19 +160,19 @@ export default function SnippetManager({ theme, language, onInsert, onClose, ini
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [langFilter]);
 
   useEffect(() => {
     const timer = setTimeout(load, 300);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [query]);
 
-  // If opened with selected code, jump straight to the create form
+  
   useEffect(() => {
     if (initialCode) setEditing('new');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   const filtered = useMemo(() => {
@@ -206,7 +206,7 @@ export default function SnippetManager({ theme, language, onInsert, onClose, ini
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className={`${t.card} relative w-[720px] max-w-full max-h-[85vh] flex flex-col overflow-hidden animate-fade-in`}>
-        {/* Header */}
+        { }
         <div className={`flex items-center justify-between px-5 py-4 border-b ${t.border} shrink-0`}>
           <div className="flex items-center gap-2.5">
             <span className="w-8 h-8 rounded-lg bg-(--acid)/15 border border-(--acid)/30 flex items-center justify-center">
@@ -243,7 +243,7 @@ export default function SnippetManager({ theme, language, onInsert, onClose, ini
           </div>
         ) : (
           <>
-            {/* Filters */}
+            { }
             <div className={`flex items-center gap-2 px-5 py-3 border-b ${t.border} shrink-0 flex-wrap`}>
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${t.border} bg-(--panel) flex-1 min-w-[180px]`}>
                 <Search size={13} className={t.textMuted} />
@@ -279,7 +279,7 @@ export default function SnippetManager({ theme, language, onInsert, onClose, ini
               </button>
             </div>
 
-            {/* List */}
+            { }
             <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
               {loading ? (
                 <p className={`text-center py-10 text-[13px] ${t.textMuted}`}>Loading snippets…</p>

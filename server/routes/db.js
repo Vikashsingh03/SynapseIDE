@@ -1,7 +1,7 @@
-// DB Viewer routes — READ-ONLY MongoDB explorer (find only, never writes).
-// The user's connection string arrives per-request in the body, is used to
-// open one connection, and is NEVER persisted or logged. Error strings that
-// leave the route have credentials AND hosts scrubbed via scrubUri().
+
+
+
+
 const express = require('express');
 const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/auth');
@@ -12,10 +12,10 @@ const URI_PREFIXES = ['mongodb://', 'mongodb+srv://'];
 const DB_NAME_RE = /^[A-Za-z0-9_-]+$/;
 const COLL_NAME_RE = /^[A-Za-z0-9_.-]+$/;
 
-// Scrub a connection string (or any text containing one) before it ever
-// leaves the route — in logs or client errors. Strips credentials AND hosts.
-// (Driver errors also mention bare hosts/IPs without the mongodb:// prefix;
-// those are masked too — host-only disclosure is off-limits.)
+
+
+
+
 function scrubUri(text) {
   return String(text == null ? '' : text)
     .replace(/mongodb(\+srv)?:\/\/[^@\s]+@/g, 'mongodb://***@')
@@ -28,8 +28,8 @@ function scrubbedErr(err, fallback) {
   return scrubUri((err && err.message) || fallback || 'Database request failed');
 }
 
-// Log only the stable error code — never the raw message (it may embed the
-// URI, credentials or hosts).
+
+
 function logErr(tag, err) {
   console.error(tag, scrubUri((err && err.code) || 'unknown'));
 }
@@ -66,9 +66,9 @@ function getMongoClient(conn) {
   return client;
 }
 
-// Serialize BSON types into plain JSON-safe values. A pre-walk is used
-// (not a stringify replacer) because some BSON classes define toJSON(),
-// which stringify applies before the replacer ever sees the instance.
+
+
+
 function bsonType(v, names) {
   if (!v || typeof v !== 'object') return false;
   const cn = (v.constructor && v.constructor.name) || '';
@@ -105,9 +105,9 @@ function bsonSafe(value) {
   return bsonWalk(value);
 }
 
-// POST /api/db/connect — validate the URI and list databases.
-// Body: { uri }
-// Returns: { ok: true, databases: [{ name, sizeOnDisk }] }
+
+
+
 router.post('/connect', authMiddleware, async (req, res) => {
   const { uri } = req.body || {};
   const invalid = validateUri(uri);
@@ -127,9 +127,9 @@ router.post('/connect', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/db/collections — list collection names in a database.
-// Body: { uri, db }
-// Returns: { collections: [name] }
+
+
+
 router.post('/collections', authMiddleware, async (req, res) => {
   const { uri, db } = req.body || {};
   const invalid = validateUri(uri);
@@ -149,9 +149,9 @@ router.post('/collections', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/db/query — READ-ONLY find() on one collection.
-// Body: { uri, db, collection, filter (JSON string, default '{}'), limit (default 25, max 100) }
-// Returns: { documents: [plain objects], count }
+
+
+
 router.post('/query', authMiddleware, async (req, res) => {
   const { uri, db, collection } = req.body || {};
   const invalid = validateUri(uri);

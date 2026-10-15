@@ -1,10 +1,10 @@
-/**
- * Test Explorer — detect node:test files, run them through the server's
- * `node --test` (TAP) pipeline, and show per-test pass/fail results.
- *
- * Honest scope: Node's built-in runner only. Jest/Vitest projects should
- * use the integrated terminal instead.
- */
+
+
+
+
+
+
+
 import { useEffect, useMemo, useState } from 'react';
 import { FlaskConical, Play, X, Check, Loader2 } from 'lucide-react';
 import { useFiles } from '../contexts/FileContext';
@@ -13,7 +13,7 @@ import { getToken } from '../services/authService';
 
 const TEST_RE = /\.(test|spec)\.(js|mjs|cjs|ts|mts)$/;
 
-// Project-relative path of a file, following its parentId chain.
+
 function relPathOf(file, files) {
   const byId = new Map((files || []).map((f) => [f.id, f]));
   const parts = [file.name];
@@ -82,7 +82,7 @@ function StatusChip({ state }) {
 
 function TestPanel({ onClose }) {
   const { files } = useFiles();
-  const [states, setStates] = useState({}); // fileId -> result state
+  const [states, setStates] = useState({}); 
   const [expandedId, setExpandedId] = useState(null);
   const [runningAll, setRunningAll] = useState(false);
 
@@ -139,7 +139,7 @@ function TestPanel({ onClose }) {
     setRunningAll(true);
     try {
       for (const f of testFiles) {
-        // eslint-disable-next-line no-await-in-loop
+        
         await runOne(f);
       }
     } finally {
@@ -151,7 +151,7 @@ function TestPanel({ onClose }) {
 
   return (
     <div className="flex flex-col h-full bg-(--paper-2) text-(--ink)">
-      {/* Header */}
+      { }
       <div className="flex items-center gap-2.5 px-4 h-[52px] border-b border-(--line) shrink-0">
         <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-(--blue)/15 text-(--blue)">
           <FlaskConical size={16} />
@@ -179,7 +179,7 @@ function TestPanel({ onClose }) {
         </button>
       </div>
 
-      {/* Body */}
+      { }
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {testFiles.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-6 py-16">
@@ -278,7 +278,7 @@ function TestPanel({ onClose }) {
         )}
       </div>
 
-      {/* Footer */}
+      { }
       <div className="px-4 py-2.5 border-t border-(--line) shrink-0">
         <p className="text-[11px] text-(--muted) leading-relaxed">
           Runs with Node's built-in test runner (<span className="font-mono">node --test</span>) in

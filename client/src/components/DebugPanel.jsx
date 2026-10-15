@@ -26,7 +26,7 @@ function extOf(name) {
 
 function runtimeFor(ext) {
   if (ext === 'py') return 'Python';
-  return 'Node'; // js | mjs | cjs
+  return 'Node'; 
 }
 
 function loadPrefs() {
@@ -40,15 +40,15 @@ function loadPrefs() {
   }
 }
 
-/**
- * VisualDebug — real in-editor debugging for Node.js via the Chrome DevTools
- * Protocol. The server spawns `node --inspect-brk` on the workspace file and
- * bridges CDP over this panel's own Socket.IO connection (same pattern as
- * TerminalPanel: own socket, works in solo + rooms, no page changes needed).
- *
- * Breakpoints are toggled by clicking the editor's glyph margin (red dot)
- * and read from the shared breakpointsStore for the target file's relPath.
- */
+
+
+
+
+
+
+
+
+
 function VisualDebug({ jsFiles, files, forcedFileId }) {
   const { activeFileId } = useFiles();
   const [fileId, setFileId] = useState(
@@ -56,7 +56,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
   );
   const [bps, setBps] = useState([]);
   const [running, setRunning] = useState(false);
-  const [status, setStatus] = useState('idle'); // idle | running | paused | stopped
+  const [status, setStatus] = useState('idle'); 
   const [frames, setFrames] = useState([]);
   const [variables, setVariables] = useState([]);
   const [consoleLines, setConsoleLines] = useState([]);
@@ -68,14 +68,14 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
   const selected = jsFiles.find((r) => r.id === fileId) || null;
   const rel = selected?.rel || null;
 
-  // A launch config selected at the panel level pins the target file.
+  
   useEffect(() => {
     if (forcedFileId && jsFiles.some((r) => r.id === forcedFileId)) {
       setFileId(forcedFileId);
     }
   }, [forcedFileId, jsFiles]);
 
-  // Keep the store's breakpoints for this file live (gutter clicks elsewhere update us).
+  
   useEffect(() => {
     if (!rel) {
       setBps([]);
@@ -107,7 +107,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
     } catch {}
   };
 
-  // ─── Own socket lifecycle (mirrors TerminalPanel) ───
+  
   useEffect(() => {
     const socket = createCollaborationSocket();
     socketRef.current = socket;
@@ -176,10 +176,10 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
         );
       } catch {}
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
-  // Live-push gutter toggles while a session runs.
+  
   useEffect(() => {
     if (!runningRef.current || !socketRef.current) return;
     try {
@@ -259,7 +259,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* File picker */}
+      { }
       <div>
         <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">
           File to debug
@@ -283,7 +283,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
         )}
       </div>
 
-      {/* Breakpoint summary */}
+      { }
       <div className="rounded-lg border border-(--line) bg-(--paper) p-3">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
@@ -300,7 +300,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
         </p>
       </div>
 
-      {/* Start / Stop */}
+      { }
       {!running ? (
         <button
           onClick={start}
@@ -322,7 +322,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
 
       {running && (
         <>
-          {/* Status */}
+          { }
           <div className="flex items-center gap-2">
             <span
               className={`w-2 h-2 rounded-full ${paused ? 'bg-yellow-400' : 'bg-emerald-400'} ${paused ? '' : 'animate-pulse'}`}
@@ -335,7 +335,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
             )}
           </div>
 
-          {/* Step controls */}
+          { }
           <div className="grid grid-cols-4 gap-1.5">
             <button
               onClick={() => sendCommand('resume')}
@@ -371,7 +371,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
             </button>
           </div>
 
-          {/* Call stack */}
+          { }
           <div>
             <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">
               Call stack
@@ -396,7 +396,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
             </div>
           </div>
 
-          {/* Variables (top frame) */}
+          { }
           <div>
             <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">
               Variables — top frame
@@ -425,7 +425,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
         </>
       )}
 
-      {/* Debug console */}
+      { }
       <div>
         <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">
           Debug console
@@ -446,7 +446,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
         </div>
       </div>
 
-      {/* Honest note */}
+      { }
       <p className="font-mono text-[10.5px] text-(--muted)">
         Real Node.js inspector (node --inspect) or the Debug Adapter Protocol (debugpy — the same
         adapter VS Code uses for Python) under the hood — the yellow line in the editor is
@@ -461,7 +461,7 @@ function VisualDebug({ jsFiles, files, forcedFileId }) {
 export default function DebugPanel({ onClose }) {
   const { files, activeFileId } = useFiles();
 
-  // Reconstruct workspace-relative paths (folder chain + file name)
+  
   const runnable = useMemo(() => {
     const byId = new Map(files.map((f) => [f.id, f]));
     return files
@@ -484,11 +484,11 @@ export default function DebugPanel({ onClose }) {
   const [debug, setDebug] = useState(prefs.debug);
   const [status, setStatus] = useState('');
   const [fileId, setFileId] = useState(null);
-  const [mode, setMode] = useState('terminal'); // 'terminal' | 'visual'
-  const [configName, setConfigName] = useState(''); // '' = Manual
+  const [mode, setMode] = useState('terminal'); 
+  const [configName, setConfigName] = useState(''); 
   const [programMissing, setProgramMissing] = useState(false);
 
-  // launch.json (`.synapse/launch.json` first, then root) → named run configs.
+  
   const launchConfigs = useMemo(() => {
     const lf = findLaunchFile(files);
     if (!lf) return { rel: null, configs: [] };
@@ -521,7 +521,7 @@ export default function DebugPanel({ onClose }) {
     }
   };
 
-  // Default selection: active file if runnable, else the first runnable file
+  
   useEffect(() => {
     const active = runnable.find((r) => r.id === activeFileId);
     setFileId((active || runnable[0] || null)?.id ?? null);
@@ -562,7 +562,7 @@ export default function DebugPanel({ onClose }) {
 
   return (
     <div className="fixed inset-y-0 right-0 w-[440px] max-w-[92vw] z-[70] bg-(--paper-2) border-l border-(--line) flex flex-col shadow-[0_0_48px_rgba(0,0,0,0.45)] animate-fade-in">
-      {/* Header */}
+      { }
       <div className="px-4 py-3 flex items-center gap-2.5 shrink-0 border-b border-(--line)">
         <span className="w-8 h-8 rounded-md border border-(--line) flex items-center justify-center text-(--blue)">
           <Bug size={16} />
@@ -580,9 +580,9 @@ export default function DebugPanel({ onClose }) {
         </button>
       </div>
 
-      {/* Body */}
+      { }
       <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 flex flex-col gap-4">
-        {/* Mode toggle */}
+        { }
         <div className="flex items-center gap-1 p-1 rounded-lg border border-(--line) bg-(--ink)/5 shrink-0">
           {[
             { id: 'terminal', label: 'Terminal' },
@@ -602,7 +602,7 @@ export default function DebugPanel({ onClose }) {
           ))}
         </div>
 
-        {/* Launch configuration (launch.json) — shared by both modes */}
+        { }
         {launchConfigs.configs.length > 0 && (
           <div className="-mt-1">
             <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">
@@ -644,7 +644,7 @@ export default function DebugPanel({ onClose }) {
           </div>
         ) : (
           <>
-            {/* File picker */}
+            { }
             <div>
               <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">File to run</label>
               <select
@@ -660,7 +660,7 @@ export default function DebugPanel({ onClose }) {
               </select>
             </div>
 
-            {/* Runtime chip + debug toggle */}
+            { }
             <div className="flex items-center gap-2">
               {selected && (
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-bold bg-(--ink)/5 text-(--ink) border-(--line)">
@@ -683,7 +683,7 @@ export default function DebugPanel({ onClose }) {
               </button>
             </div>
 
-            {/* Arguments */}
+            { }
             <div>
               <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted)">Arguments</label>
               <input
@@ -697,7 +697,7 @@ export default function DebugPanel({ onClose }) {
               />
             </div>
 
-            {/* Launch */}
+            { }
             <button
               onClick={launch}
               disabled={!selected}
@@ -710,7 +710,7 @@ export default function DebugPanel({ onClose }) {
               <p className="font-mono text-[11px] text-emerald-500 -mt-2">{status}</p>
             )}
 
-            {/* Debug help cards */}
+            { }
             {debug && selected && runtimeFor(selected.ext) === 'Node' && (
               <div className="rounded-lg border border-(--line) bg-(--paper) p-3">
                 <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-(--muted) mb-2">Node debugging steps</p>
@@ -749,7 +749,7 @@ export default function DebugPanel({ onClose }) {
               </div>
             )}
 
-            {/* Honest note */}
+            { }
             <p className="font-mono text-[10.5px] text-(--muted) mt-auto pt-2">
               Commands run in the workspace folder of the room — Node and Python must be installed on the host.
             </p>

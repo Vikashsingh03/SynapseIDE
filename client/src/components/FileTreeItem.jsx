@@ -56,7 +56,7 @@ export default function FileTreeItem({
     setIsRenaming(true);
   }, [item.name]);
 
-  // Allow parent to trigger rename via ref
+  
   useEffect(() => {
     if (item._triggerRename) {
       const timer = window.setTimeout(() => startRenaming(), 0);
@@ -83,7 +83,7 @@ export default function FileTreeItem({
   const handleClick = (e) => {
     e.stopPropagation();
     if (isRenaming) return;
-    // Select the item first
+    
     onSelect?.(item.id);
     if (isFolder) {
       onToggleFolder(item.id);
@@ -141,7 +141,7 @@ export default function FileTreeItem({
     }
   };
 
-  // Neutral indent guides (v3 hairline)
+  
   const indentGuides = [];
   const guideColor = 'var(--line)';
   for (let i = 0; i < depth; i++) {
@@ -158,7 +158,7 @@ export default function FileTreeItem({
     );
   }
 
-  // Determine background state — v3: red inset indicator for the active file
+  
   let stateClass = '';
   if (isDropTarget) {
     stateClass = 'bg-(--blue)/10 ring-1 ring-inset ring-(--blue)/40';
@@ -185,15 +185,15 @@ export default function FileTreeItem({
       {...attributes}
       {...listeners}
     >
-      {/* Indent guide lines */}
+      { }
       {depth > 0 && indentGuides}
 
-      {/* Content with proper indentation */}
+      { }
       <div
         className="flex items-center gap-1.5 py-1 pr-3 truncate min-w-0 flex-1"
         style={{ paddingLeft: `${depth * 16 + 10}px` }}
       >
-        {/* Folder chevron or spacer */}
+        { }
         {isFolder ? (
           <ChevronRight
             size={12}
@@ -232,14 +232,14 @@ export default function FileTreeItem({
           </div>
         ) : (
           <>
-            {/* File/Folder icon */}
+            { }
             {isFolder ? (
               <FileIcon name={item.name} folder open={Boolean(item.isOpen)} size={18} />
             ) : (
               <FileIcon name={item.name} size={17} />
             )}
 
-            {/* Name or rename input */}
+            { }
             {isRenaming ? (
               <input
                 ref={renameInputRef}
@@ -261,7 +261,7 @@ export default function FileTreeItem({
               </span>
             )}
 
-            {/* Lock indicator */}
+            { }
             {!isFolder && !isRenaming && fileLock && (
               <span
                 className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-semibold shrink-0 border ${
@@ -283,7 +283,7 @@ export default function FileTreeItem({
         )}
       </div>
 
-      {/* Action buttons on hover */}
+      { }
       {!isRenaming && !confirmDelete && (
         <div className="flex items-center gap-0.5 shrink-0 pr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           <button

@@ -49,7 +49,7 @@ export default function JoinRoom() {
         setError('');
       }
     } catch {
-      /* clipboard unavailable — user can type manually */
+       
     }
   };
 

@@ -1,27 +1,27 @@
-/**
- * In-browser terminal manager (node-pty + Socket.IO) — VS Code style.
- *
- * Each socket can own MULTIPLE pty sessions, keyed by terminalId.
- * All sessions are killed when the socket disconnects.
- *
- * Security notes:
- * - The pty runs as the server's OS user — only enable this on a trusted
- *   dev machine (localhost). Do NOT expose an unrestricted shell on a
- *   public server without a sandbox.
- */
+
+
+
+
+
+
+
+
+
+
+
 const path = require('path');
 const fs = require('fs');
 const RoomModel = require('../models/Room');
 
 let pty = null;
 try {
-  // Lazy so the server still boots when node-pty isn't installed.
+  
   pty = require('node-pty');
 } catch {
   pty = null;
 }
 
-// socket.id -> Map<terminalId, pty.Process>
+
 const sessions = new Map();
 let nextId = 1;
 
@@ -62,9 +62,9 @@ function killAllSessions(socket) {
   sessions.delete(socket.id);
 }
 
-// ─── Folder-aware workspace writing ─────────────────────────────────────────
-// File/folder names are single segments; anything path-like is sanitized so a
-// name can never escape the workspace directory.
+
+
+
 function sanitizeSegment(name) {
   const clean = String(name || '')
     .replace(/[\\/:*?"<>|\x00-\x1f]/g, '_')
@@ -73,8 +73,8 @@ function sanitizeSegment(name) {
   return clean;
 }
 
-// Root-first folder path for an item, following its parentId chain.
-// Returns [] for root items, null if the chain has a cycle.
+
+
 function folderPathFor(item, byId) {
   const parts = [];
   const seen = new Set([item.id]);
@@ -97,9 +97,9 @@ function cleanWorkspaceDir(dir) {
   }
 }
 
-// Writes files at their folder paths (creating folders, incl. empty ones).
-// Two files with the same name in different folders no longer overwrite
-// each other. Returns the number of files written.
+
+
+
 function writeWorkspaceTree(dir, files) {
   const list = Array.isArray(files) ? files : [];
   const byId = new Map(list.map((f) => [f.id, f]));
@@ -131,12 +131,12 @@ function writeWorkspaceTree(dir, files) {
   return count;
 }
 
-/**
- * Write the room's files to a real folder on disk so the terminal
- * shows the user's project (main.py, …) instead of Synapse's own code.
- */
+
+
+
+
 async function prepareWorkspace(roomId, clientFiles, userId) {
-  // Solo editor: client sends its local files -> per-user workspace
+  
   if (!roomId && Array.isArray(clientFiles) && clientFiles.length > 0) {
     const safeUser = String(userId || 'anon').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32) || 'anon';
     try {
@@ -237,7 +237,7 @@ function registerTerminalHandlers(io, socket) {
     }
   });
 
-  // Always clean up ALL ptys when the socket goes away
+  
   socket.on('disconnect', () => killAllSessions(socket));
 }
 

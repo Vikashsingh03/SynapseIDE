@@ -41,12 +41,12 @@ const XTERM_THEME = {
   brightWhite: '#ffffff',
 };
 
-/**
- * VS Code-style terminal panel: multiple tabs, right-click paste,
- * font zoom, clear, per-tab kill. Real shell via node-pty on the server.
- */
+
+
+
+
 export default function TerminalPanel({ roomId } = {}) {
-  // Solo editor: grab local files so the terminal gets a real workspace
+  
   let localFiles = [];
   try {
     const ctx = useFiles();
@@ -55,8 +55,8 @@ export default function TerminalPanel({ roomId } = {}) {
   const localFilesRef = useRef(localFiles);
   localFilesRef.current = localFiles;
   const socketRef = useRef(null);
-  const termsRef = useRef(new Map()); // terminalId -> { term, fit, container, disposeData }
-  const [tabs, setTabs] = useState([]); // [{ id, label, status }]
+  const termsRef = useRef(new Map()); 
+  const [tabs, setTabs] = useState([]); 
   const [activeId, setActiveId] = useState(null);
   const [fontSize, setFontSize] = useState(13);
   const [globalError, setGlobalError] = useState('');
@@ -84,7 +84,7 @@ export default function TerminalPanel({ roomId } = {}) {
     socketRef.current?.emit('terminal:create', { roomId, files: roomId ? undefined : localFilesRef.current });
   }, [roomId]);
 
-  // Mount an xterm instance for a new terminalId
+  
   const mountTerminal = useCallback(
     (terminalId, label, container) => {
       const term = new Terminal({
@@ -107,12 +107,12 @@ export default function TerminalPanel({ roomId } = {}) {
 
       term.writeln('\x1b[1;32m◈ Synapse Terminal\x1b[0m \x1b[2m— starting shell…\x1b[0m');
 
-      // Input -> server
+      
       const disposeData = term.onData((data) =>
         socketRef.current?.emit('terminal:input', { terminalId, data })
       );
 
-      // Right-click = paste (VS Code style)
+      
       const handleContextMenu = async (e) => {
         e.preventDefault();
         try {
@@ -122,13 +122,13 @@ export default function TerminalPanel({ roomId } = {}) {
       };
       container.addEventListener('contextmenu', handleContextMenu);
 
-      // Ctrl+C copy when there's a selection, else send SIGINT
+      
       term.attachCustomKeyEventHandler((e) => {
         if (e.ctrlKey && e.key === 'c' && term.hasSelection()) {
           const sel = term.getSelection();
           navigator.clipboard.writeText(sel).catch(() => {});
           term.clearSelection();
-          return false; // don't send to pty
+          return false; 
         }
         if (e.ctrlKey && e.key === 'v') {
           navigator.clipboard.readText().then((text) => {
@@ -150,7 +150,7 @@ export default function TerminalPanel({ roomId } = {}) {
         },
       });
 
-      // Resize to fit now that it's visible
+      
       setTimeout(() => {
         if (activeIdRef.current === terminalId) fitActive();
       }, 50);
@@ -189,7 +189,7 @@ export default function TerminalPanel({ roomId } = {}) {
     });
   }, [fitActive]);
 
-  // ─── Package install bar ───
+  
   const [installOpen, setInstallOpen] = useState(false);
   const [installName, setInstallName] = useState('');
   const [installError, setInstallError] = useState('');
@@ -223,7 +223,7 @@ export default function TerminalPanel({ roomId } = {}) {
       setInstallStatus(`Installing ${name}…`);
     };
     if (!activeIdRef.current) {
-      // No terminal yet: start one, then send into it once ready.
+      
       createTerminal();
       setTimeout(send, 800);
     } else {
@@ -235,9 +235,9 @@ export default function TerminalPanel({ roomId } = {}) {
     if (installOpen) installInputRef.current?.focus();
   }, [installOpen]);
 
-  // ─── Run & Debug squad: launch commands from the Run and Debug drawer ───
-  // Sends e.detail.command to the active terminal, reusing the install flow's
-  // create-then-send-after-800ms fallback when no terminal exists yet.
+  
+  
+  
   useEffect(() => {
     const onTerminalRun = (e) => {
       try {
@@ -260,7 +260,7 @@ export default function TerminalPanel({ roomId } = {}) {
     return () => window.removeEventListener('synapse:terminal-run', onTerminalRun);
   }, [createTerminal]);
 
-  // ─── Socket lifecycle ───
+  
   useEffect(() => {
     const socket = createCollaborationSocket();
     socketRef.current = socket;
@@ -300,7 +300,7 @@ export default function TerminalPanel({ roomId } = {}) {
     });
 
     socket.connect();
-    // Auto-create the first terminal
+    
     socket.emit('terminal:create', { roomId, files: roomId ? undefined : localFilesRef.current });
 
     const onResize = () => fitActive();
@@ -315,14 +315,14 @@ export default function TerminalPanel({ roomId } = {}) {
     };
   }, [fitActive]);
 
-  // Fit when switching tabs
+  
   useEffect(() => {
     if (activeId) setTimeout(() => fitActive(), 60);
   }, [activeId, fitActive]);
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-[#0d1420]">
-      {/* VS Code-style tab bar */}
+      { }
       <div className="flex items-center border-b border-[#1c2942] shrink-0 bg-[#0a101c]">
         <div className="flex items-center flex-1 min-w-0 overflow-x-auto custom-scrollbar">
           {tabs.map((tab) => {
@@ -366,7 +366,7 @@ export default function TerminalPanel({ roomId } = {}) {
           </button>
         </div>
 
-        {/* Toolbar actions */}
+        { }
         <div className="flex items-center gap-0.5 px-2 shrink-0 border-l border-[#1c2942]">
           <button
             onClick={() => setInstallOpen((v) => !v)}
@@ -396,7 +396,7 @@ export default function TerminalPanel({ roomId } = {}) {
         </div>
       </div>
 
-      {/* Package install bar */}
+      { }
       {installOpen && (
         <div className="border-b border-[#1c2942] bg-[#0a101c] px-3 py-2 shrink-0">
           <div className="flex items-center gap-2">
@@ -451,7 +451,7 @@ export default function TerminalPanel({ roomId } = {}) {
         </div>
       )}
 
-      {/* Terminal views */}
+      { }
       <div className="flex-1 min-h-0 relative">
         {tabs.map((tab) => (
           <div
@@ -486,7 +486,7 @@ export default function TerminalPanel({ roomId } = {}) {
         </div>
       )}
 
-      {/* Hint bar */}
+      { }
       <div className="px-3 py-1 border-t border-[#1c2942] font-mono text-[10px] text-[#4a5568] shrink-0 flex items-center gap-3">
         <span className="flex items-center gap-1"><Copy size={9} /> select + Ctrl+C = copy</span>
         <span className="flex items-center gap-1"><ClipboardPaste size={9} /> right-click = paste</span>

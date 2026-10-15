@@ -28,19 +28,19 @@ function extIconComponent(name) {
   return EXT_ICONS[name] || Blocks;
 }
 
-/* ------------------------------------------------------------------ */
-/* Gallery (default export — also rendered by ExtensionsHost)          */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 export default function ExtensionsPanel({ onClose }) {
-  // tick forces rerender after enable/disable (registry state lives outside React)
+  
   const [, setTick] = useState(0);
 
   const toggle = (id) => {
     const next = !isExtensionEnabled(id);
     setExtensionEnabled(id, next);
     if (id === 'todo-highlighter' && !next) {
-      // Clear any live TODO decorations when the extension is disabled
+      
       window.dispatchEvent(
         new CustomEvent('synapse:ext-decorations', {
           detail: { extensionId: 'todo-highlighter', items: [] },
@@ -52,7 +52,7 @@ export default function ExtensionsPanel({ onClose }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-(--line) shrink-0">
         <span className="p-1.5 rounded-lg bg-(--blue)/10 border border-(--blue)/25 text-(--blue)">
           <Blocks size={16} />
@@ -70,7 +70,7 @@ export default function ExtensionsPanel({ onClose }) {
         </button>
       </div>
 
-      {/* Cards */}
+      { }
       <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
         {EXTENSIONS.map((ext) => {
           const enabled = isExtensionEnabled(ext.id);
@@ -123,7 +123,7 @@ export default function ExtensionsPanel({ onClose }) {
         })}
       </div>
 
-      {/* Footer */}
+      { }
       <div className="px-5 py-3.5 border-t border-(--line) shrink-0">
         <p className="text-[11px] text-(--muted) leading-relaxed">
           Extensions are built into Synapse — more coming soon.
@@ -133,13 +133,13 @@ export default function ExtensionsPanel({ onClose }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Markdown preview drawer                                             */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 function MarkdownPreviewDrawer({ onClose }) {
   const { files, activeFile } = useFiles();
-  // Capture which file was active when the drawer opened; content stays live
+  
   const [fileId] = useState(() => activeFile?.id);
   const file =
     files.find((f) => f.id === fileId) ||
@@ -197,9 +197,9 @@ function MarkdownPreviewDrawer({ onClose }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* TODO explorer drawer                                            */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 function TodoExplorerDrawer({ items, onClose }) {
   const { openTab } = useFiles();
@@ -207,9 +207,9 @@ function TodoExplorerDrawer({ items, onClose }) {
   const gotoItem = (it) => {
     try {
       openTab(it.fileId);
-      // The goto-line listener acts on the CURRENT editor; openTab switches
-      // the active file via state, so give React a tick to swap the editor
-      // before dispatching the line jump.
+      
+      
+      
       setTimeout(() => {
         try {
           window.dispatchEvent(
@@ -273,9 +273,9 @@ function TodoExplorerDrawer({ items, onClose }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Toasts                                                              */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 const TOAST_ICONS = { info: Info, success: CheckCircle2, error: XCircle };
 
@@ -313,14 +313,14 @@ function ToastStack({ toasts }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Host — mounts once per app shell; listens for window events          */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 export function ExtensionsHost() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [mdOpen, setMdOpen] = useState(false);
-  const [todoItems, setTodoItems] = useState(null); // null = drawer closed
+  const [todoItems, setTodoItems] = useState(null); 
   const [toasts, setToasts] = useState([]);
 
   useEffect(() => {

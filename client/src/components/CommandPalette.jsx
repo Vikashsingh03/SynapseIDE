@@ -53,16 +53,16 @@ import { fontLabelFor } from '../hooks/useEditorSettings';
 import { getExtensionCommands } from '../extensions/registry';
 import { ghostTextEnabled, setGhostTextEnabled } from '../editor/ghostText';
 
-/**
- * VS Code-style command palette (Ctrl/⌘ + K).
- * - Fuzzy-searches project files (Enter = jump to file)
- * - One-key actions: run, new file/folder, copy/download code,
- *   font size, word wrap, minimap, theme, exit
- *
- * Run is dispatched as a window CustomEvent ('synapse:run-code')
- * which the Toolbar listens for — same bridge pattern the app
- * already uses for chat search.
- */
+
+
+
+
+
+
+
+
+
+
 export default function CommandPalette({
   open,
   onClose,
@@ -88,7 +88,7 @@ export default function CommandPalette({
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
-  // Reset every time it opens
+  
   useEffect(() => {
     if (open) {
       setQuery('');
@@ -109,7 +109,7 @@ export default function CommandPalette({
     let name = 'untitled.py';
     let i = 2;
     while (taken.has(name)) name = `untitled-${i++}.py`;
-    createFile(name); // auto-opens the tab + focuses it
+    createFile(name); 
   };
 
   const handleNewFolder = () => {
@@ -149,7 +149,7 @@ export default function CommandPalette({
     try {
       await exportCodeSnapshot({ code: activeFile.content || '', filename: activeFile.name || 'code.txt' });
     } catch {
-      /* canvas unavailable — silently ignore */
+       
     } finally {
       setSnapshotBusy(false);
     }
@@ -453,7 +453,7 @@ export default function CommandPalette({
           ]
         : []),
     ];
-    // Extensions (fail-safe: a registry error must never break the palette)
+    
     try {
       const extCtx = { files, activeFile, openTab, updateContent, createFile, createFolder };
       all.push(
@@ -466,7 +466,7 @@ export default function CommandPalette({
         }))
       );
     } catch {
-      /* extensions never break the palette */
+       
     }
     return all.filter((a) => !q || a.label.toLowerCase().includes(q));
   }, [query, theme, settings, activeFile, copied, snapshotBusy, files, updateContent, openTab, createFile, createFolder, onToggleTheme, onExit, onIncreaseFont, onDecreaseFont, onToggleWordWrap, onToggleMinimap, onCycleFontFamily, onCycleTabSize, onToggleFormatOnType, onToggleStickyScroll, onOpenReview]);
@@ -493,7 +493,7 @@ export default function CommandPalette({
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  // Keep the highlighted row visible
+  
   useEffect(() => {
     const el = listRef.current?.querySelector(`[data-idx="${selected}"]`);
     el?.scrollIntoView({ block: 'nearest' });
@@ -526,7 +526,7 @@ export default function CommandPalette({
         className="w-full max-w-xl h-fit rounded-xl border border-(--line) overflow-hidden shadow-[0_30px_90px_rgba(20,21,20,0.25)] animate-spring-in bg-(--paper-2)"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Search input */}
+        { }
         <div className={`flex items-center gap-3 px-5 py-4 border-b ${t.border}`}>
           <Search size={17} className={`${t.textMuted} shrink-0`} />
           <input
@@ -540,7 +540,7 @@ export default function CommandPalette({
           <span className={t.kbd}>esc</span>
         </div>
 
-        {/* Results */}
+        { }
         <div ref={listRef} className="max-h-[46vh] overflow-y-auto p-2 custom-scrollbar">
           {flat.length === 0 && (
             <p className={`text-center text-sm ${t.textMuted} py-8`}>
@@ -592,7 +592,7 @@ export default function CommandPalette({
           ))}
         </div>
 
-        {/* Footer hints */}
+        { }
         <div
           className={`flex items-center gap-4 px-5 py-2.5 border-t ${t.border} text-[11px] ${t.textMuted}`}
         >

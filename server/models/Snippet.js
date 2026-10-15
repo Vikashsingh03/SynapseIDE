@@ -4,15 +4,15 @@ const snippetSchema = new mongoose.Schema(
   {
     userId: {
       type: String,
-      default: null, // null = built-in snippet for everyone
+      default: null, 
       index: true,
     },
     name: { type: String, required: true },
-    prefix: { type: String, required: true, index: true }, // trigger word
-    language: { type: String, required: true, index: true }, // python, cpp, java, javascript
+    prefix: { type: String, required: true, index: true }, 
+    language: { type: String, required: true, index: true }, 
     category: { type: String, default: 'general' },
     description: { type: String, default: '' },
-    code: { type: String, required: true }, // supports ${1:placeholder} tab stops
+    code: { type: String, required: true }, 
     isBuiltIn: { type: Boolean, default: false },
     useCount: { type: Number, default: 0 },
   },

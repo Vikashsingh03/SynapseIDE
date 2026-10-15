@@ -1,11 +1,11 @@
-/**
- * monaco-overrides.css — premium VS Code-grade styling for Monaco's floating
- * widgets (suggest, hover, parameter hints, find, context menu, quick input).
- * Tailwind classes can't reach these DOM areas, so plain CSS it is.
- *
- * Imported ONCE from client/src/main.jsx (parent wires the import).
- * The editor is always-dark: targets the midnight palette.
- */
+
+
+
+
+
+
+
+
 
 :root {
   --m-surface: #0d1322;
@@ -18,7 +18,7 @@
   --m-row-hi: #14335f;
 }
 
-/* ─── Shared widget chrome ─────────────────────────────────────────── */
+ 
 .monaco-editor .suggest-widget,
 .monaco-editor .monaco-hover,
 .monaco-editor .parameter-hints-widget,
@@ -32,43 +32,43 @@
   color: var(--m-text);
 }
 
-/* Text selection inside widget inputs */
+ 
 .monaco-editor ::selection,
 .monaco-editor .monaco-inputbox input::selection {
   background: rgba(88, 166, 255, 0.33);
 }
 
-/* ─── Suggest widget ───────────────────────────────────────────────── */
+ 
 .monaco-editor .suggest-widget {
   backdrop-filter: blur(6px);
   overflow: hidden;
 }
 
-/* list rows */
+ 
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row {
   font-size: 12.5px;
   color: var(--m-text);
 }
 
-/* selected / focused row */
+ 
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused,
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row.selected {
   background: var(--m-row-hi) !important;
   color: #ffffff;
 }
 
-/* hovered (unfocused) row */
+ 
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row:hover:not(.focused):not(.selected) {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* matched-character highlight — acid, inherits bold from Monaco */
+ 
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row .highlight {
   color: var(--m-acid);
   font-weight: inherit;
 }
 
-/* status bar at the bottom of the suggest widget */
+ 
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row .monaco-highlighted-label,
 .monaco-editor .suggest-widget .suggest-status-bar {
   border-top: 1px solid var(--m-hairline);
@@ -76,18 +76,18 @@
   font-size: 11px;
 }
 
-/* details pane on the right */
+ 
 .monaco-editor .suggest-widget .suggest-details {
   border-left: 1px solid var(--m-hairline);
   background: rgba(0, 0, 0, 0.18);
 }
 
-/* icon/theme colors keep working inside dark surface */
+ 
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row .contents .main .monaco-icon-label {
   color: var(--m-text);
 }
 
-/* ─── Hover widget ─────────────────────────────────────────────────── */
+ 
 .monaco-editor .monaco-hover {
   padding: 10px 12px;
   font-size: 12.5px;
@@ -100,7 +100,7 @@
   color: var(--m-text);
 }
 
-/* markdown code spans inside hover */
+ 
 .monaco-editor .monaco-hover .hover-contents .rendered-markdown code,
 .monaco-editor .monaco-hover .hover-contents code {
   background: rgba(255, 255, 255, 0.07);
@@ -110,7 +110,7 @@
   color: var(--m-text);
 }
 
-/* code blocks inside hover */
+ 
 .monaco-editor .monaco-hover .hover-contents .rendered-markdown pre,
 .monaco-editor .monaco-hover .hover-contents pre {
   background: rgba(0, 0, 0, 0.35);
@@ -123,7 +123,7 @@
   color: var(--m-accent);
 }
 
-/* ─── Parameter hints ──────────────────────────────────────────────── */
+ 
 .monaco-editor .parameter-hints-widget {
   padding: 6px 10px;
   font-size: 12.5px;
@@ -134,13 +134,13 @@
   color: var(--m-text);
 }
 
-/* ─── Find widget ──────────────────────────────────────────────────── */
+ 
 .monaco-editor .find-widget {
   padding: 6px 8px;
   backdrop-filter: blur(6px);
 }
 
-/* find inputs */
+ 
 .monaco-editor .find-widget .monaco-inputbox,
 .monaco-editor .find-widget .monaco-inputbox .input {
   background: rgba(255, 255, 255, 0.06);
@@ -160,7 +160,7 @@
   outline-offset: 0;
 }
 
-/* find buttons (prev/next/close toggles) */
+ 
 .monaco-editor .find-widget .button,
 .monaco-editor .find-widget .monaco-custom-toggle,
 .monaco-editor .find-widget .codicon {
@@ -178,13 +178,13 @@
   font-size: 11.5px;
 }
 
-/* ─── Rename box ───────────────────────────────────────────────────── */
+ 
 .monaco-editor .rename-box {
   padding: 4px;
   backdrop-filter: blur(6px);
 }
 
-/* ─── Context menu (editor right-click / suggest context) ──────────── */
+ 
 .monaco-editor .context-view .monaco-menu,
 .monaco-menu {
   background: rgba(13, 19, 34, 0.95) !important;
@@ -203,7 +203,7 @@
   padding: 4px 10px;
 }
 
-/* hovered menu item */
+ 
 .monaco-editor .context-view .monaco-menu .monaco-action-bar .action-item:hover:not(.disabled) .action-label,
 .monaco-menu .monaco-action-bar .action-item:hover:not(.disabled) .action-label,
 .monaco-editor .context-view .monaco-menu .monaco-action-bar .action-item.focused:not(.disabled) .action-label,
@@ -212,7 +212,7 @@
   color: #ffffff;
 }
 
-/* menu separators */
+ 
 .monaco-editor .context-view .monaco-menu .monaco-action-bar .action-item.separator,
 .monaco-menu .monaco-action-bar .action-item.separator {
   border-top: 1px solid var(--m-hairline);
@@ -221,13 +221,13 @@
   padding: 0;
 }
 
-/* menu keybinding hints */
+ 
 .monaco-editor .context-view .monaco-menu .keybinding,
 .monaco-menu .keybinding {
   color: rgba(215, 226, 242, 0.45);
 }
 
-/* ─── Quick input (command palette quick pick) ─────────────────────── */
+ 
 .monaco-editor .quick-input-widget {
   backdrop-filter: blur(6px);
   overflow: hidden;
@@ -266,7 +266,7 @@
   font-weight: inherit;
 }
 
-/* ── Extensions: TODO / FIXME line highlights ─────────────────────── */
+ 
 .monaco-editor .synapse-todo-line {
   background: rgba(255, 196, 0, 0.09);
 }
@@ -275,7 +275,7 @@
   background: rgba(248, 113, 113, 0.12);
 }
 
-/* ─── Visual debugger: breakpoints + execution line (Wave 4) ─── */
+ 
 .monaco-editor .synapse-bp-dot {
   background: radial-gradient(circle at center, #f87171 0 5px, transparent 6px);
   cursor: pointer;

@@ -1,5 +1,5 @@
-// Prefer IPv4 DNS results: on some networks (notably certain Indian ISPs)
-// IPv6 routes to Google APIs blackhole and hang, while IPv4 works fine.
+
+
 require('dns').setDefaultResultOrder('ipv4first');
 
 const express = require('express');
@@ -58,7 +58,7 @@ app.use(
 );
 app.use(express.json({ limit: '5mb' }));
 
-// P0-02: global per-IP guard (300/min). Specific routes add stricter limits.
+
 app.use(globalLimiter);
 
 app.use('/api', executeRoute);

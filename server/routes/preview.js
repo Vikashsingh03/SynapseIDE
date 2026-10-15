@@ -1,16 +1,16 @@
-/**
- * Live Preview routes — serve the project workspace as a static site on a
- * localhost port so HTML/CSS/JS projects can be previewed inside the IDE.
- *
- *   POST /api/preview/start { roomId?, files } → { port, url, version }
- *   POST /api/preview/sync  { roomId?, files } → { version }
- *   POST /api/preview/stop  { roomId? }        → { ok: true }
- *
- * A tiny live-reload script is injected into every .html response; it polls
- * GET /__synapse_lr and reloads the page when the workspace version changes.
- * Servers are in-memory only (one per solo user / room) and never exposed
- * beyond 127.0.0.1.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 const express = require('express');
 const http = require('http');
 const path = require('path');
@@ -20,7 +20,7 @@ const { prepareWorkspace } = require('../socket/terminalManager');
 
 const router = express.Router();
 
-// key → { server, port, dir, version }
+
 const servers = new Map();
 
 const CONTENT_TYPES = {
@@ -52,7 +52,7 @@ function keyFor(roomId, userId) {
   return `solo:${safeUser}`;
 }
 
-// The live-reload snippet is byte-exact by contract with the panel.
+
 function liveReloadScript(version) {
   const body = `(function(){var v=__V__;setInterval(function(){fetch('/__synapse_lr').then(function(r){return r.text()}).then(function(t){if(t!==String(v)){location.reload()}}).catch(function(){})},1000)})();`;
   return `<script>${body.split('__V__').join(String(version))}</script>`;
@@ -73,7 +73,7 @@ function resolveSafe(root, rawPath) {
     return null;
   }
   const normalized = path.normalize(decoded).replace(/^([/\\])+/, '');
-  // Reject dotdot navigation outright — escaping attempts get a 400.
+  
   if (/(^|[\\/])\.\.([\\/]|$)/.test(normalized)) return null;
   const resolved = path.resolve(root, normalized);
   if (resolved !== root && !resolved.startsWith(root + path.sep)) return null;
@@ -166,7 +166,7 @@ async function writeFiles(roomId, files, userId) {
   return dir;
 }
 
-// POST /api/preview/start
+
 router.post('/preview/start', authMiddleware, async (req, res) => {
   try {
     const { roomId, files } = req.body || {};
@@ -198,7 +198,7 @@ router.post('/preview/start', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/preview/sync
+
 router.post('/preview/sync', authMiddleware, async (req, res) => {
   try {
     const { roomId, files } = req.body || {};
@@ -219,7 +219,7 @@ router.post('/preview/sync', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/preview/stop
+
 router.post('/preview/stop', authMiddleware, async (req, res) => {
   try {
     const { roomId } = req.body || {};

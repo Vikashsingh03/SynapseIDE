@@ -1,17 +1,17 @@
-/**
- * CDP debug bridge — spawns `node --inspect-brk` on a workspace file and
- * talks the Chrome DevTools Protocol (Debugger + Runtime domains) over a
- * plain `ws` WebSocket. One DebugSession = one child process.
- *
- * Events pushed out via the onEvent callback: { kind, ...payload }
- *   'started'     { filePath, breakpoints }
- *   'output'      { type: 'stdout'|'stderr'|'console'|'system', text }
- *   'paused'      { reason, callFrames: [{ functionName, line, column, callFrameId, variables }] }
- *                 variables (name/value/type) are fetched for the TOP frame only.
- *   'resumed'     {}
- *   'terminated'  { code }
- *   'error'       { message }
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const { spawn } = require('child_process');
 const net = require('net');
 const http = require('http');
@@ -37,7 +37,7 @@ class DebugSession {
     this.ws = null;
     this.msgId = 1;
     this.pending = new Map();
-    this.scripts = new Map(); // scriptId -> url
+    this.scripts = new Map(); 
     this.targetUrl = null;
     this.targetScriptId = null;
     this.breakpointIds = [];
@@ -54,7 +54,7 @@ class DebugSession {
     } catch {}
   }
 
-  // ─── Port allocation: bind port 0, read it back, close ─────────────────────
+  
   async allocatePort() {
     return new Promise((resolve, reject) => {
       const srv = net.createServer();
@@ -66,7 +66,7 @@ class DebugSession {
     });
   }
 
-  // ─── Wait for the inspector HTTP endpoint to list the debug target ──────────
+  
   async fetchTargetList(port) {
     const deadline = Date.now() + JSON_LIST_TIMEOUT_MS;
     while (Date.now() < deadline) {
@@ -128,7 +128,7 @@ class DebugSession {
       variables: i === 0 ? [] : undefined,
     }));
 
-    // Top frame: fetch 'local' scope variables (fall back to 'closure').
+    
     try {
       const top = (params.callFrames || [])[0];
       const chain = top?.scopeChain || [];
@@ -149,7 +149,7 @@ class DebugSession {
         }));
       }
     } catch (err) {
-      // Variables are best-effort — never break the pause event.
+      
     }
 
     this.emit('paused', { reason: params.reason || 'other', callFrames: frames });
@@ -203,14 +203,14 @@ class DebugSession {
     if (!params.scriptId) return;
     const url = String(params.url || '');
     this.scripts.set(params.scriptId, url);
-    // Match the file being debugged by URL suffix (handles file:// URLs).
+    
     if (this.targetUrl && url.endsWith(this.targetUrl)) {
       this.targetScriptId = params.scriptId;
     }
   }
 
   async setBreakpointsInternal(lines) {
-    // Remove previous breakpoints first.
+    
     for (const id of this.breakpointIds) {
       try {
         await this.send('Debugger.removeBreakpoint', { breakpointId: id });
@@ -218,8 +218,8 @@ class DebugSession {
     }
     this.breakpointIds = [];
     const applied = [];
-    // Prefer exact scriptId-based breakpoints (no URL matching involved).
-    // Fallback: the exact file:// URL of the target.
+    
+    
     const useScriptId = this.targetScriptId && this.scripts.has(this.targetScriptId);
     const fileUrl = (() => {
       try {
@@ -259,7 +259,7 @@ class DebugSession {
     const safeRel = String(relFile || '');
     this.cwd = cwd;
     this.safeRel = safeRel;
-    // URL suffix used to match Debugger.scriptParsed events.
+    
     this.targetUrl = '/' + safeRel.split(path.sep).join('/');
     const lines = (Array.isArray(breakpoints) ? breakpoints : [])
       .filter((n) => Number.isInteger(n) && n > 0)
@@ -285,13 +285,13 @@ class DebugSession {
       );
       child.stderr?.on('data', (d) => {
         const text = String(d);
-        // The inspector prints its banner to stderr — mark it as system info.
+        
         if (/Debugger (listening|attached)/i.test(text)) {
           this.emit('output', { type: 'system', text: text.trim() });
         } else if (/Waiting for the debugger to disconnect/.test(text)) {
-          // The program has run to completion; node keeps the process alive
-          // until the inspector disconnects. Tear down so 'terminated' fires
-          // instead of hanging the session forever.
+          
+          
+          
           this.emit('output', { type: 'system', text: 'Program finished — disconnecting debugger.' });
           setTimeout(() => {
             if (this.stopped) return;
@@ -338,9 +338,9 @@ class DebugSession {
             await this.send('Log.enable');
           } catch {}
 
-          // Start execution: --inspect-brk holds at script start, so the
-          // target script parses now and scriptParsed arrives (that's what
-          // lets us bind breakpoints by exact scriptId).
+          
+          
+          
           await this.send('Runtime.runIfWaitingForDebugger');
 
           const deadline = Date.now() + 3000;

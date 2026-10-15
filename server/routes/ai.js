@@ -46,11 +46,11 @@ async function getOwnedConversation(conversationId, userId) {
 
 router.use(authMiddleware);
 
-// ── Ghost text (inline completions) ───────────────────────────────────
-// Completions fire on every typing pause, so instead of the hourly chat
-// limiter this endpoint uses a lightweight per-user minimum gap. It is
-// stateless (no DB writes) — ensureDatabaseReady is intentionally skipped.
-/** userId -> timestamp of last accepted completion call */
+
+
+
+
+ 
 const completionLastCall = new Map();
 const COMPLETION_MIN_GAP_MS = 300;
 
@@ -72,12 +72,12 @@ router.post('/complete', async (req, res) => {
 
     const userId = (req.user && (req.user.userId || req.user.id)) || 'anonymous';
     if (!completionThrottleOk(userId)) {
-      // Over-throttled: a silent empty suggestion, not an error — the
-      // client keeps typing and retries on the next pause.
+      
+      
       return res.json({ completion: '' });
     }
 
-    // Defensive caps: keep the tail of the prefix and the head of the suffix.
+    
     const safePrefix = prefix.length > 8000 ? prefix.slice(-4000) : prefix;
     const safeSuffix = typeof suffix === 'string' ? suffix.slice(0, 1500) : '';
     const safeLanguage =
@@ -269,9 +269,9 @@ router.post('/chat', aiChatLimiter, async (req, res) => {
 
     const { message, conversationId, history = [], context = {}, agentMode = false } = req.body || {};
     const normalizedMessage = normalizeMessage(message);
-    // Agent mode: the model may emit ```neura-action fenced blocks proposing
-    // file changes; these are extracted, validated, and returned separately.
-    // Non-agent behavior below is untouched (agentMode defaults to false).
+    
+    
+    
     const isAgentMode = agentMode === true;
 
     if (!normalizedMessage) {
@@ -310,8 +310,8 @@ router.post('/chat', aiChatLimiter, async (req, res) => {
       agent: isAgentMode,
     });
 
-    // Agent mode only: strip the action blocks out of the chat text and
-    // hand the validated actions to the client as structured data.
+    
+    
     let assistantContent = reply;
     let actions = [];
     if (isAgentMode) {
@@ -320,11 +320,11 @@ router.post('/chat', aiChatLimiter, async (req, res) => {
       actions = extracted.actions;
     }
 
-    // Persistence guard: an agent reply made ONLY of action blocks leaves
-    // cleanText empty, and AIMessage.content is required — saving '' fails
-    // validation and would kill the whole request (the user never sees the
-    // cards). Persist a readable placeholder instead; the actions still
-    // reach the client in the response below.
+    
+    
+    
+    
+    
     const persistedAssistantContent =
       assistantContent && assistantContent.trim()
         ? assistantContent

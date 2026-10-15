@@ -1,12 +1,12 @@
-// Built-in editor snippets for Synapse (VS Code parity pack).
-// Plain data only — no functions. Each entry matches the snippet shape used
-// by client/src/services/snippetProvider.js:
-//   { name, prefix, description, category, language, code }
-// `code` uses Monaco snippet syntax: ${1:placeholder} tabstops, $0 final
-// cursor, and mirrored tabstops (same number reused) where useful.
+
+
+
+
+
+
 
 export const BUILT_IN_SNIPPETS = [
-  // ── React (language: javascript) ──────────────────────────────────────────
+  
   { name: 'React Function Component (export default)', prefix: 'rfce', description: 'Import React + function component + export default', category: 'React', language: 'javascript', code: "import React from 'react';\n\nfunction ${1:ComponentName}() {\n\treturn (\n\t\t<div>$0</div>\n\t);\n}\n\nexport default ${1:ComponentName};" },
   { name: 'React Arrow Function Component (export default)', prefix: 'rafce', description: 'Import React + arrow function component + export default', category: 'React', language: 'javascript', code: "import React from 'react';\n\nconst ${1:ComponentName} = () => {\n\treturn <div>$0</div>;\n};\n\nexport default ${1:ComponentName};" },
   { name: 'React Function Component', prefix: 'rfc', description: 'React function component with export default', category: 'React', language: 'javascript', code: "import React from 'react';\n\nexport default function ${1:ComponentName}() {\n\treturn <div>$0</div>;\n}" },
@@ -24,7 +24,7 @@ export const BUILT_IN_SNIPPETS = [
   { name: 'React Conditional Render (&&)', prefix: 'rcond', description: 'Conditional render with && operator', category: 'React', language: 'javascript', code: '{${1:condition} && (\n\t<div>$0</div>\n)}' },
   { name: 'React Conditional Render (ternary)', prefix: 'rternary', description: 'Conditional render with ternary operator', category: 'React', language: 'javascript', code: '{${1:condition} ? (\n\t<div>$0</div>\n) : (\n\t<div>${2:fallback}</div>\n)}' },
 
-  // ── JavaScript ─────────────────────────────────────────────────────────────
+  
   { name: 'console.log', prefix: 'clg', description: 'Log a value to the console', category: 'JavaScript', language: 'javascript', code: 'console.log(${1:value});$0' },
   { name: 'console.log labeled object', prefix: 'clo', description: 'Log a labeled object to the console', category: 'JavaScript', language: 'javascript', code: "console.log('${1:label}:', ${2:obj});$0" },
   { name: 'Arrow function', prefix: 'afn', description: 'Arrow function assigned to a const', category: 'JavaScript', language: 'javascript', code: 'const ${1:name} = (${2:args}) => {\n\t$0\n};' },
@@ -39,13 +39,13 @@ export const BUILT_IN_SNIPPETS = [
   { name: 'fetch GET with JSON', prefix: 'fetchget', description: 'async fetch GET request parsing JSON, wrapped in try/catch', category: 'JavaScript', language: 'javascript', code: 'try {\n\tconst response = await fetch(${1:url});\n\tconst data = await response.json();\n\t$0\n} catch (${2:error}) {\n\tconsole.error(${2:error});\n}' },
   { name: 'fetch POST with JSON', prefix: 'fetchpost', description: 'async fetch POST request with JSON body, wrapped in try/catch', category: 'JavaScript', language: 'javascript', code: "try {\n\tconst response = await fetch(${1:url}, {\n\t\tmethod: 'POST',\n\t\theaders: { 'Content-Type': 'application/json' },\n\t\tbody: JSON.stringify(${2:data}),\n\t});\n\tconst result = await response.json();\n\t$0\n} catch (${3:error}) {\n\tconsole.error(${3:error});\n}" },
 
-  // ── Node ──────────────────────────────────────────────────────────────────
+  
   { name: 'Express server boilerplate', prefix: 'expressserver', description: 'Full Express app boilerplate with cors, JSON body parsing and listen', category: 'Node', language: 'javascript', code: "const express = require('express');\nconst cors = require('cors');\n\nconst app = express();\nconst PORT = process.env.PORT || ${1:5000};\n\napp.use(cors());\napp.use(express.json());\n\napp.get('/', (req, res) => {\n\tres.json({ message: '${2:API running}' });\n});\n\napp.listen(PORT, () => {\n\tconsole.log(`Server running on port \\${PORT}`);\n});$0" },
   { name: 'Express route handler', prefix: 'expressroute', description: 'Express app.METHOD route handler', category: 'Node', language: 'javascript', code: "app.${1:get}('${2:/path}', (req, res) => {\n\t$0\n\tres.json({});\n});" },
   { name: 'Mongoose model', prefix: 'mongomodel', description: 'Mongoose schema plus model export with timestamps', category: 'Node', language: 'javascript', code: "const mongoose = require('mongoose');\n\nconst ${1:Item}Schema = new mongoose.Schema({\n\tname: { type: String, required: true },\n\t$0\n}, { timestamps: true });\n\nmodule.exports = mongoose.model('${1:Item}', ${1:Item}Schema);" },
   { name: 'Async Express handler (req, res)', prefix: 'reqres', description: 'Async Express (req, res) handler with try/catch returning 500 on error', category: 'Node', language: 'javascript', code: "const ${1:handler} = async (req, res) => {\n\ttry {\n\t\t$0\n\t\tres.json({});\n\t} catch (error) {\n\t\tconsole.error(error);\n\t\tres.status(500).json({ message: 'Server error' });\n\t}\n};" },
 
-  // ── HTML ───────────────────────────────────────────────────────────────────
+  
   { name: 'HTML5 boilerplate', prefix: '!', description: 'Full HTML5 document boilerplate with meta, viewport, CSS link and JS script', category: 'HTML', language: 'html', code: '<!DOCTYPE html>\n<html lang="en">\n<head>\n\t<meta charset="UTF-8" />\n\t<meta name="viewport" content="width=device-width, initial-scale=1.0" />\n\t<title>${1:Document}</title>\n\t<link rel="stylesheet" href="${2:styles.css}" />\n</head>\n<body>\n\t$0\n\t<script src="${3:script.js}"></script>\n</body>\n</html>' },
   { name: 'HTML form', prefix: 'form', description: 'Form with an input and a submit button', category: 'HTML', language: 'html', code: '<form action="${1:/submit}" method="${2:post}">\n\t<input type="${3:text}" name="${4:name}" placeholder="${5:placeholder}" />\n\t<button type="submit">${6:Submit}</button>$0\n</form>' },
   { name: 'HTML table', prefix: 'table', description: 'Table with thead and tbody skeleton', category: 'HTML', language: 'html', code: '<table>\n\t<thead>\n\t\t<tr>\n\t\t\t<th>${1:Header}</th>\n\t\t</tr>\n\t</thead>\n\t<tbody>\n\t\t<tr>\n\t\t\t<td>$0</td>\n\t\t</tr>\n\t</tbody>\n</table>' },
@@ -57,7 +57,7 @@ export const BUILT_IN_SNIPPETS = [
   { name: 'Card div', prefix: 'card', description: 'Card div structure with header and body', category: 'HTML', language: 'html', code: '<div class="card">\n\t<div class="card-header">${1:Title}</div>\n\t<div class="card-body">\n\t\t$0\n\t</div>\n</div>' },
   { name: 'Nav bar', prefix: 'nav', description: 'Navigation bar with a link list', category: 'HTML', language: 'html', code: '<nav>\n\t<ul>\n\t\t<li><a href="${1:#}">${2:Home}</a></li>\n\t\t<li><a href="#">$0</a></li>\n\t</ul>\n</nav>' },
 
-  // ── CSS ────────────────────────────────────────────────────────────────────
+  
   { name: 'Flexbox centering', prefix: 'flexcenter', description: 'Center content with flexbox', category: 'CSS', language: 'css', code: 'display: flex;\njustify-content: center;\nalign-items: center;$0' },
   { name: 'CSS grid layout', prefix: 'gridlay', description: 'Grid layout with equal columns and gap', category: 'CSS', language: 'css', code: 'display: grid;\ngrid-template-columns: repeat(${1:3}, 1fr);\ngap: ${2:1rem};$0' },
   { name: 'Media query', prefix: 'mediaq', description: 'Media query for a max-width breakpoint', category: 'CSS', language: 'css', code: '@media (max-width: ${1:768px}) {\n\t$0\n}' },
@@ -67,7 +67,7 @@ export const BUILT_IN_SNIPPETS = [
   { name: 'Text ellipsis', prefix: 'textellipsis', description: 'Single-line text truncation with ellipsis', category: 'CSS', language: 'css', code: 'white-space: nowrap;\noverflow: hidden;\ntext-overflow: ellipsis;$0' },
   { name: 'Keyframes animation', prefix: 'keyframes', description: 'CSS @keyframes animation block', category: 'CSS', language: 'css', code: '@keyframes ${1:fadeIn} {\n\tfrom {\n\t\t$0\n\t}\n\tto {\n\t}\n}' },
 
-  // ── Python ─────────────────────────────────────────────────────────────────
+  
   { name: 'Python main guard', prefix: 'main', description: 'if __name__ == "__main__" guard block', category: 'Python', language: 'python', code: 'if __name__ == "__main__":\n\t$0' },
   { name: 'Python function', prefix: 'def', description: 'Function definition with return', category: 'Python', language: 'python', code: 'def ${1:name}(${2:args}):\n\t$0\n\treturn ${3:None}' },
   { name: 'Python class', prefix: 'class', description: 'Class with an __init__ constructor', category: 'Python', language: 'python', code: 'class ${1:Name}:\n\tdef __init__(self${2:, args}):\n\t\t$0' },
@@ -81,7 +81,7 @@ export const BUILT_IN_SNIPPETS = [
   { name: 'Python int input', prefix: 'inputint', description: 'Read an integer from stdin input', category: 'Python', language: 'python', code: '${1:n} = int(input(${2:"Enter a number: "}))$0' },
   { name: 'Python fast input', prefix: 'fastio', description: 'Fast stdin read-all-and-split competitive programming pattern', category: 'Python', language: 'python', code: 'import sys\n\ndata = sys.stdin.read().strip().split()\n${1:it} = iter(data)\n$0' },
 
-  // ── C++ ────────────────────────────────────────────────────────────────────
+  
   { name: 'C++ main with fast I/O', prefix: 'main', description: 'bits/stdc++.h include, fast I/O setup and main', category: 'C++', language: 'cpp', code: '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n\tios::sync_with_stdio(false);\n\tcin.tie(nullptr);\n\t$0\n\treturn 0;\n}' },
   { name: 'C++ competitive programming template', prefix: 'cpptemplate', description: 'CP template with solve() and multiple test cases', category: 'C++', language: 'cpp', code: '#include <bits/stdc++.h>\nusing namespace std;\n\nvoid solve() {\n\t$0\n}\n\nint main() {\n\tios::sync_with_stdio(false);\n\tcin.tie(nullptr);\n\tint t;\n\tcin >> t;\n\twhile (t--) solve();\n\treturn 0;\n}' },
   { name: 'C++ for loop', prefix: 'fori', description: 'Classic indexed for loop', category: 'C++', language: 'cpp', code: 'for (int ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n\t$0\n}' },
@@ -92,7 +92,7 @@ export const BUILT_IN_SNIPPETS = [
   { name: 'C++ cout', prefix: 'cout', description: 'cout print statement', category: 'C++', language: 'cpp', code: 'cout << ${1:value} << endl;$0' },
   { name: 'C++ cin', prefix: 'cin', description: 'cin input statement', category: 'C++', language: 'cpp', code: 'cin >> ${1:x};$0' },
 
-  // ── Java ───────────────────────────────────────────────────────────────────
+  
   { name: 'Java main class', prefix: 'main', description: 'Public class with a main method', category: 'Java', language: 'java', code: 'public class ${1:Main} {\n\tpublic static void main(String[] args) {\n\t\t$0\n\t}\n}' },
   { name: 'Java class', prefix: 'class', description: 'Public class skeleton', category: 'Java', language: 'java', code: 'public class ${1:Name} {\n\t$0\n}' },
   { name: 'Java System.out.println', prefix: 'sout', description: 'System.out.println statement', category: 'Java', language: 'java', code: 'System.out.println(${1:value});$0' },

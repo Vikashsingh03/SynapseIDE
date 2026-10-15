@@ -94,7 +94,7 @@ async function requestGroqChat({ message, history, context }) {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      // Ignore broken global proxy env vars when talking to Groq directly.
+      
       proxy: false,
       timeout: 45000,
     }

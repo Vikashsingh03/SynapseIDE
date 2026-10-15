@@ -35,12 +35,12 @@ export class RoomYjsManager {
     const doc = new Y.Doc();
     const text = doc.getText('content');
 
-    // Mirror every Y.Text change into React's FileContext
+    
     const textObserver = () => this.onFileContent?.(fileId, text.toString());
     text.observe(textObserver);
 
-    // Only broadcast truly LOCAL user edits (not remote or seed operations).
-    // Google Docs mode: no exclusive locks — Yjs CRDT merges concurrent edits.
+    
+    
     doc.on('update', (update, origin) => {
       if (origin === this.remoteOrigin || origin === this.localSeedOrigin) return;
       this.socket.emit('code-change', {
@@ -56,11 +56,11 @@ export class RoomYjsManager {
     return entry;
   }
 
-  /**
-   * Apply the server's authoritative Yjs snapshot (called on room-joined and
-   * room-state-updated). Server state always wins — we never pre-seed locally,
-   * so there is NO CRDT conflict / double-insert.
-   */
+  
+
+
+
+
   applySharedStates(sharedDocs = {}, files = []) {
     files.forEach((file) => {
       const encodedState = sharedDocs[file.id];
@@ -68,11 +68,11 @@ export class RoomYjsManager {
 
       let entry = this.docs.get(file.id);
 
-      // If this doc was locally seeded (e.g. user just created this file),
-      // the local Y.Doc and the server's Y.Doc are independent CRDTs with
-      // different client-IDs. Merging them via Y.applyUpdate would cause
-      // double-inserted text. Destroy the local doc and rebuild from scratch
-      // so the server state is the single source of truth.
+      
+      
+      
+      
+      
       if (entry && entry.locallySeeded) {
         entry.text.unobserve(entry.textObserver);
         entry.doc.destroy();
@@ -83,7 +83,7 @@ export class RoomYjsManager {
 
       entry = this.ensureDoc(file.id);
 
-      // Apply server state — remoteOrigin prevents it being echoed back.
+      
       Y.applyUpdate(entry.doc, decodeUpdate(encodedState), this.remoteOrigin);
       entry.seeded = true;
       entry.locallySeeded = false;
@@ -91,21 +91,21 @@ export class RoomYjsManager {
     });
   }
 
-  /**
-   * Return the stable Y.Text reference for the given file.
-   * We do NOT pre-seed from local content — the server state (via
-   * applySharedStates) is the only source of initial content. Pre-seeding
-   * locally then applying the server state causes CRDT double-inserts.
-   */
+  
+
+
+
+
+
   getText(fileId) {
     return this.ensureDoc(fileId).text;
   }
 
-  /**
-   * Seed a brand-new file's Y.Doc with its template content.
-   * Only called when the creator creates a file that the server doesn't know
-   * about yet (before the first sync-room-state round-trip completes).
-   */
+  
+
+
+
+
   seedNewFile(fileId, content) {
     const entry = this.ensureDoc(fileId);
     if (entry.seeded || !content) return;

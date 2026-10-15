@@ -13,9 +13,9 @@ import {
   XCircle,
 } from 'lucide-react';
 
-/* ------------------------------------------------------------------ */
-/* Cell rendering for the table view                                   */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 function cellDisplay(v) {
   if (v === null || v === undefined) return '';
@@ -80,9 +80,9 @@ function DocTable({ documents }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Main panel (default export — also rendered by DbHost)                */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 export default function DbPanel({ onClose }) {
   const [uri, setUri] = useState('');
@@ -96,7 +96,7 @@ export default function DbPanel({ onClose }) {
   const [limit, setLimit] = useState(25);
   const [querying, setQuerying] = useState(false);
   const [documents, setDocuments] = useState(null);
-  const [view, setView] = useState('json'); // 'json' | 'table'
+  const [view, setView] = useState('json'); 
   const [error, setError] = useState('');
 
   const callApi = useCallback(async (path, body) => {
@@ -202,7 +202,7 @@ export default function DbPanel({ onClose }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-(--line) shrink-0">
         <span className="p-1.5 rounded-lg bg-(--blue)/10 border border-(--blue)/25 text-(--blue)">
           <Database size={16} />
@@ -223,7 +223,7 @@ export default function DbPanel({ onClose }) {
       <div className="flex-1 overflow-y-auto p-5 custom-scrollbar flex flex-col gap-4">
         {!connected ? (
           <>
-            {/* Connect form */}
+            { }
             <div>
               <label className="block text-[11px] font-semibold uppercase tracking-wider text-(--muted) mb-2">
                 Connection string
@@ -254,7 +254,7 @@ export default function DbPanel({ onClose }) {
           </>
         ) : (
           <>
-            {/* Database + collection selectors */}
+            { }
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-(--muted) mb-2">
@@ -296,7 +296,7 @@ export default function DbPanel({ onClose }) {
               </div>
             </div>
 
-            {/* Filter + limit */}
+            { }
             <div>
               <label className="block text-[11px] font-semibold uppercase tracking-wider text-(--muted) mb-2">
                 Filter (JSON)
@@ -344,7 +344,7 @@ export default function DbPanel({ onClose }) {
               Disconnect
             </button>
 
-            {/* Results */}
+            { }
             {documents !== null && (
               <div className="flex flex-col gap-2 min-h-0">
                 <div className="flex items-center justify-between">
@@ -390,7 +390,7 @@ export default function DbPanel({ onClose }) {
           </>
         )}
 
-        {/* Error line */}
+        { }
         {error && (
           <div className="flex items-start gap-2 rounded-xl border border-red-500/50 bg-red-500/10 px-3.5 py-3 text-[12.5px] text-red-300 break-words">
             <XCircle size={15} className="shrink-0 mt-0.5" />
@@ -398,7 +398,7 @@ export default function DbPanel({ onClose }) {
           </div>
         )}
 
-        {/* Privacy note */}
+        { }
         <div className="flex items-start gap-2 mt-auto pt-2 text-[11.5px] text-(--muted)">
           <Info size={13} className="shrink-0 mt-0.5" />
           <span>
@@ -411,9 +411,9 @@ export default function DbPanel({ onClose }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Host — mounts once per app shell; listens for window events          */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 export function DbHost() {
   const [open, setOpen] = useState(false);

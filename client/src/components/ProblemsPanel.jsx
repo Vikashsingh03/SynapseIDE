@@ -19,7 +19,7 @@ function extensionOf(name) {
   return dot > 0 ? base.slice(dot + 1).toLowerCase() : '';
 }
 
-/** Reconstruct the project-relative path of a file via its parentId chain. */
+ 
 function filePathFor(file, byId) {
   const parts = [file.name];
   const seen = new Set([file.id]);
@@ -61,7 +61,7 @@ export default function ProblemsPanel() {
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(p);
     }
-    // Sort rows within a group: errors first, then by line
+    
     const rank = { error: 0, warning: 1, info: 2 };
     for (const list of groups.values()) {
       list.sort((a, b) => (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3) || a.line - b.line);
@@ -160,7 +160,7 @@ export default function ProblemsPanel() {
 
   return (
     <div className="h-full flex flex-col min-h-0 bg-[#0B0F16] text-[#C7D3E8]">
-      {/* ─── Header ─── */}
+      { }
       <div className="h-[34px] flex items-center justify-between px-3.5 border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#EAF1FB]">
@@ -197,7 +197,7 @@ export default function ProblemsPanel() {
         </div>
       )}
 
-      {/* ─── Body ─── */}
+      { }
       <div className="flex-1 overflow-y-auto min-h-0">
         {problems.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-center px-6">

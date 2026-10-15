@@ -1,19 +1,19 @@
-// miniMarkdown.js — tiny, SECURITY-FIRST markdown subset renderer.
-//
-// The output is consumed via dangerouslySetInnerHTML, so the golden rule is:
-//   1. escape ALL HTML special chars in the raw source FIRST
-//   2. extract fenced code blocks + inline code spans to private-use sentinels
-//      (protected from every later transform), render them only from our own templates
-//   3. parse block-level structures (fences, headings, lists, hr, quote, paragraphs)
-//   4. apply inline transforms (bold, italic, links — http(s) only) inside text blocks
-//   5. restore the protected code sentinels last
-//
-// No raw HTML passthrough, no images, no other schemes.
+
+
+
+
+
+
+
+
+
+
+
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
-// U+E000..U+E001 private-use sentinels — can't appear in normal user text,
-// contain no HTML/markdown-significant characters.
+
+
 const PS = '\uE000';
 const PE = '\uE001';
 
@@ -24,31 +24,31 @@ export function escapeHtml(str) {
 const FENCE_RE = /^```[^\n]*\n([\s\S]*?)^```[ \t]*$/m;
 
 export function renderMarkdown(md) {
-  const fences = []; // rendered <pre><code> blocks
-  const spans = [];  // rendered inline <code> spans
+  const fences = []; 
+  const spans = [];  
   const fenceOf = (i) => `${PS}FENCE${i}${PE}`;
   const spanOf = (i) => `${PS}SPAN${i}${PE}`;
 
-  // ── 1. extract fenced code blocks from the RAW source
+  
   let text = String(md);
   let m = FENCE_RE.exec(text);
   while (m) {
-    const code = m[1].replace(/\n$/, ''); // drop trailing newline before closing fence
+    const code = m[1].replace(/\n$/, ''); 
     fences.push(`<pre><code>${escapeHtml(code)}</code></pre>`);
     text = text.slice(0, m.index) + `\n${fenceOf(fences.length - 1)}\n` + text.slice(m.index + m[0].length);
     m = FENCE_RE.exec(text);
   }
 
-  // ── 2. escape everything else
+  
   text = escapeHtml(text);
 
-  // ── 3. extract inline code spans (on escaped text; content stays escaped)
+  
   text = text.replace(/`([^`\n]+?)`/g, (full, code) => {
     spans.push(`<code>${code}</code>`);
     return spanOf(spans.length - 1);
   });
 
-  // ── 4. block-level parsing
+  
   const lines = text.split('\n');
   const blocks = [];
   let i = 0;
@@ -88,7 +88,7 @@ export function renderMarkdown(md) {
       i++;
       continue;
     }
-    // blockquote: raw '>' or escaped '&gt;' (escaping ran before this)
+    
     if (/^&gt;/.test(line)) {
       para = flushPara(para);
       const quotes = [];
@@ -124,12 +124,12 @@ export function renderMarkdown(md) {
   }
   flushPara(para);
 
-  // ── 5. inline transforms (bold → italic → links) within text blocks
+  
   const inline = (s) =>
     s
       .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*\n]+?)\*/g, '<em>$1</em>')
-      // links: ONLY http:// and https:// — anything else renders as plain text
+      
       .replace(
         /\[([^\]]*?)\]\((https?:\/\/[^\s)]+)\)/g,
         '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
@@ -158,7 +158,7 @@ export function renderMarkdown(md) {
     })
     .join('\n');
 
-  // ── 6. restore protected code (our own generated tags only)
+  
   return html
     .replace(new RegExp(`${PS}FENCE(\\d+)${PE}`, 'g'), (_, n) => fences[Number(n)])
     .replace(new RegExp(`${PS}SPAN(\\d+)${PE}`, 'g'), (_, n) => spans[Number(n)]);

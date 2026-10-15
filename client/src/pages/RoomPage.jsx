@@ -61,7 +61,7 @@ function RoomSession({ roomId }) {
   const prevFilesRef = useRef([]);
   const [theme, setTheme] = useState(() => readStorage('synapse-theme') || 'dark');
 
-  // ── Tadka pack: command palette + editor personalization ──
+  
   const [paletteOpen, setPaletteOpen] = useState(false);
   const {
     settings: editorSettings,
@@ -76,11 +76,11 @@ function RoomSession({ roomId }) {
     toggleStickyScroll,
   } = useEditorSettings();
 
-  // ── Advanced pack: Neura code review modal + zen mode ──
+  
   const [reviewOpen, setReviewOpen] = useState(false);
   const [zenMode, setZenMode] = useState(false);
 
-  // ── Voice/video chat (LiveKit) ──
+  
   const [voiceOpen, setVoiceOpen] = useState(false);
 
   useEffect(() => {
@@ -110,7 +110,7 @@ function RoomSession({ roomId }) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // TitleBar command-center box + Empty State rows open the palette via event
+  
   useEffect(() => {
     const open = () => setPaletteOpen(true);
     window.addEventListener('synapse:open-palette', open);
@@ -375,7 +375,7 @@ function RoomSession({ roomId }) {
           lastEdit: Date.now(),
         },
       }));
-      // Clear the "editing" indicator after 2 seconds of inactivity
+      
       clearTimeout(editingTimersRef.current[peerId]);
       editingTimersRef.current[peerId] = setTimeout(() => {
         setEditingUsers((prev) => {
@@ -497,7 +497,7 @@ function RoomSession({ roomId }) {
       setChatMessages((prev) => prev.map(m => (m._id === updated._id ? updated : m)));
     });
     socket.on('chat-search-results', (results) => {
-      // Store search results in a separate state via a custom event
+      
       window.dispatchEvent(new CustomEvent('chat-search-results', { detail: results }));
     });
     socket.on('user-typing', ({ userId: tid, username: tname, isTyping }) => {
@@ -612,14 +612,14 @@ function RoomSession({ roomId }) {
     ownedLockRef.current = null;
   }, [files, roomId]);
 
-  // getText() returns a STABLE Y.Text reference — no fallback content is
-  // provided here so we never pre-seed locally. Content comes exclusively
-  // from the server (applySharedStates) to avoid CRDT double-inserts.
+  
+  
+  
   const sharedText = activeFileId && yjsManager ? yjsManager.getText(activeFileId) : null;
 
-  // Detect newly created files (present in current files but not previous)
-  // and seed their Y.Doc locally so the editor isn't blank before the
-  // server echo comes back.
+  
+  
+  
   useEffect(() => {
     if (!yjsManager || !roomReady) return;
     const prevIds = new Set(prevFilesRef.current.map((f) => f.id));
@@ -695,18 +695,18 @@ function RoomSession({ roomId }) {
     navigate('/dashboard');
   }, [navigate, roomId, roomReady]);
 
-  // ── Split editor (rooms) — Wave 5. Mirrors EditorPage's solo split:
-  // each pane binds its OWN file's Y.Text (two bindings on two different
-  // texts = the safe case; the duplication bug was two bindings on the SAME
-  // text+model). The toggle event is dispatched by TabBar's Columns2 button.
+  
+  
+  
+  
   const [splitOn, setSplitOn] = useState(false);
   const [splitFileId, setSplitFileId] = useState(null);
 
   useEffect(() => {
     const toggle = () => {
       if (!splitOn && !splitFileId) {
-        // Default the split pane to the most recent other open tab,
-        // else the first file that isn't the active one.
+        
+        
         const recentOther = [...openTabs].reverse().find((id) => id !== activeFileId);
         const fallback = files.find((f) => f.id !== activeFileId)?.id || null;
         setSplitFileId(recentOther || fallback);
@@ -717,10 +717,10 @@ function RoomSession({ roomId }) {
     return () => window.removeEventListener('synapse:toggle-split', toggle);
   }, [openTabs, activeFileId, files, splitOn, splitFileId]);
 
-  // Y.Text for the split pane's file — never the primary's sharedText.
+  
   const splitSharedText = splitFileId && yjsManager ? yjsManager.getText(splitFileId) : null;
 
-  // Remote peers filtered to the split file (mirrors activeRemotePeers).
+  
   const splitRemotePeers = useMemo(
     () =>
       Object.values(presence).filter(
@@ -847,7 +847,7 @@ function RoomSession({ roomId }) {
           />
           <Breadcrumbs />
 
-          {/* Editor row: primary + optional split pane */}
+          { }
           <div className="flex flex-1 min-h-0">
             <div className="flex-1 min-w-0 flex flex-col">
               <EditorPanel
@@ -870,7 +870,7 @@ function RoomSession({ roomId }) {
               <>
                 <div className="w-px shrink-0 bg-white/8" />
                 <div className="flex-1 min-w-0 flex flex-col">
-                  {/* Split file strip: pick which file the second pane shows */}
+                  { }
                   <div className="h-[30px] flex items-center gap-2 px-2 bg-[#0D1220] border-b border-white/[0.06] shrink-0">
                     <select
                       value={splitFileId || ''}
@@ -924,7 +924,7 @@ function RoomSession({ roomId }) {
         <StatusBar contextLabel={`Room ${roomId}`} />
       )}
 
-      {/* Voice/video chat — floating button + drawer (LiveKit) */}
+      { }
       {!zenMode && !voiceOpen && (
         <button
           onClick={() => setVoiceOpen(true)}
@@ -951,7 +951,7 @@ function RoomSession({ roomId }) {
         </div>
       )}
 
-      {/* Command Palette */}
+      { }
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
@@ -970,7 +970,7 @@ function RoomSession({ roomId }) {
         onOpenReview={() => setReviewOpen(true)}
       />
 
-      {/* Neura code review modal */}
+      { }
       <CodeReviewModal
         open={reviewOpen}
         onClose={() => setReviewOpen(false)}

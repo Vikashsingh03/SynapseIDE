@@ -1,13 +1,13 @@
-// Local History store — plain JS, no imports.
-// Every snapshot is the full file content at a point in time (VS Code's
-// Timeline granularity). Kept small: 25 snapshots/file, 200KB cap, and a
-// quota-eviction strategy so history never breaks the editor.
+
+
+
+
 
 const STORAGE_KEY = 'synapse-history-v1';
 const MAX_PER_FILE = 25;
 const MAX_CONTENT_CHARS = 200_000;
 
-let cache = null; // { [fileId]: [{ at, content }] } — lazy loaded
+let cache = null; 
 
 function load() {
   if (cache) return cache;
@@ -31,7 +31,7 @@ function persist() {
     return true;
   } catch (e) {
     if (!isQuotaError(e)) return false;
-    // Evict the oldest snapshot across ALL files, then retry once.
+    
     let oldest = null;
     let oldestFile = null;
     let oldestIdx = -1;
@@ -66,19 +66,19 @@ function isQuotaError(e) {
 
 export function recordSnapshot(fileId, content) {
   if (!fileId || typeof content !== 'string') return false;
-  if (!content) return false; // empty files don't need history
+  if (!content) return false; 
   if (content.length > MAX_CONTENT_CHARS) return false;
   try {
     const data = load();
     let snaps = data[fileId];
     if (!Array.isArray(snaps)) snaps = data[fileId] = [];
     const last = snaps[snaps.length - 1];
-    if (last && last.content === content) return false; // dedupe
+    if (last && last.content === content) return false; 
     snaps.push({ at: Date.now(), content });
     while (snaps.length > MAX_PER_FILE) snaps.shift();
     return persist();
   } catch {
-    return false; // history must NEVER break editing
+    return false; 
   }
 }
 
@@ -108,7 +108,7 @@ export function historyFileCount() {
   }
 }
 
-// Test-only: reset the in-memory cache so tests re-read storage.
+
 export function __resetCache() {
   cache = null;
 }

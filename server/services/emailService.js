@@ -67,7 +67,7 @@ function getResendFromAddress(config) {
     return smtpFrom;
   }
 
-  // Resend's default verified sender for onboarding/testing.
+  
   return 'onboarding@resend.dev';
 }
 

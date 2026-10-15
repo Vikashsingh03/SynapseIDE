@@ -174,7 +174,7 @@ export default function LandingPage() {
   const initials = getUserInitial(user);
   const userAvatarStyle = getAvatarStyle(user);
 
-  // ── Mobile-friendly user menu ──
+  
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -318,7 +318,7 @@ export default function LandingPage() {
       </header>
 
       <main>
-        {/* ── HERO ─────────────────────────────────────────── */}
+        { }
         <section className="relative px-5 pb-16 pt-32 sm:px-6 sm:pt-40 lg:px-8">
           <div className="syn-paper-grid pointer-events-none absolute inset-0" aria-hidden="true" />
           <div className="relative mx-auto flex max-w-5xl flex-col items-center text-center">
@@ -391,7 +391,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── TECH MARQUEE ────────────────────────────────── */}
+        { }
         <section className="relative -rotate-1 py-6" aria-label="Technology stack">
           <div className="overflow-hidden border-y-2 border-(--ink) bg-(--blue) py-3.5">
             <div className="animate-marquee flex w-max items-center gap-10 font-mono text-sm font-bold uppercase tracking-[0.12em] text-white">
@@ -405,7 +405,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── LIVE PREVIEW ─────────────────────────────────── */}
+        { }
         <section id="preview" className="px-5 py-20 sm:px-6 lg:px-8">
           <Reveal className="mx-auto max-w-6xl">
             <div className="mb-10 text-center">
@@ -420,7 +420,7 @@ export default function LandingPage() {
             </div>
 
             <div className="rounded-[14px] border border-[#283348] bg-[#121824] shadow-[0_18px_54px_rgba(20,21,20,0.28)] overflow-hidden">
-              {/* window chrome */}
+              { }
               <div className="flex items-center justify-between border-b border-[#283348] bg-[#182131] px-5 py-3.5">
                 <div className="flex items-center gap-4">
                   <div className="flex gap-1.5">
@@ -452,7 +452,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* code */}
+              { }
               <div className="p-6 font-mono text-[13px] leading-7 text-[#dce5f3] sm:p-8">
                 <div className="flex gap-6">
                   <div className="select-none text-right text-[#3a4356]">
@@ -491,7 +491,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* status bar */}
+              { }
               <div className="flex items-center justify-between border-t border-[#283348] bg-[#182131] px-5 py-3 font-mono text-[11px] text-[#8290a8]">
                 <div className="flex items-center gap-5">
                   <span className="flex items-center gap-1.5">
@@ -505,7 +505,7 @@ export default function LandingPage() {
           </Reveal>
         </section>
 
-        {/* ── FEATURES / HOW IT WORKS ──────────────────────── */}
+        { }
         <section id="features" className="px-5 pb-20 sm:px-6 lg:px-8">
           <div id="workflow" className="mx-auto max-w-6xl">
             <Reveal>
@@ -542,7 +542,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── USE CASES ────────────────────────────────────── */}
+        { }
         <section id="use-cases" className="px-5 pb-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
             <Reveal>
@@ -574,7 +574,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── TESTIMONIALS ─────────────────────────────────── */}
+        { }
         <section className="px-5 pb-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
             <Reveal>
@@ -618,7 +618,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── FAQ ──────────────────────────────────────────── */}
+        { }
         <section id="faq" className="px-5 pb-20 sm:px-6 lg:px-8">
           <Reveal className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
@@ -651,7 +651,7 @@ export default function LandingPage() {
           </Reveal>
         </section>
 
-        {/* ── CTA ──────────────────────────────────────────── */}
+        { }
         <section className="px-5 pb-24 sm:px-6 lg:px-8">
           <Reveal className="mx-auto max-w-6xl">
             <div className={`rounded-[14px] border px-6 py-14 text-center sm:px-12 shadow-[12px_14px_0_var(--blue)] ${
@@ -696,7 +696,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      {/* ── FOOTER ─────────────────────────────────────────── */}
+      { }
       <footer
         id="footer"
         className={`border-t px-5 py-12 sm:px-6 lg:px-8 ${t.divider}`}

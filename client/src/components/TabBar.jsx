@@ -8,7 +8,7 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
   const { files, openTabs, activeFileId, openTab, closeTab } = useFiles();
   const [copied, setCopied] = useState(false);
 
-  // ── Sliding active-tab indicator (measured, transform-only) ──
+  
   const tabEls = useRef(new Map());
   const [indicator, setIndicator] = useState({ left: 0, width: 0, visible: false });
 
@@ -49,12 +49,12 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  // Tabs sit inside the ALWAYS-DARK IDE frame → use the IDE palette
-  // (code text #dce5f3, comments #8290a8) regardless of page theme.
+  
+  
   return (
     <>
-      {/* Tabs — VS Code shape: rectangular, divider between inactive tabs,
-          active tab in editor surface bg with a glowing 2px TOP accent bar */}
+      {
+}
       <div
         className="relative flex items-stretch bg-[#0B0F16] border-b border-white/8 h-9 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0 select-none"
         role="tablist"
@@ -75,7 +75,7 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
               }}
               onClick={() => openTab(file.id)}
               onMouseDown={(e) => {
-                // Suppress middle-click autoscroll so middle-click can close
+                
                 if (e.button === 1) e.preventDefault();
               }}
               onAuxClick={(e) => {
@@ -116,7 +116,7 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
             </div>
           );
         })}
-        {/* Sliding active-tab indicator: 2px TOP accent bar with glow (transform-only, 60fps) */}
+        { }
         <span
           aria-hidden="true"
           className="tab-indicator pointer-events-none absolute top-0 left-0 h-[2px] bg-[#58A6FF] shadow-[0_0_8px_#58A6FF66]"
@@ -128,11 +128,11 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
         />
       </div>
 
-      {/* Chrome row — room label + quick actions (the real path trail lives in Breadcrumbs below) */}
+      { }
       <div className="flex items-center gap-1.5 px-4 py-2 text-[11px] text-[#8290a8] bg-[#121824] border-b border-[#2b3546] shrink-0 font-mono">
         <span className="font-medium tracking-wide">{roomId}</span>
 
-        {/* Right-side actions: split toggle (solo only) + copy/download active file */}
+        { }
         <span className="ml-auto flex items-center gap-0.5">
           {showSplit && (
             <button

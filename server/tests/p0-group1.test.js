@@ -1,12 +1,12 @@
-/**
- * P0 Group 1 regression tests (P0-01 → P0-04).
- *
- * Uses Node's built-in test runner (node:test) + supertest.
- * Full Vitest + Supertest suite with 15+ tests lands in P0-12 (Group 3);
- * these are the minimal security regression tests required by Group 1.
- *
- * Run: npm test (server/)
- */
+
+
+
+
+
+
+
+
+
 'use strict';
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-that-is-long-enough-for-p0-01-1234567890';
@@ -68,8 +68,8 @@ describe('P0-01: /api/execute requires authentication', () => {
   });
 
   it('authenticated POST /api/execute passes auth (not 401)', async () => {
-    // Without Judge0 creds the handler fails downstream (500), but it must
-    // NOT be rejected as unauthenticated — proving the authed client path works.
+    
+    
     const res = await request(app)
       .post('/api/execute')
       .set('Authorization', `Bearer ${signTestToken()}`)
@@ -117,7 +117,7 @@ describe('P0-02: rate limits are wired and enforce 429 + Retry-After', () => {
   it('OTP verify: allows 10, rejects 11th with 429', async () => {
     const app = express();
     app.use(express.json());
-    // Use a unique email so this test is isolated from other tests.
+    
     app.use('/test-verify', rateLimits.otpVerifyLimiter, (req, res) => res.json({ ok: true }));
     const email = `p0-02-verify-${Date.now()}@example.com`;
     for (let i = 0; i < 10; i += 1) {
@@ -179,9 +179,9 @@ describe('P0-03: socket handlers never trust payload identity', () => {
   });
 
   it('lock-bypass regression: spoofed userId cannot bypass a file lock', () => {
-    // Simulates the fixed check in the code-change handler:
-    //   const senderId = socket.data.user.userId; // authenticated only
-    //   if (activeLock && activeLock.userId !== senderId) deny
+    
+    
+    
     const victimUserId = 'victim-1';
     const attackerUserId = 'attacker-9';
     const activeLock = { userId: victimUserId, username: 'Victim' };
@@ -190,17 +190,17 @@ describe('P0-03: socket handlers never trust payload identity', () => {
       return Boolean(lock && lock.userId !== authenticatedSenderId);
     }
 
-    // Attacker is authenticated as attacker but spoofs victim's ID in payload.
-    // Fixed code ignores the payload, so sender = attacker → denied.
-    const spoofedPayloadUserId = victimUserId; // ignored by server
-    const fixedSenderId = attackerUserId; // socket.data.user.userId
+    
+    
+    const spoofedPayloadUserId = victimUserId; 
+    const fixedSenderId = attackerUserId; 
     assert.equal(isEditDenied(activeLock, fixedSenderId), true, 'attacker must be denied');
 
-    // Old (vulnerable) behaviour would have used the payload → bypassed.
+    
     const vulnerableSenderId = spoofedPayloadUserId;
     assert.equal(isEditDenied(activeLock, vulnerableSenderId), false, 'old code would have allowed (bypass)');
 
-    // Legitimate owner is still allowed.
+    
     assert.equal(isEditDenied(activeLock, victimUserId), false, 'lock owner must be allowed');
   });
 });
@@ -218,7 +218,7 @@ describe('P0-04: chat search regex is escaped', () => {
     const escaped = escapeRegExp(malicious);
     const re = new RegExp(escaped, 'i');
     assert.equal(re.test('.*'), true, 'literal .* should match the text ".*"');
-    // An unescaped .* would match anything (e.g. "aaaa"); escaped must not.
+    
     assert.equal(re.test('aaaa'), false, 'escaped .* must not match arbitrary text');
   });
 

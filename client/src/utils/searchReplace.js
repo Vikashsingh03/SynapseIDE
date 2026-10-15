@@ -1,12 +1,12 @@
-// Global search & replace helpers — used by the Sidebar Search panel.
-// Pure functions so the matching/replacement rules stay testable.
 
-/**
- * Builds a global RegExp from a user query.
- * Plain mode escapes regex characters (literal text search);
- * regex mode uses the pattern as-is.
- * Returns { regex, error } — regex is null for an empty query or bad pattern.
- */
+
+
+
+
+
+
+
+
 export function parseSearchRegex(query, { caseSensitive = false, useRegex = false } = {}) {
   if (!query) return { regex: null, error: '' };
   const pattern = useRegex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -17,7 +17,7 @@ export function parseSearchRegex(query, { caseSensitive = false, useRegex = fals
   }
 }
 
-/** Counts all matches of the query in one file's content. */
+ 
 export function countMatches(content, query, options) {
   const { regex } = parseSearchRegex(query, options);
   if (!regex || !content) return 0;
@@ -25,12 +25,12 @@ export function countMatches(content, query, options) {
   return matches ? matches.length : 0;
 }
 
-/**
- * Computes the result of replacing every match across all files.
- * Returns { updates: [{ fileId, content, count }], total, error }.
- * In regex mode the replacement may use $1, $2… capture groups;
- * in plain mode the replacement is treated as literal text.
- */
+
+
+
+
+
+
 export function computeReplacements(files, query, replacement, options = {}) {
   const { regex, error } = parseSearchRegex(query, options);
   if (!regex) return { updates: [], total: 0, error };

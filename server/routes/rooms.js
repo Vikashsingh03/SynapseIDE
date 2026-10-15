@@ -80,15 +80,15 @@ router.get('/shared/:userId', authMiddleware, async (req, res) => {
 router.get('/:roomId', authMiddleware, async (req, res) => {
   const roomId = String(req.params.roomId || '').trim().toUpperCase();
   
-  // Try to find active in-memory room first
+  
   let room = getRoomSnapshot(roomId);
   
-  // If not in memory, check database
+  
   if (!room) {
     try {
       const dbRoom = await Room.findOne({ roomId });
       if (dbRoom) {
-        // Return a shape similar to what the previous code expected
+        
         return res.json({
           room: {
             roomId: dbRoom.roomId,
@@ -129,7 +129,7 @@ router.delete('/:roomId', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Room not found.' });
     }
 
-    // Only the creator can delete
+    
     if (room.createdBy !== req.user.userId) {
       return res.status(403).json({ error: 'Only the room creator can delete this room.' });
     }

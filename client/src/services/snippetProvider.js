@@ -1,15 +1,15 @@
 import { getSnippets, trackSnippetUse } from './snippetService';
 import { BUILT_IN_SNIPPETS } from './builtinSnippets';
 
-/**
- * Registers Monaco snippet completions (VS Code-style Tab completion
- * with ${1:placeholder} tab stops) for the given editor.
- *
- * Snippets are fetched per language and registered as CompletionItems
- * with insertTextRules = InsertAsSnippet so tab stops work natively.
- */
 
-const disposables = new Map(); // lang -> disposable
+
+
+
+
+
+
+
+const disposables = new Map(); 
 
 function monacoLangToSnippetLang(monacoLang) {
   const map = {
@@ -30,7 +30,7 @@ export async function registerSnippetProvider(monaco, monacoLang) {
   const snippetLang = monacoLangToSnippetLang(monacoLang);
   if (!snippetLang) return;
 
-  // Dispose previous provider for this monaco language
+  
   if (disposables.has(monacoLang)) {
     try {
       disposables.get(monacoLang).dispose();
@@ -38,8 +38,8 @@ export async function registerSnippetProvider(monaco, monacoLang) {
     disposables.delete(monacoLang);
   }
 
-  // Built-in snippets (rfce, useState, HTML boilerplate…) always ship with
-  // the editor; user snippets from the backend are merged on top.
+  
+  
   const builtIns = BUILT_IN_SNIPPETS.filter((s) => s.language === snippetLang);
   let userSnippets = [];
   try {
@@ -88,7 +88,7 @@ export async function registerSnippetProvider(monaco, monacoLang) {
   disposables.set(monacoLang, provider);
 }
 
-// Command handler for usage tracking (registered once per editor mount)
+
 export function registerSnippetUseCommand(editor) {
   return editor.addCommand(0, (...args) => {
     const id = args?.[0];

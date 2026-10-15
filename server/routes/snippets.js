@@ -10,7 +10,7 @@ function getUserId(req) {
   return String(req.user.userId || req.user.id || '');
 }
 
-// Seed built-ins once (idempotent)
+
 async function ensureSeeded() {
   const count = await Snippet.countDocuments({ isBuiltIn: true });
   if (count === 0) {
@@ -22,7 +22,7 @@ async function ensureSeeded() {
 }
 ensureSeeded().catch((e) => console.error('[snippets] seed error:', e.message));
 
-// GET /api/snippets?language=python&q=for — built-ins + user's own
+
 router.get('/', async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -51,7 +51,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/snippets — create custom
+
 router.post('/', async (req, res) => {
   try {
     const { name, prefix, language, category, description, code } = req.body || {};
@@ -74,7 +74,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/snippets/:id — update own snippet
+
 router.put('/:id', async (req, res) => {
   try {
     const snippet = await Snippet.findOne({ _id: req.params.id, userId: getUserId(req) });
@@ -94,7 +94,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/snippets/:id — delete own snippet
+
 router.delete('/:id', async (req, res) => {
   try {
     const result = await Snippet.deleteOne({
@@ -111,7 +111,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// POST /api/snippets/:id/use — bump usage counter
+
 router.post('/:id/use', async (req, res) => {
   try {
     await Snippet.updateOne({ _id: req.params.id }, { $inc: { useCount: 1 } });

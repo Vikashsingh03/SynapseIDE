@@ -49,7 +49,7 @@ function clampSidebarWidth(value) {
   return Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, value));
 }
 
-// ─── Context Menu Component ─────────────────────────────────────────────────
+
 function ContextMenu({ x, y, items, onClose, theme }) {
   const menuRef = useRef(null);
 
@@ -70,7 +70,7 @@ function ContextMenu({ x, y, items, onClose, theme }) {
     };
   }, [onClose]);
 
-  // Adjust position if menu would overflow viewport
+  
   useEffect(() => {
     if (menuRef.current) {
       const rect = menuRef.current.getBoundingClientRect();
@@ -121,7 +121,7 @@ function ContextMenu({ x, y, items, onClose, theme }) {
   );
 }
 
-// ─── Main Sidebar ───────────────────────────────────────────────────────────
+
 export default function Sidebar({
   theme,
   collaborators = [],
@@ -144,13 +144,13 @@ export default function Sidebar({
   const [useRegex, setUseRegex] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [replaceStatus, setReplaceStatus] = useState('');
-  const [pendingFocus, setPendingFocus] = useState(null); // 'search' | 'replace'
+  const [pendingFocus, setPendingFocus] = useState(null); 
   const searchInputRef = useRef(null);
   const replaceInputRef = useRef(null);
   const [activeDragId, setActiveDragId] = useState(null);
   const [overDragId, setOverDragId] = useState(null);
   const [dragOffset, setDragOffset] = useState(0);
-  const [contextMenu, setContextMenu] = useState(null); // { x, y, item }
+  const [contextMenu, setContextMenu] = useState(null); 
   const [renameTargetId, setRenameTargetId] = useState(null);
   const [seenChatCount, setSeenChatCount] = useState(chatMessages.length);
   const [seenUserCount, setSeenUserCount] = useState(collaborators.length);
@@ -207,8 +207,8 @@ export default function Sidebar({
   });
   const hasUnreadMsgs = activeSidebar !== 'chat' && unreadMessages > 0 && !hasUnreadMention;
 
-  // ─── Global search shortcuts ───────────────────────────────────────
-  // Ctrl+Shift+F → Search panel · Ctrl+Shift+H → Search panel, replace focused
+  
+  
   useEffect(() => {
     const onKey = (e) => {
       if (!(e.ctrlKey || e.metaKey) || !e.shiftKey) return;
@@ -237,13 +237,13 @@ export default function Sidebar({
     setPendingFocus(null);
   }, [pendingFocus, activeSidebar]);
 
-  // Any change to the query/options cancels a pending replace confirmation
+  
   useEffect(() => {
     setConfirmReplace(false);
     setReplaceStatus('');
   }, [searchQuery, replaceQuery, caseSensitive, useRegex]);
 
-  // ─── Target folder logic ────────────────────────────────────────────
+  
   const getTargetParentId = (itemOrId) => {
     const refId = itemOrId || effectiveSelectedItemId;
     if (!refId) return null;
@@ -297,7 +297,7 @@ export default function Sidebar({
     setNewItemName('');
   };
 
-  // ─── Context menu handler ──────────────────────────────────────────
+  
   const handleItemContextMenu = (e, item) => {
     const isFolder = item.type === 'folder';
     const menuItems = [];
@@ -354,9 +354,9 @@ export default function Sidebar({
     setContextMenu({ x: e.clientX, y: e.clientY, items: menuItems });
   };
 
-  // ─── Rename trigger handling ───────────────────────────────────────
-  // When renameTargetId is set by context menu, we pass it down to the matching FileTreeItem
-  // and then clear it after the render
+  
+  
+  
   useEffect(() => {
     if (renameTargetId) {
       const timer = setTimeout(() => setRenameTargetId(null), 100);
@@ -364,18 +364,18 @@ export default function Sidebar({
     }
   }, [renameTargetId]);
 
-  // ─── Flatten tree ──────────────────────────────────────────────────
+  
   const getVisibleFiles = () => {
     const visible = [];
     const pushChildren = (parentId, depth) => {
       const children = files
         .filter(f => f.parentId === parentId)
         .sort((a, b) => {
-          // 1. Folders always come before files
+          
           if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
-          // 2. Within the same type, respect the manual order
+          
           if (a.order !== b.order) return a.order - b.order;
-          // 3. Fallback to name (alphabetic) if orders are identical
+          
           return a.name.localeCompare(b.name);
         });
 
@@ -396,7 +396,7 @@ export default function Sidebar({
 
   const visibleFiles = getVisibleFiles();
 
-  // ─── DnD ──────────────────────────────────────────────────────────
+  
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -473,7 +473,7 @@ export default function Sidebar({
 
     const { projectedParentId, insertIndex } = projectedState;
 
-    // Calculate position among siblings of the projected parent.
+    
     let siblingOrder = 0;
     for (let i = 0; i < insertIndex; i++) {
         if (visibleFiles[i].id === activeId) continue;
@@ -482,7 +482,7 @@ export default function Sidebar({
         }
     }
 
-    // If we are dropping on ourself, do nothing
+    
     if (activeId === (over?.id || null) && siblingOrder === visibleFiles.findIndex(f => f.id === activeId)) return;
 
     moveItem(active.id, projectedParentId, siblingOrder);
@@ -490,7 +490,7 @@ export default function Sidebar({
 
   const draggedItem = activeDragId ? visibleFiles.find(f => f.id === activeDragId) : null;
 
-  // ─── Search ───────────────────────────────────────────────────────
+  
   const searchOptions = { caseSensitive, useRegex };
   const searchError = searchQuery.trim()
     ? parseSearchRegex(searchQuery, searchOptions).error
@@ -532,7 +532,7 @@ export default function Sidebar({
     return results;
   })();
 
-  // ─── Right-click on empty area of explorer ────────────────────────
+  
   const handleExplorerContextMenu = (e) => {
     e.preventDefault();
     const menuItems = [
@@ -550,7 +550,7 @@ export default function Sidebar({
     setContextMenu({ x: e.clientX, y: e.clientY, items: menuItems });
   };
 
-  // Click on empty space deselects
+  
   const handleExplorerBgClick = () => {
     setSelectedItemId(null);
   };
@@ -585,7 +585,7 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Activity Bar — dark VS Code-style rail (intentional contrast vs paper panel) */}
+      { }
       <nav className="w-[46px] flex flex-col items-center py-3 gap-1 shrink-0 bg-[#0B0F16] border-r border-white/[0.07]">
         {activityTypes.map((type) => {
           const isActive = activeSidebar === type;
@@ -636,7 +636,7 @@ export default function Sidebar({
         <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 ring-2 ring-[#0B0F16]" title="Connected" />
       </nav>
 
-      {/* Primary Sidebar */}
+      { }
       {activeSidebar && (
         <aside
           style={{ width: `${sidebarWidth}px` }}
@@ -651,7 +651,7 @@ export default function Sidebar({
             <span className="sr-only">Resize</span>
           </button>
 
-          {/* Panel header */}
+          { }
           <div className={`px-4 py-3 flex justify-between items-center shrink-0 border-b ${t.border}`}>
             <span className={t.eyebrow}>
               {activeSidebar === 'explorer' && "Explorer"}
@@ -782,7 +782,7 @@ export default function Sidebar({
                   </DragOverlay>
                 </DndContext>
 
-                {/* Empty space fill for right-click */}
+                { }
                 <div className="flex-1 min-h-10" />
               </div>
             )}
@@ -992,7 +992,7 @@ export default function Sidebar({
         </aside>
       )}
 
-      {/* Context Menu Portal */}
+      { }
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}

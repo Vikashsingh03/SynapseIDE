@@ -1,6 +1,6 @@
-// Practice Arena problem bank.
-// Each problem has exact I/O formats; tests judge the CURRENT content of the
-// linked editor file through the same /execute (JDoodle) pipeline as Run.
+
+
+
 export const PRACTICE_PROBLEMS = [
   {
     id: 'p01',

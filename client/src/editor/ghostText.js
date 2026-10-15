@@ -1,13 +1,13 @@
-/**
- * Copilot-style ghost text (inline completions) for Monaco.
- *
- * As the user types, a greyed suggestion appears at the cursor; Tab accepts
- * it (Monaco's native inline-suggest UX). Suggestions come from the server
- * `/api/ai/complete` endpoint (Groq-backed, same transport as Neura chat).
- *
- * Default ON. Toggle: localStorage 'synapse-ghost-text' = 'off'.
- * Requires an auth token (completions ride the user's AI quota).
- */
+
+
+
+
+
+
+
+
+
+
 import { API_BASE } from '../config/apiConfig';
 import { getToken } from '../services/authService';
 
@@ -31,17 +31,17 @@ export function setGhostTextEnabled(on) {
   try {
     localStorage.setItem(STORAGE_KEY, on ? 'on' : 'off');
   } catch {
-    /* storage unavailable — ghost text stays in its current state */
+     
   }
 }
 
-/**
- * Build the prefix/suffix windows around the cursor.
- *
- * @param model   { getValueInRange(range), getLineCount(), getLineMaxColumn(line) }
- * @param position { lineNumber, column }
- * @param Range   constructor: (startLineNumber, startColumn, endLineNumber, endColumn)
- */
+
+
+
+
+
+
+
 export function buildParts(model, position, Range) {
   const lastLine = model.getLineCount();
   const prefixRange = new Range(1, 1, position.lineNumber, position.column);
@@ -53,14 +53,14 @@ export function buildParts(model, position, Range) {
   );
   let prefix = model.getValueInRange(prefixRange);
   let suffix = model.getValueInRange(suffixRange);
-  // Keep the prefix TAIL and the suffix HEAD — the code nearest the cursor
-  // is what matters most to the completion engine.
+  
+  
   if (prefix.length > MAX_PREFIX_CHARS) prefix = prefix.slice(-MAX_PREFIX_CHARS);
   if (suffix.length > MAX_SUFFIX_CHARS) suffix = suffix.slice(0, MAX_SUFFIX_CHARS);
   return { prefix, suffix };
 }
 
-/** Defensive client-side fence strip (the server already sanitizes). */
+ 
 export function stripClientFence(text) {
   const lines = String(text).split('\n');
   if (
@@ -85,7 +85,7 @@ export function registerGhostText(monaco) {
         return { items: [] };
       }
 
-      // Debounce: only the latest keystroke pause triggers a request.
+      
       const myGeneration = ++generation;
       await sleep(DEBOUNCE_MS);
       if (myGeneration !== generation || token.isCancellationRequested) {
@@ -136,7 +136,7 @@ export function registerGhostText(monaco) {
           ],
         };
       } catch {
-        // Any failure (network, abort, provider down) = silently no suggestion.
+        
         return { items: [] };
       } finally {
         if (cancelSubscription && typeof cancelSubscription.dispose === 'function') {
@@ -146,7 +146,7 @@ export function registerGhostText(monaco) {
     },
 
     freeInlineCompletions() {
-      // Completion items are plain data — nothing to dispose.
+      
     },
   };
 

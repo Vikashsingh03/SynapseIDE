@@ -1,20 +1,20 @@
-// Emmet abbreviation expansion for Synapse's Monaco editor.
-//
-// Pure, dependency-free ESM. Two public expanders:
-//   expandEmmet(abbr)    -> HTML snippet string (with a single $0 tabstop), or null
-//   expandEmmetJsx(abbr) -> same, but class->className, for->htmlFor (voids self-close)
-// plus registerEmmet(editor, monaco) which wires a smart Tab keybinding.
-//
-// Supported subset:
-//   tags (incl. custom like my-card), implicit div for bare .class / #id
-//   .class (repeatable), #id, [attr] / [attr=value] / [attr="quoted value"]
-//   {text}, child >, sibling +, climb-up ^, multiplication *n,
-//   $ / $$ numbering (in tag, classes, id, attrs, text), (grouping) with *n,
-//   void elements, default attrs (a/img/input/link/form), input :pseudo types.
-//
-// Returns null for: empty string, lone bare tag name (pure text), spaces
-// outside {} / [], CSS-like input (':' or ';' outside []/{}), unbalanced
-// parens/brackets, and pseudo-classes on non-input elements.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const VOID_ELEMENTS = new Set([
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
@@ -36,7 +36,7 @@ const DEFAULT_ATTRS = {
   form: [['action', '']],
 };
 
-// '$$' -> zero-padded to the run length: '$' -> '1', '$$' -> '01', '$$$' -> '001'
+
 function substitute(str, idx) {
   return String(str).replace(/\${1,}/g, (m) => String(idx).padStart(m.length, '0'));
 }
@@ -62,12 +62,12 @@ class Parser {
     return roots;
   }
 
-  // Parses nodes/groups joined by > + ^ until stopChar (')' for groups) or end.
+  
   parseSequence(stopChar) {
     const roots = [];
-    let last = null;        // last placed node
+    let last = null;        
     let expectChild = false;
-    let needOperand = false; // true right after > + ^ (an operand must follow)
+    let needOperand = false; 
 
     const place = (nodes) => {
       for (const n of nodes) {
@@ -103,11 +103,11 @@ class Parser {
         }
         continue;
       }
-      if (needOperand === false && last !== null) this.fail(); // e.g. "div span"
+      if (needOperand === false && last !== null) this.fail(); 
       place(this.parseOperand());
       needOperand = false;
     }
-    if (needOperand) this.fail(); // trailing operator like "div>"
+    if (needOperand) this.fail(); 
     return roots;
   }
 
@@ -117,11 +117,11 @@ class Parser {
   }
 
   parseGroup() {
-    this.i++; // consume '('
+    this.i++; 
     if (this.done || this.peek() === ')') this.fail();
     const children = this.parseSequence(')');
     if (this.done || this.peek() !== ')') this.fail();
-    this.i++; // consume ')'
+    this.i++; 
     let count = 1;
     if (!this.done && this.peek() === '*') count = this.parseCount();
     const group = { isGroup: true, children, count, parent: null };
@@ -136,7 +136,7 @@ class Parser {
     };
     const ch = this.peek();
     if (ch === '.' || ch === '#' || ch === '[' || ch === '{' || ch === ':') {
-      // implicit div
+      
     } else if (this.isNameStart(ch)) {
       node.tag = this.parseTagName();
     } else {
@@ -157,9 +157,9 @@ class Parser {
         const pseudo = this.parseTagName();
         if (node.tag === 'input') {
           if (INPUT_TYPES.has(pseudo)) node.pseudoType = pseudo;
-          // other pseudos on input are skipped silently
+          
         } else {
-          this.fail(); // pseudo-class on non-input -> unsupported
+          this.fail(); 
         }
       }
       else if (c === '[') this.parseAttrs(node);
@@ -188,7 +188,7 @@ class Parser {
   }
 
   parseCount() {
-    this.i++; // consume '*'
+    this.i++; 
     let n = '';
     while (!this.done && /[0-9]/.test(this.peek())) { n += this.peek(); this.i++; }
     const count = parseInt(n, 10);
@@ -201,7 +201,7 @@ class Parser {
   }
 
   parseAttrs(node) {
-    this.i++; // consume '['
+    this.i++; 
     for (;;) {
       this.skipBracketSpaces();
       if (this.done) this.fail();
@@ -228,7 +228,7 @@ class Parser {
       let v = '';
       while (!this.done && this.peek() !== c) { v += this.peek(); this.i++; }
       if (this.done) this.fail();
-      this.i++; // closing quote
+      this.i++; 
       return v;
     }
     let v = '';
@@ -240,11 +240,11 @@ class Parser {
   }
 
   parseText() {
-    this.i++; // consume '{'
+    this.i++; 
     let t = '';
     while (!this.done && this.peek() !== '}') { t += this.peek(); this.i++; }
     if (this.done) this.fail();
-    this.i++; // consume '}'
+    this.i++; 
     return t;
   }
 }
@@ -287,8 +287,8 @@ function renderOnce(node, idx, jsx, ctx) {
   }
 
   const classAttr = jsx ? 'className' : 'class';
-  // Emmet attribute order: other attributes first (defaults, then explicit),
-  // then id, then class.
+  
+  
   let attrStr = '';
   for (const a of attrList) {
     let aname = a.name;
@@ -303,8 +303,8 @@ function renderOnce(node, idx, jsx, ctx) {
 
   if (isVoid) return `<${tag}${attrStr} />`;
 
-  // $0 goes right after the first element's text; otherwise inside the
-  // first structurally-empty element; otherwise at the very end.
+  
+  
   let inner = text + childrenHtml;
   if (!ctx.tabstopPlaced && text !== '') {
     inner = text + '$0' + childrenHtml;
@@ -318,7 +318,7 @@ function renderOnce(node, idx, jsx, ctx) {
 
 function expand(abbr, jsx) {
   if (typeof abbr !== 'string' || abbr === '') return null;
-  if (/^[A-Za-z][\w\-$]*$/.test(abbr)) return null; // pure text / lone tag
+  if (/^[A-Za-z][\w\-$]*$/.test(abbr)) return null; 
   let roots;
   try {
     roots = new Parser(abbr).parse();
@@ -332,45 +332,45 @@ function expand(abbr, jsx) {
   return out;
 }
 
-/** Expand an Emmet abbreviation to an HTML snippet string (with one $0 tabstop), or null. */
+ 
 export function expandEmmet(abbreviation) {
   return expand(abbreviation, false);
 }
 
-/** Expand an Emmet abbreviation to a JSX snippet string (className/htmlFor), or null. */
+ 
 export function expandEmmetJsx(abbreviation) {
   return expand(abbreviation, true);
 }
 
-// Matches the trailing abbreviation on the current line, e.g. "ul>li.item$*3".
-// Includes /, =, quotes for [attr="a b"] values.
+
+
 const ABBR_RE = /([A-Za-z0-9.#>*+^()[\]{}@:$!\-_/"'=]+)$/;
 
-/**
- * Wire a smart Tab keybinding onto a Monaco editor instance.
- * When the text before the cursor is a valid Emmet abbreviation (in an
- * HTML/JSX file), Tab expands it via the snippet controller; otherwise the
- * keypress is left alone so normal Tab behavior (indent, accept suggestion)
- * is preserved. Tab is skipped when a suggestion widget is open or when
- * there is a non-collapsed selection.
- */
+
+
+
+
+
+
+
+
 export function registerEmmet(editor, monaco) {
   return editor.onKeyDown((e) => {
     if (e.code !== 'Tab' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
     if (!editor.hasTextFocus()) return;
 
-    // Let an open suggestion/completion widget keep Tab (accept suggestion).
+    
     try {
       const suggest = editor.getContribution('editor.contrib.suggestController');
       if (suggest && suggest.model && suggest.model.state !== 0) return;
-    } catch { /* contribution unavailable */ }
+    } catch {   }
 
     const model = editor.getModel();
     if (!model) return;
     const selections = editor.getSelections();
     if (!selections || selections.length !== 1) return;
     const sel = selections[0];
-    if (!sel.isEmpty()) return; // non-collapsed selection -> normal indent
+    if (!sel.isEmpty()) return; 
 
     const lang = model.getLanguageId();
     const expand = (lang === 'javascriptreact' || lang === 'typescriptreact')
@@ -384,7 +384,7 @@ export function registerEmmet(editor, monaco) {
     if (!m) return;
     let expansion = null;
     try { expansion = expand(m[1]); } catch { expansion = null; }
-    if (!expansion) return; // not a valid abbreviation -> let Tab pass through
+    if (!expansion) return; 
 
     e.preventDefault();
     e.stopPropagation();
@@ -393,7 +393,7 @@ export function registerEmmet(editor, monaco) {
     editor.setSelections([new monaco.Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn)]);
 
     let ctrl = null;
-    try { ctrl = editor.getContribution('snippetController2'); } catch { /* ignore */ }
+    try { ctrl = editor.getContribution('snippetController2'); } catch {   }
     if (ctrl && typeof ctrl.insert === 'function') {
       ctrl.insert(expansion);
     } else {

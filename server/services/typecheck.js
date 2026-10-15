@@ -5,26 +5,26 @@ const os = require('os');
 const path = require('path');
 
 const MAX_FILES = 60;
-const MAX_TOTAL_BYTES = 1.5 * 1024 * 1024; // ~1.5MB
+const MAX_TOTAL_BYTES = 1.5 * 1024 * 1024; 
 const MAX_DIAGNOSTICS = 200;
 const ALLOWED_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts']);
 
 function severityOf(category, ts) {
   if (category === ts.DiagnosticCategory.Error) return 'error';
   if (category === ts.DiagnosticCategory.Warning) return 'warning';
-  return 'info'; // Suggestion / Message
+  return 'info'; 
 }
 
-// Normalize a client-supplied relative path and force it inside `root`.
-// Returns an absolute path, or null if it cannot be made safe.
+
+
 function safeAbsPath(root, clientPath) {
   let p = String(clientPath).replace(/\\/g, '/');
-  // Strip Windows drive letters (C:/...) and leading slashes
+  
   p = p.replace(/^[a-zA-Z]:/, '').replace(/^\/+/, '');
   const segments = p.split('/').filter((s) => s && s !== '.');
   const cleaned = [];
   for (const seg of segments) {
-    if (seg === '..') continue; // drop attempts to climb out
+    if (seg === '..') continue; 
     cleaned.push(seg);
   }
   if (!cleaned.length) return null;
@@ -34,11 +34,11 @@ function safeAbsPath(root, clientPath) {
   return abs;
 }
 
-/**
- * Type-checks a set of project files with the TypeScript compiler API.
- * @param {Array<{path: string, content: string}>} files
- * @returns {Promise<Array<{path: string, line: number, column: number, severity: 'error'|'warning'|'info', code: string, message: string}>>}
- */
+
+
+
+
+
 async function typecheckFiles(files) {
   let ts;
   try {
@@ -63,7 +63,7 @@ async function typecheckFiles(files) {
 
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'synapse-tc-'));
   try {
-    // Write files, preserving relative paths; absPath -> original client path
+    
     const absToClient = new Map();
     const rootNames = [];
     for (const f of kept) {
@@ -102,18 +102,18 @@ async function typecheckFiles(files) {
     const out = [];
     for (const d of allDiagnostics) {
       if (out.length >= MAX_DIAGNOSTICS) break;
-      if (!d.file) continue; // skip global / option diagnostics
+      if (!d.file) continue; 
       const clientPath = absToClient.get(path.resolve(d.file.fileName));
-      if (!clientPath) continue; // not one of the project files
+      if (!clientPath) continue; 
       const message = ts.flattenDiagnosticMessageText(d.messageText, ' ');
-      // The temp workspace has no node_modules, so imports of real npm
-      // packages (react, express…) can never resolve here — those TS2307s
-      // are noise, not user errors. Relative imports ('./x') still report.
+      
+      
+      
       if (d.code === 2307) {
         const m = message.match(/Cannot find module '([^']+)'/);
         if (m && !m[1].startsWith('.') && !m[1].startsWith('/')) continue;
       }
-      // JSX runtime types come from the same missing packages.
+      
       if (d.code === 2875 || d.code === 7016) continue;
       const start = d.start !== undefined ? d.file.getLineAndCharacterOfPosition(d.start) : null;
       out.push({

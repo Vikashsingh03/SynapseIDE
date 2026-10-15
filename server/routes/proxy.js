@@ -4,13 +4,13 @@ const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
-// POST /api/proxy — CORS-bypassing HTTP proxy for the in-IDE REST client.
-// Body: { method, url, headers (object, optional), body (string, optional) }
-// Returns: { status, statusText, headers, body (raw string), isJson, timeMs, sizeBytes }
-// or { error } with an appropriate HTTP status.
-//
-// NOTE: localhost IS allowed on purpose — the dev uses this to test his own
-// local APIs. Cloud metadata endpoints are blocked (SSRF guard).
+
+
+
+
+
+
+
 
 const ALLOWED_METHODS = new Set([
   'GET',
@@ -22,10 +22,10 @@ const ALLOWED_METHODS = new Set([
   'OPTIONS',
 ]);
 
-// Cloud metadata endpoints — never fetch these via the proxy.
+
 const BLOCKED_HOSTS = new Set(['169.254.169.254', 'metadata.google.internal']);
 
-const MAX_BYTES = 2 * 1024 * 1024; // 2MB cap on upstream request/response
+const MAX_BYTES = 2 * 1024 * 1024; 
 
 async function proxyRequest(req, res) {
   try {
@@ -55,7 +55,7 @@ async function proxyRequest(req, res) {
         .json({ error: 'Blocked host: cloud metadata endpoints are not allowed' });
     }
 
-    // Header passthrough minus hop-by-hop headers axios must set itself.
+    
     const outHeaders = {};
     if (headers && typeof headers === 'object' && !Array.isArray(headers)) {
       for (const [k, v] of Object.entries(headers)) {
@@ -74,8 +74,8 @@ async function proxyRequest(req, res) {
       timeout: 30000,
       maxContentLength: MAX_BYTES,
       maxBodyLength: MAX_BYTES,
-      validateStatus: () => true, // pass upstream status codes through untouched
-      responseType: 'text', // keep bytes raw; no auto JSON parsing
+      validateStatus: () => true, 
+      responseType: 'text', 
       transformResponse: [(d) => d],
     };
     if (m !== 'GET' && m !== 'HEAD' && body !== undefined && body !== null) {
@@ -103,7 +103,7 @@ async function proxyRequest(req, res) {
       JSON.parse(bodyStr);
       isJson = true;
     } catch {
-      // not JSON — isJson stays false
+      
     }
 
     res.json({
@@ -124,5 +124,5 @@ async function proxyRequest(req, res) {
 router.post('/proxy', authMiddleware, proxyRequest);
 
 module.exports = router;
-// Exported for unit/smoke testing without going through express.
+
 module.exports.proxyRequest = proxyRequest;

@@ -3,25 +3,25 @@ import { ChevronRight, Dot, Braces } from 'lucide-react';
 import { useFiles } from '../contexts/FileContext';
 import FileIcon from './FileIcon';
 
-/**
- * VS Code-style breadcrumb bar shown above the editor.
- *
- * - Path trail: root → … → folders → active file (clicking a folder
- *   dispatches `synapse:reveal-file` with { id } — a listener can be
- *   added later; harmless when none exists).
- * - Symbols row: top-level functions/classes defs extracted with light
- *   regexes from the active file's content. Clicking a symbol dispatches
- *   `synapse:goto-line` with { line } (1-based). The symbol containing the
- *   cursor is highlighted — the editor bridge dispatches `synapse:cursor`
- *   with { line } on cursor movement.
- *
- * @param {{ className?: string }} props
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export default function Breadcrumbs({ className = '' }) {
   const { files, activeFile } = useFiles();
   const [cursorLine, setCursorLine] = useState(null);
 
-  // Listen for editor cursor updates (dispatched by the editor bridge).
+  
   useEffect(() => {
     const onCursor = (e) => {
       const line = e?.detail?.line;
@@ -37,7 +37,7 @@ export default function Breadcrumbs({ className = '' }) {
     return m;
   }, [files]);
 
-  // Path trail: walk parentId chain up, then reverse to root→file order.
+  
   const trail = useMemo(() => {
     if (!activeFile) return [];
     const segs = [];
@@ -51,7 +51,7 @@ export default function Breadcrumbs({ className = '' }) {
     return segs.reverse();
   }, [activeFile, idToFile]);
 
-  // Top-level symbols extracted from the active file's content.
+  
   const symbols = useMemo(() => {
     if (!activeFile || typeof activeFile.content !== 'string') return [];
     const name = (activeFile.name || '').toLowerCase();
@@ -111,7 +111,7 @@ export default function Breadcrumbs({ className = '' }) {
     return out;
   }, [activeFile]);
 
-  // The symbol containing the cursor = last symbol at/above the cursor line.
+  
   const currentSymbolIdx = useMemo(() => {
     if (cursorLine == null) return -1;
     let idx = -1;

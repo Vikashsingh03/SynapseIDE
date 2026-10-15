@@ -30,10 +30,10 @@ function normalizeOutput(value) {
 
 export default function PracticePanel({ theme, onClose }) {
   const { files, createFile, createFolder, updateContent, openTab } = useFiles();
-  const [view, setView] = useState('list'); // 'list' | 'detail'
+  const [view, setView] = useState('list'); 
   const [selected, setSelected] = useState(null);
   const [lang, setLang] = useState(PRACTICE_LANGUAGES[0]);
-  const [linked, setLinked] = useState(null); // { fileId, langId, slug }
+  const [linked, setLinked] = useState(null); 
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState([]);
   const [runNote, setRunNote] = useState('');
@@ -133,7 +133,7 @@ export default function PracticePanel({ theme, onClose }) {
 
   return (
     <div className="fixed inset-y-0 right-0 w-[440px] max-w-[92vw] z-[70] bg-(--paper-2) border-l border-(--line) flex flex-col shadow-[0_0_48px_rgba(0,0,0,0.45)] animate-fade-in">
-      {/* Header */}
+      { }
       <div className="px-4 py-3 flex items-center gap-2.5 shrink-0 border-b border-(--line)">
         <span className="w-8 h-8 rounded-md border border-(--line) flex items-center justify-center text-(--blue)">
           <Trophy size={16} />

@@ -1,4 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
+ 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { LANGUAGES, getLanguageByExtension } from '../utils/languageMap';
 import { readStorage, writeStorage } from '../utils/storage';
@@ -6,9 +6,9 @@ import { recordSnapshot } from '../history/historyStore';
 
 const FileContext = createContext();
 
-// Local History (Timeline): debounce per file so keystrokes collapse into one
-// snapshot 2.5s after typing pauses. Module-level so it survives re-renders;
-// guarded so history can never break editing.
+
+
+
 const historyTimers = new Map();
 const historyLatestContent = new Map();
 const HISTORY_DEBOUNCE_MS = 2500;
@@ -177,7 +177,7 @@ export function FileProvider({ children, storageKey = STORAGE_KEY }) {
     
     setOpenTabs((prev) => [...prev, id]);
     setActiveFileId(id);
-    return id; // Return ID instead of object since state update is async
+    return id; 
   }, []);
 
   const createFolder = useCallback((name, parentId = null) => {
@@ -207,29 +207,29 @@ export function FileProvider({ children, storageKey = STORAGE_KEY }) {
 
   const moveItem = useCallback((id, newParentId, newOrder) => {
     setFiles((prev) => {
-      // Prevent nesting folder inside itself or its children
+      
       if (newParentId) {
         let currentParent = prev.find(f => f.id === newParentId);
         while (currentParent) {
-          if (currentParent.id === id) return prev; // Invalid move
+          if (currentParent.id === id) return prev; 
           currentParent = prev.find(f => f.id === currentParent.parentId);
         }
       }
 
-      // Also prevent dropping a folder into itself
+      
       if (newParentId === id) return prev;
 
       const updated = prev.map(f => f.id === id ? { ...f, parentId: newParentId, updatedAt: Date.now() } : f);
       
-      // Get all children of the new parent (excluding the moving item)
+      
       const siblings = updated.filter(f => f.parentId === newParentId && f.id !== id).sort((a, b) => a.order - b.order);
       const movingItem = updated.find(f => f.id === id);
       
-      // Target position
+      
       const targetIndex = Math.max(0, Math.min(newOrder, siblings.length));
       siblings.splice(targetIndex, 0, movingItem);
       
-      // Re-assign sequential orders to all siblings
+      
       const finalOrderMap = new Map();
       siblings.forEach((sib, index) => {
         finalOrderMap.set(sib.id, index);
@@ -259,20 +259,20 @@ export function FileProvider({ children, storageKey = STORAGE_KEY }) {
   }, []);
 
   const deleteFile = useCallback((id) => {
-    // We need to compute deletedIds synchronously from the latest state,
-    // then update all three pieces of state consistently.
+    
+    
     setFiles((prevFiles) => {
       const deletedIds = new Set(getSubTreeIds(prevFiles, id));
       const remaining = prevFiles.filter((file) => !deletedIds.has(file.id));
       const safeFiles = remaining.length ? remaining : getDefaultState().files;
 
-      // Update tabs — remove any deleted file tabs
+      
       setOpenTabs((prevTabs) => {
         const remainingTabs = prevTabs.filter((tabId) => !deletedIds.has(tabId));
         return remainingTabs.length ? remainingTabs : [safeFiles.find(f => f.type === 'file')?.id || safeFiles[0].id];
       });
 
-      // Update active file — if the active file was deleted, pick the next available file
+      
       setActiveFileId((prevActiveId) => {
         if (!deletedIds.has(prevActiveId)) {
           return prevActiveId;
@@ -297,7 +297,7 @@ export function FileProvider({ children, storageKey = STORAGE_KEY }) {
           : file
       )
     );
-    // Local History: snapshot (debounced) — editing behavior untouched.
+    
     try {
       scheduleHistorySnapshot(id, content);
     } catch {}

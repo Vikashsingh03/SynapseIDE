@@ -20,14 +20,14 @@ function daysAgo(n) {
   return d;
 }
 
-// GET /api/analytics/summary — everything the dashboard needs in one call
+
 router.get('/summary', async (req, res) => {
   try {
     const userId = getUserId(req);
     const today = daysAgo(0);
     const yearAgo = daysAgo(364);
 
-    // ─── Daily activity counts (heatmap, last 365 days) ───
+    
     const daily = await Activity.aggregate([
       {
         $match: {
@@ -54,11 +54,11 @@ router.get('/summary', async (req, res) => {
     const heatmap = {};
     for (const d of daily) heatmap[d._id] = d;
 
-    // ─── Streaks ───
+    
     const activeDays = new Set(daily.map((d) => d._id));
     let currentStreak = 0;
     let check = new Date(today);
-    // If today has no activity yet, start counting from yesterday
+    
     if (!activeDays.has(dayStr(check))) {
       check.setUTCDate(check.getUTCDate() - 1);
     }
@@ -67,7 +67,7 @@ router.get('/summary', async (req, res) => {
       check.setUTCDate(check.getUTCDate() - 1);
     }
 
-    // Longest streak (single pass over sorted days)
+    
     const sortedDays = [...activeDays].sort();
     let longestStreak = 0;
     let run = 0;
@@ -83,7 +83,7 @@ router.get('/summary', async (req, res) => {
       prev = d;
     }
 
-    // ─── Totals (last 30 days) ───
+    
     const monthAgo = daysAgo(30);
     const [totals] = await Activity.aggregate([
       { $match: { userId, createdAt: { $gte: monthAgo } } },
@@ -101,14 +101,14 @@ router.get('/summary', async (req, res) => {
       },
     ]);
 
-    // ─── Language distribution (last 30 days) ───
+    
     const languages = await Activity.aggregate([
       { $match: { userId, type: 'run', createdAt: { $gte: monthAgo } } },
       { $group: { _id: '$language', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
 
-    // ─── Weekly runs (last 12 weeks, for bar chart) ───
+    
     const twelveWeeksAgo = daysAgo(84);
     const weekly = await Activity.aggregate([
       { $match: { userId, type: 'run', createdAt: { $gte: twelveWeeksAgo } } },

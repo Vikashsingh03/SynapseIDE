@@ -1,5 +1,5 @@
-// deployConfigs.js — project detection + deployment config generators.
-// Pure functions, zero imports. Used by DeployPanel.jsx.
+
+
 
 export const PROJECT_TYPES = ['react-vite', 'node', 'python', 'static', 'unknown'];
 
@@ -19,12 +19,12 @@ export const DEFAULT_PORTS = {
   unknown: 3000,
 };
 
-/**
- * Detect the project type from the file list.
- * files = [{ name, type, parentId?, content? }]
- * Returns { type, name, port, entry, evidence: [strings] }.
- * - entry: suggested server entry file (null when not applicable)
- */
+
+
+
+
+
+
 export function detectProject(files = []) {
   const list = (files || []).filter((f) => f && f.type === 'file');
   const root = list.filter((f) => f.parentId == null);
@@ -55,7 +55,7 @@ export function detectProject(files = []) {
     const scriptText = Object.values(scripts)
       .filter((s) => typeof s === 'string')
       .join(' ');
-    // Port from scripts (PORT=8080, --port 8080) or a top-level port field
+    
     const portMatch = scriptText.match(/(?:\bPORT\s*=\s*|--port[=\s]+)(\d{3,5})/i);
     if (portMatch) port = parseInt(portMatch[1], 10);
     if (!port && Number.isInteger(pkg.port)) port = pkg.port;
@@ -74,13 +74,13 @@ export function detectProject(files = []) {
       if (pkg.main) evidence.push(`main field: ${pkg.main}`);
       type = 'node';
     } else if (rootHas('index.html')) {
-      // package.json exists but no framework signals — treat as a static page
+      
       evidence.push('index.html at root (no framework detected)');
       type = 'static';
     }
   }
 
-  // Root server-file fallback when package.json gave no signal
+  
   if (type === 'unknown' && !pkg) {
     const serverFile = ['server.js', 'index.js', 'app.js'].find(rootHas);
     if (serverFile) {
@@ -108,7 +108,7 @@ export function detectProject(files = []) {
   return { type, name, port, entry, evidence };
 }
 
-/** vercel.json generator. entry is the serverless function entry (node/python). */
+ 
 export function vercelJson(type, entry = 'index.js') {
   const e = entry || 'index.js';
   const cfg =
@@ -126,7 +126,7 @@ export function vercelJson(type, entry = 'index.js') {
   return JSON.stringify(cfg, null, 2) + '\n';
 }
 
-/** render.yaml (Render Blueprint) generator. */
+ 
 export function renderYaml(name, type, entry = 'index.js') {
   const e = entry || 'index.js';
   const safe =
@@ -174,7 +174,7 @@ export function renderYaml(name, type, entry = 'index.js') {
       '',
     ].join('\n');
   }
-  // node + unknown (best guess: node)
+  
   return [
     'services:',
     '  - type: web',
@@ -190,7 +190,7 @@ export function renderYaml(name, type, entry = 'index.js') {
   ].join('\n');
 }
 
-/** netlify.toml generator. */
+ 
 export function netlifyToml(type) {
   if (type === 'react-vite') {
     return [
@@ -235,7 +235,7 @@ export function netlifyToml(type) {
   ].join('\n');
 }
 
-/** Dockerfile generator. opts = { port, entry } */
+ 
 export function dockerfile(type, opts = {}) {
   const p = opts.port || DEFAULT_PORTS[type] || 3000;
   const e = opts.entry || 'index.js';
@@ -280,7 +280,7 @@ export function dockerfile(type, opts = {}) {
       '',
     ].join('\n');
   }
-  // node + unknown (best guess: node)
+  
   const guess = type === 'unknown' ? '# Project type not detected — assuming Node; adjust CMD as needed\n' : '';
   return [
     `${guess}FROM node:22-alpine`,
@@ -295,7 +295,7 @@ export function dockerfile(type, opts = {}) {
   ].join('\n');
 }
 
-/** .dockerignore generator. */
+ 
 export function dockerignore() {
   return ['node_modules', '.git', 'dist', '.env', '*.log', 'coverage', ''].join('\n');
 }

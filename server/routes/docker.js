@@ -5,10 +5,10 @@ const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 router.use(authMiddleware);
 
-// NOTE: Docker is machine-global, not per-room — unlike the git routes there
-// is no workspace resolution here. Everything runs against the host's daemon.
 
-// execFile wrapper mirroring routes/git.js — arg arrays only, NO shell strings.
+
+
+
 function docker(args, timeout = 15000) {
   return new Promise((resolve) => {
     execFile('docker', args, { timeout, maxBuffer: 4 * 1024 * 1024 }, (error, stdout, stderr) => {
@@ -22,7 +22,7 @@ function docker(args, timeout = 15000) {
   });
 }
 
-// Map a failed docker invocation to the right 503. Returns res on error, null when ok.
+
 function dockerGuard(r, res) {
   if (r.ok) return null;
   if (r.code === 'ENOENT') {
@@ -33,9 +33,9 @@ function dockerGuard(r, res) {
     .json({ error: 'Docker daemon is not running or unreachable' });
 }
 
-const ID_RE = /^[a-zA-Z0-9_.-]+$/; // container names, short ids, full 64-hex ids
+const ID_RE = /^[a-zA-Z0-9_.-]+$/; 
 
-// GET /api/docker/status — light probe, always 200 with { available }
+
 router.get('/status', async (req, res) => {
   try {
     const r = await docker(['version', '--format', '{{.Server.Version}}'], 5000);
@@ -46,7 +46,7 @@ router.get('/status', async (req, res) => {
   }
 });
 
-// GET /api/docker/ps — all containers
+
 router.get('/ps', async (req, res) => {
   try {
     const r = await docker(['ps', '-a', '--format', '{{json .}}']);
@@ -67,7 +67,7 @@ router.get('/ps', async (req, res) => {
           state: c.State || '',
         });
       } catch {
-        // skip malformed lines
+        
       }
     }
     return res.json({ containers });
@@ -77,7 +77,7 @@ router.get('/ps', async (req, res) => {
   }
 });
 
-// GET /api/docker/images
+
 router.get('/images', async (req, res) => {
   try {
     const r = await docker(['images', '--format', '{{json .}}']);
@@ -96,7 +96,7 @@ router.get('/images', async (req, res) => {
           created: img.CreatedAt || '',
         });
       } catch {
-        // skip malformed lines
+        
       }
     }
     return res.json({ images });
@@ -106,7 +106,7 @@ router.get('/images', async (req, res) => {
   }
 });
 
-// POST /api/docker/action — { id, action: 'start'|'stop'|'restart'|'remove' }
+
 router.post('/action', async (req, res) => {
   try {
     const { id, action } = req.body || {};
@@ -129,8 +129,8 @@ router.post('/action', async (req, res) => {
   }
 });
 
-// GET /api/docker/logs?id=<id>&tail=100 — docker logs writes app stderr to
-// the process's stderr, so stdout and stderr are merged.
+
+
 router.get('/logs', async (req, res) => {
   try {
     const { id } = req.query || {};

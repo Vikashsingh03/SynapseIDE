@@ -10,7 +10,7 @@ export async function copyText(text) {
       await navigator.clipboard.writeText(value);
       return true;
     } catch {
-      // Fall back to the legacy selection-based copy path.
+      
     }
   }
 

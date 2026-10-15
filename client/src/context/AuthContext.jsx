@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check for existing auth on mount
+  
   useEffect(() => {
     try {
       if (isAuthenticated()) {

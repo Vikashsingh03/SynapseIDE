@@ -1,9 +1,9 @@
-/**
- * Built-in snippet collection — seeded once on first run.
- * Code supports VS Code-style tab stops: ${1:placeholder}, ${2:...}, $0 = final cursor.
- */
+
+
+
+
 const BUILT_IN_SNIPPETS = [
-  // ─── Python ───
+  
   {
     name: 'For loop', prefix: 'for', language: 'python', category: 'loops',
     description: 'For loop over range',
@@ -54,7 +54,7 @@ const BUILT_IN_SNIPPETS = [
     description: 'Depth-first search template',
     code: 'def dfs(${1:node}, ${2:visited}):\n    ${2:visited}.add(${1:node})\n    for ${3:nei} in ${4:graph}[${1:node}]:\n        if ${3:nei} not in ${2:visited}:\n            ${0:dfs(${3:nei}, ${2:visited})}',
   },
-  // ─── C++ ───
+  
   {
     name: 'For loop', prefix: 'for', language: 'cpp', category: 'loops',
     description: 'For loop',
@@ -90,7 +90,7 @@ const BUILT_IN_SNIPPETS = [
     description: 'Binary search template',
     code: 'int lo = 0, hi = ${1:n} - 1;\nwhile (lo <= hi) {\n    int mid = lo + (hi - lo) / 2;\n    if (${2:arr}[mid] == ${3:target}) ${0:return mid;}\n    else if (${2:arr}[mid] < ${3:target}) lo = mid + 1;\n    else hi = mid - 1;\n}\nreturn -1;',
   },
-  // ─── Java ───
+  
   {
     name: 'Main class', prefix: 'main', language: 'java', category: 'boilerplate',
     description: 'Main class with psvm',
@@ -111,7 +111,7 @@ const BUILT_IN_SNIPPETS = [
     description: 'Scanner for input',
     code: 'Scanner ${1:sc} = new Scanner(System.in);',
   },
-  // ─── JavaScript ───
+  
   {
     name: 'Arrow function', prefix: 'arrow', language: 'javascript', category: 'functions',
     description: 'Arrow function',

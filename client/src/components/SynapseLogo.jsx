@@ -1,4 +1,4 @@
-// Editorial v3: solid ink/red mark — no gradients, no glow.
+
 export default function SynapseLogo({
   size = 100,
   color = '#ff4d35',

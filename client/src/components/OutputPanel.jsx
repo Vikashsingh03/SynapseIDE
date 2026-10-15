@@ -23,7 +23,7 @@ export default function OutputPanel({ theme, output, roomId }) {
   const [isOutputExpanded, setIsOutputExpanded] = useState(true);
   const { activeFile } = useFiles();
 
-  // Status bar / palette "Problems" → jump to the errors tab
+  
   useEffect(() => {
     const openProblems = () => {
       setActiveTab('errors');
@@ -38,7 +38,7 @@ export default function OutputPanel({ theme, output, roomId }) {
   const hasError = output?.stderr || output?.compile_output || output?.error;
   const isRunning = output?.running;
 
-  /** Sends the current error to Neura AI for a plain-words explanation. */
+   
   const handleExplainError = () => {
     const errorText = output?.stderr || output?.compile_output || output?.error || '';
     if (!errorText) return;
@@ -58,7 +58,7 @@ export default function OutputPanel({ theme, output, roomId }) {
     window.dispatchEvent(new CustomEvent('synapse:ask-neura', { detail: { prompt } }));
   };
 
-  // The output terminal contents
+  
   const displayContent = () => {
     if (isRunning) {
       return (
@@ -123,7 +123,7 @@ export default function OutputPanel({ theme, output, roomId }) {
   const panelHeight = !isOutputExpanded ? 'h-10' : activeTab === 'git' ? 'h-[420px]' : 'h-64';
   return (
     <div className={`border-t border-white/[0.07] flex flex-col transition-[height] duration-200 shrink-0 bg-[#121824] shadow-[inset_0_1px_10px_rgba(0,0,0,0.28)] ${panelHeight}`}>
-      {/* Header */}
+      { }
       <div className="h-[34px] flex items-center justify-between pl-4 pr-2 border-b border-white/[0.06] bg-[#0B0F16] shrink-0">
         <div className="flex gap-1 h-full items-end">
           {['output', 'errors', 'terminal', 'git'].map((tab) => {

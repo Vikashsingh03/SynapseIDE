@@ -6,21 +6,21 @@ const Activity = require('../models/Activity');
 
 const router = express.Router();
 
-// JDoodle — FREE tier: 20 code runs/day, no card needed.
-// Signup: https://www.jdoodle.com (Client ID + Client Secret)
-// Docs: https://www.jdoodle.com/docs/api
+
+
+
 const jdoodleClient = axios.create({
   baseURL: 'https://api.jdoodle.com',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 60000, // free runner me kabhi queue lagti hai, isliye 60s
+  timeout: 60000, 
 });
 
-// Frontend ke Judge0 language_id -> JDoodle language name
+
 const LANGUAGE_MAP = {
-  71: 'python3',  // Python
-  63: 'nodejs',   // JavaScript (Node.js)
-  54: 'cpp',      // C++
-  62: 'java',     // Java
+  71: 'python3',  
+  63: 'nodejs',   
+  54: 'cpp',      
+  62: 'java',     
 };
 
 const LANG_NAME = { 71: 'python', 63: 'javascript', 54: 'cpp', 62: 'java' };
@@ -29,7 +29,7 @@ function dayBucket(d = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
-// Fire-and-forget activity logging (never blocks the response)
+
 function logRun(userId, languageId, sourceCode, success) {
   try {
     const lines = String(sourceCode || '').split(/\r?\n/).filter((l) => l.trim()).length;
@@ -45,7 +45,7 @@ function logRun(userId, languageId, sourceCode, success) {
   } catch {}
 }
 
-// Submit code and get result
+
 router.post('/execute', authMiddleware, executeLimiter, async (req, res) => {
   try {
     const { source_code, language_id, stdin = '' } = req.body;
@@ -80,10 +80,10 @@ router.post('/execute', authMiddleware, executeLimiter, async (req, res) => {
 
     const data = response.data || {};
 
-    // Analytics: log the run (fire-and-forget)
+    
     logRun(req.user.userId || req.user.id, language_id, source_code, true);
 
-    // Judge0-style status taaki existing frontend bina change ke chale
+    
     res.json({
       stdout: data.output || '',
       stderr: '',
@@ -95,7 +95,7 @@ router.post('/execute', authMiddleware, executeLimiter, async (req, res) => {
   } catch (error) {
     console.error('Execution error:', error.response?.data || error.message);
 
-    // Free limit khatm (20 runs/day)
+    
     if (error.response?.status === 402) {
       return res.json({
         stdout: '',
@@ -107,7 +107,7 @@ router.post('/execute', authMiddleware, executeLimiter, async (req, res) => {
       });
     }
 
-    // Runner slow/busy ya program input ka wait kar raha hai
+    
     if (error.code === 'ECONNABORTED') {
       return res.json({
         stdout: '',
@@ -125,7 +125,7 @@ router.post('/execute', authMiddleware, executeLimiter, async (req, res) => {
   }
 });
 
-// Get supported languages
+
 router.get('/languages', authMiddleware, async (req, res) => {
   res.json([
     { id: 71, name: 'Python' },

@@ -225,7 +225,7 @@ export default function Login() {
       <div className="flex min-h-screen">
         <BrandPanel t={t} />
 
-        {/* form side */}
+        { }
         <main className="flex-1 flex items-center justify-center p-6 sm:p-10">
           <div className="w-full max-w-md animate-fade-up">
             <Link to="/" className="lg:hidden flex items-center justify-center gap-2.5 mb-8">
@@ -236,7 +236,7 @@ export default function Login() {
             </Link>
 
             <div className={`${t.card} p-8 relative overflow-hidden`}>
-              {/* brand accent bar */}
+              { }
               <div className="absolute top-0 left-0 right-0 h-1 bg-(--red)" aria-hidden="true" />
 
               <div className="mb-7">

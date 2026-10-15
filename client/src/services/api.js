@@ -10,7 +10,7 @@ const apiClient = axios.create({
   },
 });
 
-//api/execute now requires JWT — attach it like roomService/aiService do.
+
 apiClient.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {

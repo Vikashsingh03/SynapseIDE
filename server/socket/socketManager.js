@@ -18,8 +18,8 @@ function normalizeRoomId(roomId) {
   return String(roomId || '').trim().toUpperCase();
 }
 
-// escape user input before $regex so patterns like ".*" or "(a+)+$"
-// are matched literally and cannot cause regex injection / ReDoS.
+
+
 function escapeRegExp(value) {
   return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -59,7 +59,7 @@ function emitParticipants(io, roomId) {
 const FILE_LOCK_TIMEOUT_MS = 45000;
 const roomLocks = new Map();
 
-// ─── Notifications: userId -> Set<socketId> for direct real-time emits ───
+
 const userSockets = new Map();
 const NotificationModel = require('../models/Notification');
 const UserModel = require('../models/User');
@@ -87,7 +87,7 @@ function emitToUser(io, userId, event, payload) {
   }
 }
 
-// Extract @username mentions from chat content
+
 function extractMentions(content) {
   const mentions = new Set();
   const re = /@([A-Za-z0-9_.-]{2,32})/g;
@@ -268,8 +268,8 @@ function createSocketServer(httpServer) {
     trackUserSocket(socket.data.user?.userId, socket.id);
     registerTerminalHandlers(io, socket);
     registerDebugHandlers(io, socket);
-    // P0-03: never trust userId/username from the payload — identity always
-    // comes from the verified JWT (socket.data.user).
+    
+    
     socket.on('join-room', async ({ roomId } = {}) => {
       const normalizedRoomId = normalizeRoomId(roomId);
       let room = getRoom(normalizedRoomId);
@@ -330,7 +330,7 @@ function createSocketServer(httpServer) {
       });
       emitParticipants(io, normalizedRoomId);
 
-      // Generate System Message
+      
       try {
         const sysMsg = await MessageModel.create({
           roomId: normalizedRoomId,
@@ -376,7 +376,7 @@ function createSocketServer(httpServer) {
       }
     });
 
-    // ─── CHAT ROOM FEATURES ───────────────────────────────────────────────────
+    
 
     socket.on('send-chat-message', async ({ roomId, content, type = 'user', replyTo }) => {
       const activeRoomId = normalizeRoomId(roomId || socket.data.roomId);
@@ -400,7 +400,7 @@ function createSocketServer(httpServer) {
         const newMessage = await MessageModel.create(msgData);
         io.to(activeRoomId).emit('chat-message', newMessage);
 
-        // ─── @mention notifications ───
+        
         try {
           const mentionNames = extractMentions(content).filter(
             (n) => n !== String(msgData.senderName || '').toLowerCase()
@@ -465,7 +465,7 @@ function createSocketServer(httpServer) {
       }
     });
 
-    // ─── EDIT MESSAGE ──────────────────────────────────────────────────────────
+    
 
     socket.on('edit-chat-message', async ({ messageId, content }) => {
       const activeRoomId = normalizeRoomId(socket.data.roomId);
@@ -473,7 +473,7 @@ function createSocketServer(httpServer) {
       try {
         const msg = await MessageModel.findById(messageId);
         if (!msg || msg.roomId !== activeRoomId) return;
-        // Only the sender can edit
+        
         const senderId = socket.data.user.userId || socket.data.participant?.userId;
         if (msg.senderId !== senderId) return;
         msg.content = content;
@@ -485,7 +485,7 @@ function createSocketServer(httpServer) {
       }
     });
 
-    // ─── DELETE MESSAGE ────────────────────────────────────────────────────────
+    
 
     socket.on('delete-chat-message', async ({ messageId }) => {
       const activeRoomId = normalizeRoomId(socket.data.roomId);
@@ -504,7 +504,7 @@ function createSocketServer(httpServer) {
       }
     });
 
-    // ─── PIN MESSAGE ───────────────────────────────────────────────────────────
+    
 
     socket.on('pin-chat-message', async ({ messageId }) => {
       const activeRoomId = normalizeRoomId(socket.data.roomId);
@@ -515,7 +515,7 @@ function createSocketServer(httpServer) {
         msg.pinned = !msg.pinned;
         await msg.save();
         io.to(activeRoomId).emit('chat-message-updated', msg);
-        // Broadcast system notification
+        
         const action = msg.pinned ? 'pinned' : 'unpinned';
         const sysName = socket.data.participant?.username || socket.data.user?.name || 'Someone';
         const sysMsg = await MessageModel.create({
@@ -531,7 +531,7 @@ function createSocketServer(httpServer) {
       }
     });
 
-    // ─── REACT TO MESSAGE ──────────────────────────────────────────────────────
+    
 
     socket.on('react-chat-message', async ({ messageId, emoji }) => {
       const activeRoomId = normalizeRoomId(socket.data.roomId);
@@ -560,13 +560,13 @@ function createSocketServer(httpServer) {
       }
     });
 
-    // ─── SEARCH MESSAGES ───────────────────────────────────────────────────────
+    
 
     socket.on('search-chat-messages', async ({ roomId, query }) => {
       const activeRoomId = normalizeRoomId(roomId || socket.data.roomId);
       if (!activeRoomId || !query) return;
       try {
-        // P0-04: treat the query as literal text (cap length to bound regex work).
+        
         const safeQuery = escapeRegExp(String(query).slice(0, 200));
         const results = await MessageModel.find({
           roomId: activeRoomId,
@@ -582,7 +582,7 @@ function createSocketServer(httpServer) {
       }
     });
 
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     socket.on('sync-room-state', async (payload = {}) => {
       const roomId = socket.data.roomId;
@@ -645,10 +645,10 @@ function createSocketServer(httpServer) {
         console.error('sync-room-state DB update error', err);
       }
 
-      // Broadcast to ALL sockets in the room, including the sender.
-      // The sender needs this echo so newly created files get their server-side
-      // Yjs state applied back. suppressStructureSyncRef on the client prevents
-      // an infinite loop.
+      
+      
+      
+      
       io.to(roomId).emit('room-state-updated', {
         files: snapshot.files,
         activeFileId: snapshot.activeFileId,
@@ -771,12 +771,12 @@ function createSocketServer(httpServer) {
         return;
       }
 
-      // P0-03: sender identity comes from the verified token only.
+      
       const senderId = socket.data.user.userId;
-      // Google Docs mode: no exclusive edit locks — the Yjs CRDT merges
-      // concurrent edits. (Locks remain as presence hints only, via
-      // file-locks-updated.) Dropping a collaborator's keystrokes here would
-      // desync their doc from the shared one, so every code-change is applied.
+      
+      
+      
+      
       const nextState = applyDocumentUpdate(activeRoomId, fileId, changes);
       if (!nextState) {
         return;
@@ -786,7 +786,7 @@ function createSocketServer(httpServer) {
       const senderColor = socket.data.participant?.cursorColor;
       const senderAvatarGlyph = socket.data.participant?.avatarGlyph;
 
-      // Broadcast the Yjs update to all other peers in the room
+      
       socket.to(activeRoomId).emit('remote-code-change', {
         fileId,
         changes,
@@ -796,8 +796,8 @@ function createSocketServer(httpServer) {
         updatedAt: nextState.updatedAt,
       });
 
-      // Also emit a lightweight "who is typing" event so the UI can show
-      // live editing indicators without waiting for cursor-move events
+      
+      
       socket.to(activeRoomId).emit('user-editing', {
         userId: senderId,
         username: senderName,

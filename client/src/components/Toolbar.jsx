@@ -92,14 +92,14 @@ export default function Toolbar({
     }
   }, [activeFile, currentLang, stdinValue, isRunning, setOutput]);
 
-  // ── Tadka pack: command palette can trigger a run via CustomEvent ──
+  
   useEffect(() => {
     const onRunEvent = () => handleRun();
     window.addEventListener('synapse:run-code', onRunEvent);
     return () => window.removeEventListener('synapse:run-code', onRunEvent);
   }, [handleRun]);
 
-  // ── Tadka pack: Ctrl/Cmd + Enter runs code (from the editor, not from inputs) ──
+  
   useEffect(() => {
     const onKey = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -124,32 +124,32 @@ export default function Toolbar({
     }
   };
 
-  // Paper-style cluster buttons (theme-aware via CSS vars)
+  
   const clusterBtn = dark
     ? 'text-(--muted) hover:text-(--ink) hover:bg-white/6'
     : 'text-(--muted) hover:text-(--ink) hover:bg-black/5';
 
-  // ── TitleBar squad: 'synapse:open-palette' bridge ──
-  // The centered command box dispatches this window event; the bridge routes
-  // it into the onOpenPalette prop (the same path the palette icon button
-  // already uses), so the command box works with the current page wiring.
+  
+  
+  
+  
   useEffect(() => {
     const open = () => { try { onOpenPalette?.(); } catch {} };
     window.addEventListener('synapse:open-palette', open);
     return () => window.removeEventListener('synapse:open-palette', open);
   }, [onOpenPalette]);
 
-  // VS Code-style command-center box (theme-aware)
+  
   const cmdBox = dark
     ? 'bg-white/[0.05] border-white/10 hover:border-white/20 hover:bg-white/[0.08] text-[#6b6e66] hover:text-[#a8aba3]'
     : 'bg-black/[0.04] border-black/10 hover:border-black/20 hover:bg-black/[0.06] text-[#8a8d85] hover:text-[#60635d]';
 
-  // Premium RUN elevation: acid-lime identity kept (signature), sheen + press physics added
+  
   const runElevate = 'bg-gradient-to-b from-white/25 via-transparent to-black/[0.08] hover:scale-[1.02] active:scale-[0.99]';
 
   return (
     <header className={`h-[46px] flex items-center pl-3 pr-3 gap-2 select-none ${t.header} relative z-50 shrink-0`}>
-      {/* Left: brand + run controls */}
+      { }
       <div className="flex items-center min-w-0 gap-3 shrink-0">
         <div className="flex items-center shrink-0">
           <Link to="/" className="flex items-center gap-2.5">
@@ -169,7 +169,7 @@ export default function Toolbar({
           </Link>
         </div>
 
-        {/* Mobile RUN button — compact acid */}
+        { }
         <button
           onClick={handleRun}
           disabled={isRunning || !activeFile}
@@ -184,9 +184,9 @@ export default function Toolbar({
           <span>{isRunning ? 'RUN…' : 'RUN'}</span>
         </button>
 
-        {/* Run control cluster — desktop */}
+        { }
         <div className={`hidden md:flex items-center gap-1 p-1 rounded-lg border ${t.border}`}>
-          {/* Run Button — acid lime, mono (v3 signature) */}
+          { }
           <button
             onClick={handleRun}
             disabled={isRunning || !activeFile}
@@ -200,7 +200,7 @@ export default function Toolbar({
             <span>{isRunning ? 'RUNNING…' : 'RUN'}</span>
           </button>
 
-          {/* Save Version Button */}
+          { }
           {onSaveVersion && (
             <button
               onClick={handleSave}
@@ -219,7 +219,7 @@ export default function Toolbar({
             </button>
           )}
 
-          {/* Language dropdown */}
+          { }
           <div className="relative group">
             <button className={`flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${clusterBtn}`}>
               <span className="font-mono">{currentLang.name}</span>
@@ -250,7 +250,7 @@ export default function Toolbar({
             </div>
           </div>
 
-          {/* Stdin Button */}
+          { }
           <div className="relative">
             <button
               onClick={() => setIsStdinOpen(!isStdinOpen)}
@@ -286,7 +286,7 @@ export default function Toolbar({
             )}
           </div>
 
-          {/* Command palette trigger */}
+          { }
           <button
             onClick={onOpenPalette}
             title="Command palette (Ctrl+K or Ctrl+Shift+P)"
@@ -296,7 +296,7 @@ export default function Toolbar({
             <span className={t.kbd}>Ctrl K</span>
           </button>
 
-          {/* Neura code review trigger */}
+          { }
           <button
             onClick={onOpenReview}
             title="Review code with Neura AI"
@@ -308,7 +308,7 @@ export default function Toolbar({
         </div>
       </div>
 
-      {/* Center: VS Code-style command center (no overlap — flex absorbs space, truncates) */}
+      { }
       <div className="flex-1 min-w-0 hidden md:flex items-center justify-center px-2">
         <button
           onClick={() => window.dispatchEvent(new Event('synapse:open-palette'))}
@@ -321,7 +321,7 @@ export default function Toolbar({
         </button>
       </div>
 
-      {/* Right: theme, room, exit, avatar */}
+      { }
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('synapse:open-snippets'))}

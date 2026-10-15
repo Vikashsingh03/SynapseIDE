@@ -1,17 +1,17 @@
-// Prettier formatting for Synapse (Wave 6).
-// REAL Prettier (what VS Code users actually run) instead of Monaco's
-// built-in formatter, for JS/JSX/TS/TSX/JSON/CSS/HTML.
-// Everything here is lazy: prettier is loaded via dynamic import ONLY when
-// the first format runs, so it lands in its own Vite chunk (~1.5-2MB) and
-// never in the main bundle. In the Node unit-test harness the same module
-// is bundled with esbuild against a scratch prettier install.
+
+
+
+
+
+
+
 
 let loading = null;
 
-// Normalize plugin modules across bundler interop shapes:
-// prettier's docs use `import * as plugin from 'prettier/plugins/babel'`
-// and pass the namespace object; the CJS builds expose the same shape on
-// `.default`. Either works — take whichever carries `parsers`.
+
+
+
+
 function normPlugin(m) {
   if (!m) return null;
   if (m.parsers) return m;
@@ -41,15 +41,15 @@ export async function loadPrettier() {
         postcss: normPlugin(postcss),
       };
     })().catch((err) => {
-      loading = null; // let a later call retry
+      loading = null; 
       throw err;
     });
   }
   return loading;
 }
 
-// extension -> { parser, pluginKeys }. postcss plugin's parser is named 'css'
-// and handles css/scss/less.
+
+
 function parserFor(fileName) {
   if (typeof fileName !== 'string') return null;
   const base = fileName.split(/[\\/]/).pop().toLowerCase();
@@ -102,8 +102,8 @@ function pickKnown(obj) {
   return out;
 }
 
-// Project config: root .prettierrc (JSON) wins; else package.json "prettier"
-// key; else defaults. Never throws.
+
+
 export function resolvePrettierOptions(files, fileName) {
   const defaults = {
     semi: true,
@@ -120,7 +120,7 @@ export function resolvePrettierOptions(files, fileName) {
         const parsed = JSON.parse(rc.content);
         return { ...defaults, ...pickKnown(parsed) };
       } catch {
-        /* fall through to package.json */
+         
       }
     }
     const pkg = list.find((f) => relPathOf(f, list) === 'package.json');
@@ -135,8 +135,8 @@ export function resolvePrettierOptions(files, fileName) {
   return defaults;
 }
 
-// Formats `text`; returns the formatted string, or null when unsupported
-// (extension, syntax error, load failure). Never throws.
+
+
 export async function formatWithPrettier(text, fileName, files = []) {
   try {
     if (typeof text !== 'string' || !text.trim()) return text || '';
@@ -156,10 +156,10 @@ export async function formatWithPrettier(text, fileName, files = []) {
   }
 }
 
-// Registers a Monaco DocumentFormattingEditProvider (Shift+Alt+F) for the
-// supported languages, backed by formatWithPrettier. Global per language —
-// guarded so repeated calls (split panels, file switches) register once.
-// getFiles: () => current FileContext files array (for .prettierrc lookup).
+
+
+
+
 let providerRegistered = false;
 export function registerPrettierFormattingProvider(monaco, getFiles) {
   try {

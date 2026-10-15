@@ -1,15 +1,15 @@
-// Parser for .http / .rest request files (VS Code REST Client style).
-// Supports:
-//   ### Request name          — separator (starts a new request)
-//   GET https://api/x         — request line (METHOD + URL)
-//   https://api/x             — bare URL = GET
-//   Header: value             — headers until the first blank line
-//   (blank line)
-//   body lines...             — raw body until the next ###
-//   # comment / // comment    — ignored outside the body
-// {{var}} substitution in URL/headers/body (unknown vars left as-is).
-//
-// parseHttpFile(text, vars = {}) → [{ name?, method, url, headers: {}, body }]
+
+
+
+
+
+
+
+
+
+
+
+
 
 const REQUEST_LINE_RE =
   /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(\S+)\s*$/i;
@@ -23,7 +23,7 @@ export function substituteVars(text, vars = {}) {
       const v = vars[key];
       return v === undefined || v === null ? m : String(v);
     }
-    return m; // unknown vars left as-is
+    return m; 
   });
 }
 
@@ -36,8 +36,8 @@ export function parseHttpFile(text, vars = {}) {
   const requests = [];
   const lines = String(text || '').split(/\r?\n/);
 
-  let cur = null; // { name, method, url, headers, bodyLines }
-  let state = 'idle'; // idle | request | headers | body
+  let cur = null; 
+  let state = 'idle'; 
 
   const startRequest = (name) => {
     cur = {
@@ -47,7 +47,7 @@ export function parseHttpFile(text, vars = {}) {
       headers: [],
       bodyLines: [],
     };
-    state = 'request'; // the request line comes next
+    state = 'request'; 
   };
 
   const push = () => {
@@ -76,7 +76,7 @@ export function parseHttpFile(text, vars = {}) {
       return true;
     }
     if (trimmed) {
-      // Bare URL = GET
+      
       cur.url = trimmed;
       state = 'headers';
       return true;
@@ -87,7 +87,7 @@ export function parseHttpFile(text, vars = {}) {
   for (const raw of lines) {
     const trimmed = raw.trim();
 
-    // Separator: ### [name]
+    
     if (trimmed.startsWith('###')) {
       push();
       startRequest(trimmed.slice(3).trim());
@@ -95,7 +95,7 @@ export function parseHttpFile(text, vars = {}) {
     }
 
     if (state === 'idle') {
-      // Before the first ###: only a request line starts implicit parsing.
+      
       if (!trimmed || isComment(raw)) continue;
       startRequest(undefined);
       parseRequestLine(trimmed);
@@ -103,7 +103,7 @@ export function parseHttpFile(text, vars = {}) {
     }
 
     if (state === 'request') {
-      // The request line: METHOD URL (or bare URL = GET)
+      
       if (!trimmed || isComment(raw)) continue;
       parseRequestLine(trimmed);
       continue;
@@ -120,18 +120,18 @@ export function parseHttpFile(text, vars = {}) {
         cur.headers.push([hm[1], hm[2]]);
         continue;
       }
-      // Not a header → treat as the start of the body (tolerant mode).
+      
       state = 'body';
       cur.bodyLines.push(raw);
       continue;
     }
 
-    // state === 'body': raw lines, comments included verbatim.
+    
     cur.bodyLines.push(raw);
   }
 
   push();
-  // Trim trailing blank lines from bodies (separator artifacts).
+  
   for (const r of requests) r.body = r.body.replace(/\s+$/, '');
   return requests;
 }

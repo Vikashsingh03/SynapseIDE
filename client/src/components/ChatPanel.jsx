@@ -6,7 +6,7 @@ import {
 import { copyText } from '../utils/clipboard';
 import { getAvatarStyle, getUserInitial } from '../utils/avatar';
 
-// ─── URL / Link detection ────────────────────────────────────────────────────
+
 const URL_REGEX = /(https?:\/\/[^\s<]+)/g;
 
 function LinkifyText({ text, theme }) {
@@ -32,9 +32,9 @@ function LinkifyText({ text, theme }) {
   );
 }
 
-// ─── @Mention highlighting ───────────────────────────────────────────────────
+
 function RichText({ text, theme }) {
-  // Split by @mentions
+  
   const mentionRegex = /(@\w+)/g;
   const segments = text.split(mentionRegex);
   return (
@@ -52,7 +52,7 @@ function RichText({ text, theme }) {
   );
 }
 
-// ─── Code snippet with copy ──────────────────────────────────────────────────
+
 function CodeSnippet({ code, theme }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
@@ -83,7 +83,7 @@ function CodeSnippet({ code, theme }) {
   );
 }
 
-// ─── Message content parser ──────────────────────────────────────────────────
+
 function MessageContent({ text, theme }) {
   const parts = text.split(/(```[\s\S]*?```)/g);
   return (
@@ -106,7 +106,7 @@ function MessageContent({ text, theme }) {
   );
 }
 
-// ─── Mention autocomplete dropdown ───────────────────────────────────────────
+
 function MentionDropdown({ users, filter, onSelect, theme }) {
   const filtered = users.filter(u =>
     u.username?.toLowerCase().startsWith(filter.toLowerCase())
@@ -124,16 +124,16 @@ function MentionDropdown({ users, filter, onSelect, theme }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAIN CHAT PANEL
-// ═══════════════════════════════════════════════════════════════════════════════
+
+
+
 export default function ChatPanel({
   theme, themeClasses: t, chatMessages = [], typingUsers = [],
   getSocket, roomId, currentUser, collaborators = []
 }) {
   const [inputValue, setInputValue] = useState('');
-  const [replyTo, setReplyTo] = useState(null);      // message being replied to
-  const [editingMsg, setEditingMsg] = useState(null); // message being edited
+  const [replyTo, setReplyTo] = useState(null);      
+  const [editingMsg, setEditingMsg] = useState(null); 
   const [searchMode, setSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -145,21 +145,21 @@ export default function ChatPanel({
   const typingTimeoutRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Auto-scroll to bottom
+  
   useEffect(() => {
     if (!searchMode && !showPinned) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, typingUsers, searchMode, showPinned]);
 
-  // Listen for search results from socket via custom event
+  
   useEffect(() => {
     const handler = (e) => setSearchResults(e.detail || []);
     window.addEventListener('chat-search-results', handler);
     return () => window.removeEventListener('chat-search-results', handler);
   }, []);
 
-  // Lazy load older messages on scroll to top
+  
   const handleScroll = () => {
     const el = scrollContainerRef.current;
     const socket = getSocket?.();
@@ -176,13 +176,13 @@ export default function ChatPanel({
     }
   };
 
-  // ─── Input handling ──────────────────────────────────────────────────────
+  
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInputValue(val);
     const socket = getSocket?.();
 
-    // Detect @ for mention autocomplete
+    
     const words = val.split(/\s/);
     const lastWord = words[words.length - 1];
     if (lastWord.startsWith('@') && lastWord.length > 1) {
@@ -240,11 +240,11 @@ export default function ChatPanel({
     socket.emit('search-chat-messages', { roomId, query: searchQuery });
   };
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────
+  
   const border = t?.border || 'border-slate-700';
   const textMuted = t?.textMuted || 'text-slate-500';
 
-  // De-duplicate messages
+  
   const uniqueMessages = useMemo(() => {
     const seen = new Set();
     return chatMessages.filter(m => {
@@ -262,7 +262,7 @@ export default function ChatPanel({
 
   const displayMessages = searchMode ? searchResults : uniqueMessages;
 
-  // ─── Render a single message ─────────────────────────────────────────────
+  
   const renderMessage = (msg, index) => {
     const isMe = msg.senderId === currentUser?.userId;
     const isSystem = msg.type === 'system';
@@ -280,7 +280,7 @@ export default function ChatPanel({
       );
     }
 
-    // Parse reactions map
+    
     const reactions = msg.reactions
       ? (msg.reactions instanceof Map ? Object.fromEntries(msg.reactions) : msg.reactions)
       : {};
@@ -298,7 +298,7 @@ export default function ChatPanel({
         onMouseEnter={() => setHoveredMsg(msgKey)}
         onMouseLeave={() => setHoveredMsg(null)}
       >
-        {/* Reply reference */}
+        { }
         {msg.replyTo?.content && (
           <div className={`flex items-center gap-1 text-[9px] mb-1 px-2 ${textMuted} opacity-80`}>
             <CornerDownRight size={10} />
@@ -308,7 +308,7 @@ export default function ChatPanel({
         )}
 
         <div className={`flex items-end gap-2 max-w-[95%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-          {/* Avatar */}
+          { }
           <div
             className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold border ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
             style={avatarStyle}
@@ -316,7 +316,7 @@ export default function ChatPanel({
             {getUserInitial(msg.senderName)}
           </div>
 
-          {/* Bubble */}
+          { }
           <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} relative min-w-0`}>
             <span className={`text-[9px] font-semibold mb-1 px-1 opacity-70 ${textMuted}`}>
               {isMe ? 'You' : msg.senderName}
@@ -340,7 +340,7 @@ export default function ChatPanel({
               )}
             </div>
 
-            {/* Action buttons (on hover) */}
+            { }
             {isHovered && !isDeleted && !searchMode && (
               <div className={`absolute -top-7 ${isMe ? 'right-0' : 'left-0'} flex gap-0.5 rounded-lg p-1 shadow-[0_8px_24px_rgba(0,0,0,0.35)] border z-20 animate-fade-in bg-(--paper-2) border-(--line)`}>
                 <button onClick={() => { setReplyTo(msg); inputRef.current?.focus(); }}
@@ -366,7 +366,7 @@ export default function ChatPanel({
               </div>
             )}
 
-            {/* Reactions display */}
+            { }
             {Object.keys(reactions).length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {Object.entries(reactions).map(([emoji, users]) => {
@@ -396,11 +396,11 @@ export default function ChatPanel({
     );
   };
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  
   return (
     <div className="flex flex-col h-full bg-transparent min-h-0">
 
-      {/* ─── Header bar with search + pinned ──────────────────────────────── */}
+      { }
       <div className={`flex items-center gap-1 px-3 py-2 border-b ${border} shrink-0`}>
         {searchMode ? (
           <div className="flex items-center gap-1.5 flex-1 animate-fade-in">
@@ -446,7 +446,7 @@ export default function ChatPanel({
         )}
       </div>
 
-      {/* ─── Pinned messages bar ──────────────────────────────────────────── */}
+      { }
       {showPinned && pinnedMessages.length > 0 && (
         <div className={`px-3 py-2.5 border-b ${border} space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar animate-fade-in bg-amber-500/5`}>
           <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] mb-1 text-amber-600">
@@ -460,7 +460,7 @@ export default function ChatPanel({
         </div>
       )}
 
-      {/* ─── Messages list ────────────────────────────────────────────────── */}
+      { }
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
@@ -484,7 +484,7 @@ export default function ChatPanel({
 
         {displayMessages.map((msg, i) => renderMessage(msg, i))}
 
-        {/* Typing Indicators */}
+        { }
         {!searchMode && typingUsers.length > 0 && (
           <div className="flex items-center gap-2 font-mono text-[10px] text-(--muted) px-1 animate-fade-in">
             <span className="flex gap-1">
@@ -499,7 +499,7 @@ export default function ChatPanel({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ─── Reply / Edit banner ──────────────────────────────────────────── */}
+      { }
       {(replyTo || editingMsg) && (
         <div className="mx-3 mb-2 px-3 py-2 rounded-lg border flex items-center gap-2 font-mono text-[10px] text-(--muted) animate-fade-in bg-(--ink)/3 border-(--line)">
           {replyTo && (
@@ -521,10 +521,10 @@ export default function ChatPanel({
         </div>
       )}
 
-      {/* ─── Input Area ───────────────────────────────────────────────────── */}
+      { }
       <div className={`p-3 border-t ${border} shrink-0`}>
         <form onSubmit={handleSubmit} className="relative">
-          {/* Mention dropdown */}
+          { }
           {mentionFilter && (
             <MentionDropdown
               users={collaborators}

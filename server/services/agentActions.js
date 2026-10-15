@@ -1,15 +1,15 @@
-// Neura Agent Mode — action block extraction + validation.
-// Pure module: no imports. Runs on the server after the model reply is
-// complete, before the reply is persisted/returned.
-//
-// Agent-mode replies may carry fenced blocks:
-//
-//   ```neura-action
-//   { "type": "create_file", "path": "src/util.js", "content": "..." }
-//   ```
-//
-// Types: create_file | replace_file (FULL new file content) | insert_code
-// (needs afterLine, 1-based; 0 = top of file).
+
+
+
+
+
+
+
+
+
+
+
+
 
 const ACTION_FENCE_RE = /```neura-action[ \t]*\r?\n([\s\S]*?)```/g;
 
@@ -23,11 +23,11 @@ function sanitizePath(raw) {
   if (typeof raw !== 'string') return null;
   let p = raw.trim();
   if (!p) return null;
-  // Strip Windows drive letters (C:\ / C:/) and leading slashes.
+  
   p = p.replace(/^[A-Za-z]:[\\/]?/, '').replace(/^[/\\]+/, '');
   const segments = p.split(/[/\\]+/).filter((s) => s && s !== '.');
   if (!segments.length) return null;
-  // Path traversal is not negotiable — the whole action is dropped.
+  
   if (segments.some((s) => s === '..')) return null;
   const normalized = segments.join('/');
   if (normalized.length > MAX_PATH_LENGTH) return null;
@@ -44,8 +44,8 @@ function sanitizeAction(raw) {
   if (!path) return null;
 
   if (typeof raw.content !== 'string') return null;
-  // Oversized content: drop the action rather than truncate (a truncated
-  // file write would silently corrupt the user's code).
+  
+  
   if (raw.content.length > MAX_CONTENT_LENGTH) return null;
 
   const action = { type, path, content: raw.content };
@@ -71,13 +71,13 @@ function extractAgentActions(text) {
     try {
       parsed = JSON.parse(match[1]);
     } catch {
-      parsed = null; // invalid JSON → skipped silently
+      parsed = null; 
     }
     const action = sanitizeAction(parsed);
     if (action) actions.push(action);
   }
 
-  // Strip the blocks from the chat text; tidy up the leftover whitespace.
+  
   ACTION_FENCE_RE.lastIndex = 0;
   let cleanText = source.replace(ACTION_FENCE_RE, '');
   cleanText = cleanText
@@ -109,7 +109,7 @@ const AGENT_SYSTEM_SUFFIX = [
 module.exports = {
   extractAgentActions,
   AGENT_SYSTEM_SUFFIX,
-  // exposed for tests
+  
   _sanitizePath: sanitizePath,
   _sanitizeAction: sanitizeAction,
 };

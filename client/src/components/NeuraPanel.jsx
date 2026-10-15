@@ -41,9 +41,9 @@ const PANEL_WIDTH_KEY = 'synapse-neura-width';
 const MIN_PANEL_WIDTH = 300;
 const MAX_PANEL_WIDTH = 720;
 
-/** Project-relative path for a file, built from parentId chains. Pure in the
- *  file list, so it is safe to call from stale closures (e.g. window events).
- */
+
+
+
 function buildRelPath(file, list) {
   const parts = [];
   let cur = file;
@@ -156,9 +156,9 @@ const QUICK_ACTIONS = [
 
 const AGENT_MODE_KEY = 'synapse-neura-agent';
 
-// Agent mode: same /ai/chat endpoint with agentMode: true. Non-streaming —
-// the server returns { reply, actions } after extracting validated
-// ```neura-action blocks from the model reply.
+
+
+
 async function sendAgentChat({ message, conversationId, context }) {
   const token = getToken();
   const response = await fetch(`${API_BASE}/ai/chat`, {
@@ -315,7 +315,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
   const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'history'
+  const [activeTab, setActiveTab] = useState('chat'); 
   const [agentMode, setAgentMode] = useState(() => readStorage(AGENT_MODE_KEY) === 'true');
 
   useEffect(() => {
@@ -507,8 +507,8 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
     }
   };
 
-  // ─── Agent mode: file action resolution ────────────────────────────
-  // Project-relative path for a file, built from parentId chains.
+  
+  
   const fileRelPath = (file) => buildRelPath(file, files);
 
   const findActionTarget = (actionPath) => {
@@ -524,9 +524,9 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
     return cands.length === 1 ? cands[0] : null;
   };
 
-  // Walk/create the folder segments of an action path. Returns the file name
-  // and the parentId to create under. Folder ids are returned synchronously
-  // by createFolder, so the walk is safe against stale state.
+  
+  
+  
   const ensurePathFolders = (actionPath) => {
     const segs = String(actionPath || '').split('/').filter(Boolean);
     const fileName = segs.pop();
@@ -550,9 +550,9 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
     );
   };
 
-  // Edits to the ACTIVE file go through the editor (Monaco/Yjs-safe) via
-  // 'synapse:neura-apply' (EditorPanel listener, added at assembly).
-  // Edits to any other file write straight to FileContext.
+  
+  
+  
   const applyAction = (msg, index) => {
     const action = msg.actions && msg.actions[index];
     if (!action) return;
@@ -572,7 +572,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
     if (action.type === 'create_file') {
       const existing = findActionTarget(action.path);
       if (existing) {
-        // File already exists — apply as a full replace instead.
+        
         replaceTarget(existing, action.content);
       } else {
         const { fileName, parentId } = ensurePathFolders(action.path);
@@ -656,7 +656,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
           content: response.reply,
           createdAt: new Date().toISOString(),
         };
-        // Attach validated file actions (agent mode) for the Apply/Reject cards.
+        
         const actionList = Array.isArray(response.actions) ? response.actions : [];
         if (agentMode || actionList.length > 0) {
           assistantMessage.actions = actionList;
@@ -675,10 +675,10 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
     }
   };
 
-  // ─── Collapsed rail ────────────────────────────────────────────────
-  // External triggers (e.g. "Explain with Neura" from the output panel, or
-  // "Fix with Neura" from the Problems panel): open the panel and send the
-  // prompt as a chat message.
+  
+  
+  
+  
   const handleSendRef = useRef(null);
   handleSendRef.current = handleSend;
   const filesRef = useRef(files);
@@ -690,7 +690,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
       const prompt = e?.detail?.prompt;
       if (!prompt || typeof prompt !== 'string') return;
       setIsOpen(true);
-      // Defer a tick so the panel opens before the message streams in.
+      
       setTimeout(() => handleSendRef.current?.(prompt), 60);
     };
     const onNeuraFix = (e) => {
@@ -737,8 +737,8 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
         return;
       }
 
-      // Fix with Neura always goes through Agent mode so the reply comes back
-      // as reviewable Apply/Reject action cards.
+      
+      
       setAgentMode(true);
       const prompt = buildFixPrompt({
         fileName: target.name,
@@ -793,7 +793,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
       )}
 
       <div className="flex flex-col w-full h-full relative min-h-0">
-        {/* Header */}
+        { }
         <header className={`px-4 py-3 border-b ${t.border} flex items-center justify-between shrink-0`}>
           <div className="flex items-center gap-2.5">
             <span className="relative flex w-8 h-8 rounded-md border items-center justify-center bg-(--blue)/10 border-(--blue)/30">
@@ -846,7 +846,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
           </div>
         </header>
 
-        {/* Quick actions */}
+        { }
         {agentMode && (
           <div className="px-4 py-2 border-b border-(--line) bg-(--blue)/5 flex items-center gap-2 shrink-0">
             <Bot size={12} className="text-(--blue) shrink-0" />
@@ -873,7 +873,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
           ))}
         </div>
 
-        {/* Chat / History tabs */}
+        { }
         <div className={`flex px-4 gap-5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] border-b ${t.border} shrink-0 ${t.textMuted}`}>
           {['chat', 'history'].map((tab) => (
             <button
@@ -891,7 +891,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
           ))}
         </div>
 
-        {/* Messages */}
+        { }
         <main className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 space-y-5 custom-scrollbar min-w-0 min-h-0">
           {activeTab === 'chat' ? (
             <>
@@ -1032,7 +1032,7 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
           )}
         </main>
 
-        {/* Footer input */}
+        { }
         {activeTab === 'chat' && (
           <footer className={`p-3.5 border-t ${t.border} shrink-0`}>
             <div className="relative">

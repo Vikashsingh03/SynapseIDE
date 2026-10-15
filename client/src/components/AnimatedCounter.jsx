@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 
-/**
- * AnimatedCounter — ease-out count-up that starts when scrolled into view.
- * Props: { to, suffix, duration=1400 }. Renders a tabular-nums span.
- * rAF-based, no dependencies.
- */
+
+
+
+
+
 export default function AnimatedCounter({ to, suffix = '', duration = 1400 }) {
   const [value, setValue] = useState(0);
   const ref = useRef(null);
@@ -23,7 +23,7 @@ export default function AnimatedCounter({ to, suffix = '', duration = 1400 }) {
       const tick = (now) => {
         const elapsed = now - start;
         const progress = Math.min(elapsed / duration, 1);
-        // ease-out cubic
+        
         const eased = 1 - Math.pow(1 - progress, 3);
         setValue(Math.round(target * eased));
         if (progress < 1) requestAnimationFrame(tick);

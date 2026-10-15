@@ -13,7 +13,7 @@ export default function RenameSymbolModal({ open, onClose, seedWord = '' }) {
   const [status, setStatus] = useState('');
   const closeTimer = useRef(null);
 
-  // Reset fields each time the modal opens; the host may prefill the old name.
+  
   useEffect(() => {
     if (open) {
       setOldName(seedWord || '');
@@ -30,7 +30,7 @@ export default function RenameSymbolModal({ open, onClose, seedWord = '' }) {
     };
   }, [open, seedWord]);
 
-  // Esc closes
+  
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
@@ -96,7 +96,7 @@ export default function RenameSymbolModal({ open, onClose, seedWord = '' }) {
         aria-label="Rename symbol across files"
         className="w-full max-w-md rounded-2xl border border-(--line) bg-(--paper-2) shadow-[0_24px_80px_rgba(0,0,0,0.5)] flex flex-col max-h-[88vh] overflow-hidden"
       >
-        {/* Header */}
+        { }
         <div className="flex items-center justify-between px-6 py-4 border-b border-(--line) shrink-0">
           <div className="flex items-center gap-2.5">
             <span
@@ -121,7 +121,7 @@ export default function RenameSymbolModal({ open, onClose, seedWord = '' }) {
           </button>
         </div>
 
-        {/* Body */}
+        { }
         <div className="px-6 py-5 overflow-y-auto custom-scrollbar">
           <label className="block text-[11px] font-bold tracking-[0.08em] uppercase text-(--muted) mb-1.5">
             Rename
@@ -174,7 +174,7 @@ export default function RenameSymbolModal({ open, onClose, seedWord = '' }) {
             </p>
           )}
 
-          {/* Live preview */}
+          { }
           {oldValid && newValid && (
             <div className="mt-4 rounded-xl border border-(--line) bg-(--paper) overflow-hidden">
               <div className="px-4 py-2.5 border-b border-(--line) text-[12px] font-mono text-(--muted)">
@@ -207,7 +207,7 @@ export default function RenameSymbolModal({ open, onClose, seedWord = '' }) {
           )}
         </div>
 
-        {/* Footer */}
+        { }
         <div className="px-6 py-4 border-t border-(--line) shrink-0 flex items-center gap-3">
           {status ? (
             <span className="flex-1 text-[12.5px] font-mono text-emerald-500">{status}</span>
@@ -233,7 +233,7 @@ export default function RenameSymbolModal({ open, onClose, seedWord = '' }) {
   );
 }
 
-// Host: holds modal state, prefills from the 'synapse:rename-symbol' window event.
+
 export function RenameSymbolHost() {
   const [open, setOpen] = useState(false);
   const [seed, setSeed] = useState('');

@@ -44,7 +44,7 @@ export default function NotificationBell({ theme }) {
   const panelRef = useRef(null);
   const socketRef = useRef(null);
 
-  // Initial load
+  
   useEffect(() => {
     let cancelled = false;
     getNotifications()
@@ -62,7 +62,7 @@ export default function NotificationBell({ theme }) {
     };
   }, []);
 
-  // Real-time notifications via dedicated lightweight socket
+  
   useEffect(() => {
     const socket = createCollaborationSocket();
     socketRef.current = socket;
@@ -84,7 +84,7 @@ export default function NotificationBell({ theme }) {
     };
   }, []);
 
-  // Close on outside click / Escape
+  
   useEffect(() => {
     if (!open) return;
     const onDown = (e) => {

@@ -33,19 +33,19 @@ import { readStorage, writeStorage } from '../utils/storage';
 import { getThemeClasses } from '../utils/theme';
 import { useFiles } from '../contexts/FileContext';
 
-/** Editor column of the IDE frame: tabs, breadcrumbs, editor (+split), output.
- *  Lives inside <FileProvider> so it can read openTabs/activeFileId/files. */
+
+
 function EditorWorkspace({ theme, editorSettings, output }) {
   const { openTabs, activeFileId, files } = useFiles();
   const [splitOn, setSplitOn] = useState(false);
   const [splitFileId, setSplitFileId] = useState(null);
 
-  // Split toggle dispatched from TabBar's Columns2 button
+  
   useEffect(() => {
     const toggle = () => {
       if (!splitOn && !splitFileId) {
-        // Default the split pane to the most recent other open tab,
-        // else the first file that isn't the active one.
+        
+        
         const recentOther = [...openTabs].reverse().find((id) => id !== activeFileId);
         const fallback = files.find((f) => f.id !== activeFileId)?.id || null;
         setSplitFileId(recentOther || fallback);
@@ -60,11 +60,11 @@ function EditorWorkspace({ theme, editorSettings, output }) {
     <div
       className="flex flex-col flex-1 min-w-0 overflow-hidden rounded-xl border border-[#2b3546] bg-[#121824] min-h-0"
     >
-      {/* Tab bar */}
+      { }
       <TabBar theme={theme} showSplit splitActive={splitOn} />
       <Breadcrumbs />
 
-      {/* Editor row: primary + optional split pane */}
+      { }
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 min-w-0 flex flex-col">
           <EditorPanel theme={theme} editorSettings={editorSettings} />
@@ -73,7 +73,7 @@ function EditorWorkspace({ theme, editorSettings, output }) {
           <>
             <div className="w-px shrink-0 bg-white/8" />
             <div className="flex-1 min-w-0 flex flex-col">
-              {/* Split file strip: pick which file the second pane shows */}
+              { }
               <div className="h-[30px] flex items-center gap-2 px-2 bg-[#0D1220] border-b border-white/[0.06] shrink-0">
                 <select
                   value={splitFileId || ''}
@@ -111,7 +111,7 @@ function EditorWorkspace({ theme, editorSettings, output }) {
         )}
       </div>
 
-      {/* Output */}
+      { }
       <OutputPanel theme={theme} output={output} />
     </div>
   );
@@ -134,7 +134,7 @@ function EditorPage() {
     running: false,
   });
 
-  // ── Tadka pack: command palette + editor personalization ──
+  
   const [paletteOpen, setPaletteOpen] = useState(false);
   const {
     settings: editorSettings,
@@ -149,11 +149,11 @@ function EditorPage() {
     toggleStickyScroll,
   } = useEditorSettings();
 
-  // ── Advanced pack: Neura code review modal + zen mode ──
+  
   const [reviewOpen, setReviewOpen] = useState(false);
   const [zenMode, setZenMode] = useState(false);
 
-  // ── Mobile: slide-over drawers for sidebar + Neura ──
+  
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [mobileNeuraOpen, setMobileNeuraOpen] = useState(false);
 
@@ -184,7 +184,7 @@ function EditorPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // TitleBar command-center box + Empty State rows open the palette via event
+  
   useEffect(() => {
     const open = () => setPaletteOpen(true);
     window.addEventListener('synapse:open-palette', open);
@@ -217,7 +217,7 @@ function EditorPage() {
         className={`flex flex-col h-screen w-screen overflow-hidden ${t.page}`}
         data-theme={theme}
       >
-        {/* Top Toolbar */}
+        { }
         <div className="relative z-50 shrink-0">
           <Toolbar
             theme={theme}
@@ -230,9 +230,9 @@ function EditorPage() {
           />
         </div>
 
-        {/* Main content area */}
+        { }
         <div className="flex flex-1 overflow-hidden p-2 gap-2 min-h-0">
-          {/* Sidebar — desktop inline, mobile drawer */}
+          { }
           {!zenMode && (
             <>
               <div className="hidden md:flex shrink-0 min-h-0">
@@ -261,10 +261,10 @@ function EditorPage() {
             </>
           )}
 
-          {/* Editor + Output — dark IDE frame (always dark, like a real IDE) */}
+          { }
           <EditorWorkspace theme={theme} editorSettings={editorSettings} output={output} />
 
-          {/* Neura AI Sidebar — desktop inline, mobile drawer */}
+          { }
           {!zenMode && (
             <>
               <div className="hidden md:flex shrink-0 min-h-0">
@@ -298,14 +298,14 @@ function EditorPage() {
           )}
         </div>
 
-        {/* Status Bar — hidden in zen mode */}
+        { }
         {!zenMode && (
           <div className="shrink-0 overflow-x-auto">
             <StatusBar contextLabel="Solo workspace" />
           </div>
         )}
 
-        {/* Mobile floating buttons: files + Neura */}
+        { }
         {!zenMode && (
           <div className="md:hidden fixed bottom-16 left-3 z-40 flex flex-col gap-2">
             <button
@@ -325,7 +325,7 @@ function EditorPage() {
           </div>
         )}
 
-        {/* Command Palette */}
+        { }
         <CommandPalette
           open={paletteOpen}
           onClose={() => setPaletteOpen(false)}
@@ -360,7 +360,7 @@ function EditorPage() {
         <TestHost />
         <TimelineHost />
 
-        {/* Neura code review modal */}
+        { }
         <CodeReviewModal
           open={reviewOpen}
           onClose={() => setReviewOpen(false)}

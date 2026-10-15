@@ -33,13 +33,13 @@ const SEVERITY_META = {
   },
 };
 
-/**
- * Parses Neura's structured review output.
- * Expected format per finding:
- *   [SEVERITY] Short title
- *   1-3 lines of explanation + fix
- * Or a single: [CLEAN] ...
- */
+
+
+
+
+
+
+
 function parseReview(text) {
   const findings = [];
   let current = null;
@@ -69,7 +69,7 @@ function parseReview(text) {
 export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
   const { activeFile } = useFiles();
   const t = getThemeClasses(theme);
-  const [status, setStatus] = useState('idle'); // idle | loading | done | error
+  const [status, setStatus] = useState('idle'); 
   const [findings, setFindings] = useState([]);
   const [isClean, setIsClean] = useState(false);
   const [error, setError] = useState('');
@@ -137,7 +137,7 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [open, runId]);
 
   if (!open) return null;
@@ -158,7 +158,7 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
         className={`${t.modalCard} w-[min(720px,94vw)] max-h-[84vh] flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        { }
         <div className={`flex items-center gap-3 px-5 py-4 border-b ${t.border} shrink-0`}>
           <span className="flex items-center justify-center w-9 h-9 rounded-md border bg-(--blue)/10 border-(--blue)/30">
             <ScanSearch size={17} className="text-(--blue)" />
@@ -186,7 +186,7 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
           </button>
         </div>
 
-        {/* Body */}
+        { }
         <div className="flex-1 overflow-y-auto p-5 custom-scrollbar min-h-0">
           {status === 'loading' && (
             <div className="flex flex-col items-center gap-4 py-12 animate-fade-in">
@@ -247,7 +247,7 @@ export default function CodeReviewModal({ open, onClose, theme = 'dark' }) {
           )}
         </div>
 
-        {/* Footer */}
+        { }
         <div className={`flex items-center justify-between px-5 py-3.5 border-t ${t.border} shrink-0`}>
           <p className={`text-[11px] ${t.textMuted}`}>Powered by Neura AI · Always double-check critical findings</p>
           <button

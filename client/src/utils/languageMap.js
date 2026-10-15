@@ -1,4 +1,4 @@
-// Judge0 language IDs mapped to file extensions and display names
+
 export const LANGUAGES = [
   { id: 71, name: 'Python', extension: '.py', monacoLang: 'python', icon: '🐍', template: '# Python 3\nprint("Hello, Synapse!")' },
   { id: 63, name: 'JavaScript', extension: '.js', monacoLang: 'javascript', icon: '⚡', template: '// JavaScript (Node.js)\nconsole.log("Hello, Synapse!");' },

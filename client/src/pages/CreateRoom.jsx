@@ -46,7 +46,7 @@ export default function CreateRoom() {
         </Link>
 
         <div className={`${t.card} p-8`}>
-          {/* step indicator */}
+          { }
           <div className="flex items-center gap-2 mb-8">
             {STEPS.map((step, i) => (
               <div key={step} className="flex items-center gap-2 flex-1 last:flex-none">

@@ -1,9 +1,9 @@
-/**
- * Live Preview panel — serve the project workspace as a static site on a
- * localhost port and render it in an iframe inside Synapse. Every .html
- * response carries a live-reload script, so debounced file syncs refresh the
- * page automatically.
- */
+
+
+
+
+
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Monitor, Play, Square, RotateCw, ExternalLink, X } from 'lucide-react';
 import { useFiles } from '../contexts/FileContext';
@@ -36,8 +36,8 @@ async function callPreview(endpoint, body) {
 
 function PreviewPanel({ onClose, roomId }) {
   const { files } = useFiles();
-  const [state, setState] = useState('idle'); // idle | starting | running
-  const [server, setServer] = useState(null); // { port, url }
+  const [state, setState] = useState('idle'); 
+  const [server, setServer] = useState(null); 
   const [error, setError] = useState(null);
   const [syncedAt, setSyncedAt] = useState(0);
   const [iframeKey, setIframeKey] = useState(0);
@@ -88,20 +88,20 @@ function PreviewPanel({ onClose, roomId }) {
     try {
       await callPreview('stop', { roomId });
     } catch {
-      /* best-effort cleanup */
+       
     }
   }, [roomId]);
 
-  // Auto-start when the drawer opens; stop when it unmounts.
+  
   useEffect(() => {
     start();
     return () => {
       stop();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
-  // Debounced file sync while running — the injected script reloads the page.
+  
   useEffect(() => {
     if (state !== 'running') return;
     if (syncTimer.current) clearTimeout(syncTimer.current);
@@ -117,20 +117,20 @@ function PreviewPanel({ onClose, roomId }) {
         await callPreview('sync', { roomId, files: payload });
         setSyncedAt(Date.now());
       } catch {
-        /* keep the iframe alive; user can refresh manually */
+         
       }
     }, 900);
     return () => {
       if (syncTimer.current) clearTimeout(syncTimer.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [files, state, roomId]);
 
   const iframeSrc = state === 'running' && server ? `${server.url}/${path.replace(/^\/+/, '')}` : undefined;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center gap-2 px-4 py-3 border-b border-(--line)">
         <Monitor size={17} className="text-(--ink)" />
         <h2 className="text-[13px] font-bold text-(--ink)">Live Preview</h2>
@@ -161,7 +161,7 @@ function PreviewPanel({ onClose, roomId }) {
         </button>
       </div>
 
-      {/* Toolbar */}
+      { }
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-(--line)">
         <input
           value={path}
@@ -206,7 +206,7 @@ function PreviewPanel({ onClose, roomId }) {
         )}
       </div>
 
-      {/* Body */}
+      { }
       <div className="flex-1 min-h-0 flex flex-col">
         {error && (
           <div className="m-4 p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-[12.5px] text-red-300">
@@ -250,7 +250,7 @@ function PreviewPanel({ onClose, roomId }) {
         )}
       </div>
 
-      {/* Footer */}
+      { }
       <div className="px-4 py-2 border-t border-(--line)">
         <p className="text-[11px] text-(--muted)">
           Served by the Synapse server from this project's workspace (localhost only).
@@ -281,8 +281,8 @@ export function PreviewHost() {
 
   if (!open) return null;
 
-  // Note: PreviewPanel stops its server on its own unmount path via stop()
-  // being called when the user closes it or toggles stop.
+  
+  
   return (
     <div className="fixed inset-y-0 right-0 w-[760px] max-w-[97vw] z-[70] bg-(--paper-2) border-l border-(--line) flex flex-col shadow-[0_0_48px_rgba(0,0,0,0.45)] animate-fade-in">
       <PreviewPanel roomId={roomId} onClose={() => setOpen(false)} />

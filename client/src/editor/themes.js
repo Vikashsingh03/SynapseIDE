@@ -1,34 +1,34 @@
-/**
- * Premium editor themes for Synapse (VS Code Wave 1).
- *
- * Registers two extra Monaco themes on top of the app's built-in ones
- * (Dracula, Monokai, Night Owl, GitHub Dark live in EditorPanel's own
- * defineCustomEditorThemes — this module is separate so nothing collides).
- *
- * - 'synapse-dark-plus': faithful VS Code Dark+ clone (base 'vs-dark').
- * - 'synapse-midnight': Synapse's premium signature theme — deep navy-black
- *   with an acid accent, matching the Editorial v3 palette.
- *
- * Token scopes use only the standard names Monaco's tokenizers actually emit
- * (comment, keyword, string, number, type, type.identifier, function-ish via
- * 'entity'... note: the canonical basic set is used; unrecognized scopes are
- * silently ignored by Monaco, so every rule below is safe).
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const PREMIUM_THEME_IDS = ['synapse-dark-plus', 'synapse-midnight'];
 
 let registered = false;
 
-/**
- * @param {object} monaco - the monaco instance from @monaco-editor/react
- */
+
+
+
 export function registerPremiumThemes(monaco) {
   if (registered) return;
   try {
     const defineTheme = monaco?.editor?.defineTheme;
     if (typeof defineTheme !== 'function') return;
 
-    // ─── 1. VS Code Dark+ clone ───────────────────────────────────────────
+    
     defineTheme('synapse-dark-plus', {
       base: 'vs-dark',
       inherit: true,
@@ -68,10 +68,10 @@ export function registerPremiumThemes(monaco) {
         { token: 'constant', foreground: '4FC1FF' },
         { token: 'type', foreground: '4EC9B0' },
         { token: 'type.identifier', foreground: '4EC9B0' },
-        { token: 'identifier', foreground: 'DCDCAA' }, // functions in JS/TS
+        { token: 'identifier', foreground: 'DCDCAA' }, 
         { token: 'variable', foreground: '9CDCFE' },
         { token: 'variable.predefined', foreground: '9CDCFE' },
-        { token: 'attribute.name', foreground: '9CDCFE' }, // HTML attr names, JSON keys
+        { token: 'attribute.name', foreground: '9CDCFE' }, 
         { token: 'attribute.value', foreground: 'CE9178' },
         { token: 'tag', foreground: '569CD6' },
         { token: 'delimiter', foreground: '808080' },
@@ -81,14 +81,14 @@ export function registerPremiumThemes(monaco) {
         { token: 'debug', foreground: '569CD6' },
         { token: 'namespace', foreground: '4EC9B0' },
         { token: 'entity', foreground: '4EC9B0' },
-        // CSS specifics (scoped token names Monaco's CSS tokenizer emits)
+        
         { token: 'attribute.name.css', foreground: '9CDCFE' },
         { token: 'string.css', foreground: 'CE9178' },
         { token: 'number.css', foreground: 'B5CEA8' },
       ],
     });
 
-    // ─── 2. Synapse Midnight — premium signature theme ────────────────────
+    
     defineTheme('synapse-midnight', {
       base: 'vs-dark',
       inherit: true,
@@ -128,7 +128,7 @@ export function registerPremiumThemes(monaco) {
         { token: 'constant', foreground: 'F78C6C' },
         { token: 'type', foreground: '4EC9B0' },
         { token: 'type.identifier', foreground: '4EC9B0' },
-        { token: 'identifier', foreground: 'C792EA' }, // functions in JS/TS
+        { token: 'identifier', foreground: 'C792EA' }, 
         { token: 'variable', foreground: 'D7E2F2' },
         { token: 'variable.predefined', foreground: '82AAFF' },
         { token: 'attribute.name', foreground: 'FFCB6B' },
@@ -149,6 +149,6 @@ export function registerPremiumThemes(monaco) {
 
     registered = true;
   } catch {
-    // theming must never break the editor
+    
   }
 }

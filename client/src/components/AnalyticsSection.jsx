@@ -11,7 +11,7 @@ import {
 import { getThemeClasses } from '../utils/theme';
 import { getAnalyticsSummary } from '../services/analyticsService';
 
-// ─── GitHub-style heatmap ───
+
 
 function dayKey(date) {
   return date.toISOString().slice(0, 10);
@@ -23,7 +23,7 @@ function Heatmap({ data, theme }) {
   const weeks = useMemo(() => {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-    // Start from 52 weeks ago, aligned to Sunday
+    
     const start = new Date(today);
     start.setUTCDate(start.getUTCDate() - 364);
     start.setUTCDate(start.getUTCDate() - start.getUTCDay());
@@ -131,7 +131,7 @@ function Heatmap({ data, theme }) {
   );
 }
 
-// ─── Language bars ───
+
 
 const LANG_COLORS = {
   python: '#4d7fff',
@@ -172,12 +172,12 @@ function LanguageBars({ languages, theme }) {
   );
 }
 
-// ─── Weekly bars ───
+
 
 function WeeklyBars({ weekly, theme }) {
   const t = getThemeClasses(theme);
   const data = useMemo(() => {
-    // Fill last 12 weeks, even empty ones
+    
     const map = new Map(weekly.map((w) => [w.week, w.count]));
     const out = [];
     const now = new Date();
@@ -212,7 +212,7 @@ function WeeklyBars({ weekly, theme }) {
   );
 }
 
-// ─── Main section ───
+
 
 function StatCard({ icon: Icon, label, value, sub, accent, t }) {
   return (
@@ -266,7 +266,7 @@ export default function AnalyticsSection({ theme }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header */}
+      { }
       <div className="flex items-center gap-2.5">
         <span className="w-8 h-8 rounded-lg bg-(--blue)/12 border border-(--blue)/30 flex items-center justify-center">
           <TrendingUp size={15} className="text-(--blue)" />
@@ -277,7 +277,7 @@ export default function AnalyticsSection({ theme }) {
         </div>
       </div>
 
-      {/* Stat cards */}
+      { }
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           t={t}
@@ -313,7 +313,7 @@ export default function AnalyticsSection({ theme }) {
         />
       </div>
 
-      {/* Heatmap */}
+      { }
       <div className={`${t.card} p-5`}>
         <div className="flex items-center gap-2 mb-4">
           <CalendarDays size={14} className={t.textMuted} />
@@ -328,7 +328,7 @@ export default function AnalyticsSection({ theme }) {
         )}
       </div>
 
-      {/* Languages + Weekly */}
+      { }
       <div className="grid md:grid-cols-2 gap-4">
         <div className={`${t.card} p-5`}>
           <h3 className={`text-[14px] font-extrabold ${t.textPrimary} mb-4`}>Top languages</h3>

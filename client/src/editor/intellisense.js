@@ -1,29 +1,29 @@
-/**
- * Synapse IntelliSense boost.
- *
- * registerIntellisense(monaco) is called ONCE from EditorPanel's onMount with
- * the real monaco object from @monaco-editor/react. It wires up:
- *
- *  1. JS/TS IntelliSense boost — ESNext compiler options + a pragmatic React
- *     stub d.ts (react, react-dom/client, react/jsx-runtime) registered as
- *     extra libs on both the JavaScript and TypeScript defaults, so `useState`,
- *     `createRoot`, `jsx(…)` etc. give real suggestions.
- *  2. Tailwind CSS completions — a programmatic ~2k utility-class list
- *     (spacing scales, sizes, text sizes, font weights, full color palette,
- *     layout utilities) offered inside class/className attributes (html/jsx/tsx)
- *     and after `@apply` / inside selector blocks (css).
- *  3. JSON diagnostics — validation + comments + a pragmatic package.json
- *     schema so package.json gets property completions and error squiggles.
- *
- * Fully guarded (try/catch + optional chaining) and idempotent — safe to call
- * more than once. No imports, no new npm deps.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 let registered = false;
 
-// ---------------------------------------------------------------------------
-// 1. JS/TS IntelliSense boost
-// ---------------------------------------------------------------------------
+
+
+
 
 const REACT_STUB_DTS = `declare module 'react' {
   export type ReactNode = any;
@@ -127,21 +127,21 @@ function setupJsTs(monaco) {
     try {
       d.setCompilerOptions?.(compilerOptions);
     } catch {
-      /* ignore */
+       
     }
     for (const lib of EXTRA_LIBS) {
       try {
         d.addExtraLib?.(lib.content, lib.path);
       } catch {
-        /* ignore */
+         
       }
     }
   }
 }
 
-// ---------------------------------------------------------------------------
-// 2. Tailwind CSS completions
-// ---------------------------------------------------------------------------
+
+
+
 
 const SPACING_SCALE = [
   '0', '0.5', '1', '1.5', '2', '2.5', '3', '3.5', '4', '5', '6', '7', '8', '9',
@@ -172,7 +172,7 @@ const COLOR_NAMES = [
 ];
 const COLOR_SHADES = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
 const COLOR_PREFIXES = ['bg', 'text', 'border', 'ring', 'from', 'via', 'to'];
-// Tailwind 500-shade hexes, used in the suggestion documentation.
+
 const COLOR_HEX = {
   slate: '#64748b', gray: '#6b7280', zinc: '#71717a', red: '#ef4444',
   orange: '#f97316', amber: '#f59e0b', yellow: '#eab308', green: '#22c55e',
@@ -230,7 +230,7 @@ const LAYOUT_UTILS = [
 const TAILWIND_LANGS = ['css', 'html', 'javascriptreact', 'typescriptreact', 'javascript', 'typescript'];
 const TAILWIND_TRIGGERS = [' ', '"', "'", '@'];
 const TOKEN_CHAR = /[a-zA-Z0-9\-_:/.[\]%#]/;
-// Matches class= / className= with an unterminated string or a JSX expression.
+
 const CLASS_ATTR_RE = /(class|className)\s*=\s*(\{|"[^"]*|'[^']*|`[^`]*)$/;
 
 function buildTailwindItems(monaco) {
@@ -253,22 +253,22 @@ function buildTailwindItems(monaco) {
     });
   };
 
-  // Spacing: p-, m-, gap, space-x/y × scale
+  
   for (const prefix of SPACING_PREFIXES) {
     for (const s of SPACING_SCALE) push(`${prefix}-${s}`);
   }
-  // Widths / heights: fractions + scale + keywords
+  
   for (const prefix of ['w', 'h']) {
     for (const f of FRACTIONS) push(`${prefix}-${f}`);
     for (const s of SPACING_SCALE) push(`${prefix}-${s}`);
     for (const w of SIZE_WORDS) push(`${prefix}-${w}`);
   }
-  push('w-screen', {}); // already covered by SIZE_WORDS, deduped
+  push('w-screen', {}); 
   push('h-screen', {});
-  // Text sizes & font weights
+  
   for (const s of TEXT_SIZES) push(`text-${s}`);
   for (const w of FONT_WEIGHTS) push(w);
-  // Color utilities: palette × shades
+  
   for (const prefix of COLOR_PREFIXES) {
     for (const color of COLOR_NAMES) {
       for (const shade of COLOR_SHADES) {
@@ -282,7 +282,7 @@ function buildTailwindItems(monaco) {
   for (const c of COLOR_WORDS) {
     push(c, { kind: colorKind, documentation: 'tailwind color keyword' });
   }
-  // Generated numeric helpers: z-, order-, duration-, opacity-, col/row spans
+  
   for (const z of ['0', '10', '20', '30', '40', '50']) push(`z-${z}`);
   for (let i = 1; i <= 12; i++) push(`order-${i}`);
   push('order-first'); push('order-last'); push('order-none');
@@ -292,10 +292,10 @@ function buildTailwindItems(monaco) {
   push('col-span-full');
   for (let i = 1; i <= 6; i++) push(`row-span-${i}`);
   push('row-span-full');
-  // Hand-picked layout utilities
+  
   for (const u of LAYOUT_UTILS) push(u);
 
-  // Hard cap — hover: variants and beyond are intentionally NOT separate items.
+  
   return items.slice(0, 2500);
 }
 
@@ -316,10 +316,10 @@ function shouldOfferTailwind(model, position) {
   if (!TAILWIND_LANGS.includes(lang)) return false;
   const prefix = model.getLineContent(position.lineNumber).slice(0, position.column - 1);
   if (lang === 'css') {
-    // Inside @apply or inside a selector block like `.card |`.
+    
     return prefix.includes('@apply') || prefix.trim().startsWith('.');
   }
-  // class= / className= with an open string or JSX expression.
+  
   return CLASS_ATTR_RE.test(prefix);
 }
 
@@ -346,9 +346,9 @@ function setupTailwind(monaco) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// 3. JSON diagnostics + package.json schema
-// ---------------------------------------------------------------------------
+
+
+
 
 function setupJson(monaco) {
   try {
@@ -377,32 +377,32 @@ function setupJson(monaco) {
       ],
     });
   } catch {
-    /* ignore */
+     
   }
 }
 
-// ---------------------------------------------------------------------------
-// 4. Project-aware IntelliSense (Wave 5): project files as extra libs
-// ---------------------------------------------------------------------------
-// The TS/JS worker only knows the open model + the React stubs above. This
-// keeps EVERY project .ts/.tsx/.mts/.cts/.js/.jsx file (incl. .d.ts — pure
-// gold for the worker) registered as an extra lib under a file:/// URI built
-// from its project-relative path, so the worker's module graph covers the
-// whole project: cross-file import resolution, hover types and go-to-
-// definition work across files — the same TypeScript compiler VS Code runs,
-// inside the browser worker.
-//
-// Routing decision: every eligible file is added to BOTH javascriptDefaults
-// AND typescriptDefaults. Mixed JS/TS projects are the norm here (a .jsx
-// file importing a .ts util is routine); Monaco keeps separate language
-// services, so each service needs the full graph to resolve cross-file
-// imports. URI collisions are avoided by construction: project libs live at
-// file:///<relPath> while the React stubs above use file:///node_modules/....
-//
-// Debounce decision: EditorPanel calls syncProjectFiles on every `files`
-// change (FileContext updates per keystroke), so the sync is ALWAYS trailing
-// debounced (400ms). The worker gets a fresh project graph when the user
-// pauses typing, without re-registering libs on every keystroke.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const PROJECT_LIB_ELIGIBLE_RE = /\.(?:d\.ts|ts|tsx|mts|cts|js|jsx)$/;
 const MAX_PROJECT_LIB_BYTES = 200 * 1024;
@@ -434,8 +434,8 @@ function uriForRelPath(relPath) {
   );
 }
 
-// Cheap signature: length + sampled charCode hash + first/last 50 chars.
-// Fast enough to run on a pause for the whole project.
+
+
 export function contentSignature(content) {
   const n = content.length;
   let h = 5381;
@@ -445,7 +445,7 @@ export function contentSignature(content) {
   return n + ':' + h.toString(36) + ':' + content.slice(0, 50) + '|' + content.slice(-50);
 }
 
-// Pure: file list -> desired Map<uri, content>.
+
 export function projectLibsForFiles(files) {
   const desired = new Map();
   for (const f of files || []) {
@@ -455,7 +455,7 @@ export function projectLibsForFiles(files) {
     const content = typeof f.content === 'string' ? f.content : '';
     if (content.length > MAX_PROJECT_LIB_BYTES) continue;
     const uri = uriForRelPath(relPathOfFile(f, files));
-    if (desired.has(uri)) continue; // safety net; relPaths are unique per tree
+    if (desired.has(uri)) continue; 
     desired.set(uri, content);
   }
   return desired;
@@ -468,7 +468,7 @@ function addLibToDefaults(defaults, content, uri) {
       const disp = d && d.addExtraLib ? d.addExtraLib(content, uri) : null;
       if (disp) disposables.push(disp);
     } catch {
-      /* ignore */
+       
     }
   }
   return {
@@ -477,18 +477,18 @@ function addLibToDefaults(defaults, content, uri) {
         try {
           disp.dispose && disp.dispose();
         } catch {
-          /* ignore */
+           
         }
       }
     },
-    // How many defaults actually accepted the lib (0 = nowhere registered).
+    
     count: disposables.length,
   };
 }
 
-// Injectable core (unit-testable): desired-Map bookkeeping over N defaults.
+
 export function createSyncer(defaults) {
-  const live = new Map(); // uri -> { sig, disposable }
+  const live = new Map(); 
   return {
     sync(desired) {
       try {
@@ -505,8 +505,8 @@ export function createSyncer(defaults) {
           const entry = live.get(uri);
           if (!entry) {
             const disposable = addLibToDefaults(defaults, content, uri);
-            // If no default accepted the lib (e.g. no TS service), don't mark
-            // it live — the next sync will retry.
+            
+            
             if (disposable.count > 0) live.set(uri, { sig, disposable });
           } else if (entry.sig !== sig) {
             try {
@@ -518,7 +518,7 @@ export function createSyncer(defaults) {
           }
         }
       } catch {
-        /* never break the editor */
+         
       }
     },
     uris() {
@@ -535,8 +535,8 @@ function typescriptDefaultsFor(monaco) {
   return [ts && ts.javascriptDefaults, ts && ts.typescriptDefaults].filter(Boolean);
 }
 
-// Debounced project sync with injectable debounceMs (tests). The module
-// singleton exported below uses the default 400ms.
+
+
 export function createProjectSync(monaco, opts) {
   const syncer = createSyncer(typescriptDefaultsFor(monaco));
   const debounceMs =
@@ -576,11 +576,11 @@ export function syncProjectFiles(monaco, files) {
     }
     projectSyncSingleton.sync(files);
   } catch {
-    /* ignore */
+     
   }
 }
 
-// ---------------------------------------------------------------------------
+
 
 export function registerIntellisense(monaco) {
   if (registered) return;
@@ -588,16 +588,16 @@ export function registerIntellisense(monaco) {
   try {
     setupJsTs(monaco);
   } catch {
-    /* ignore */
+     
   }
   try {
     setupTailwind(monaco);
   } catch {
-    /* ignore */
+     
   }
   try {
     setupJson(monaco);
   } catch {
-    /* ignore */
+     
   }
 }

@@ -11,7 +11,7 @@ function getUserId(req) {
   return String(req.user.userId || req.user.id || '');
 }
 
-// Resolve the workspace dir for this request (same logic as terminalManager)
+
 function resolveWorkspace(roomId, userId) {
   const cleanRoom = String(roomId || '').trim().toUpperCase();
   if (cleanRoom && /^[A-Z0-9]{4,16}$/.test(cleanRoom)) {
@@ -42,7 +42,7 @@ function workspaceOf(req) {
   return dir;
 }
 
-// GET /api/git/status?roomId=XXX
+
 router.get('/status', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
@@ -72,7 +72,7 @@ router.get('/status', async (req, res) => {
         return { file, status, code: code.trim() };
       });
 
-    // Ahead/behind
+    
     let ahead = 0;
     let behind = 0;
     const ab = await git(cwd, ['rev-list', '--left-right', '--count', 'HEAD...@{upstream}']);
@@ -95,13 +95,13 @@ router.get('/status', async (req, res) => {
   }
 });
 
-// POST /api/git/init
+
 router.post('/init', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
     const r = await git(cwd, ['init', '-b', 'main']);
     if (!r.ok) return res.status(500).json({ error: r.stderr || 'git init failed.' });
-    // Auto-configure identity so commits work out of the box
+    
     const user = req.user || {};
     const name = String(user.username || user.name || 'Synapse User').slice(0, 60);
     const email = String(user.email || 'user@synapse.local').slice(0, 80);
@@ -113,12 +113,12 @@ router.post('/init', async (req, res) => {
   }
 });
 
-// POST /api/git/add { files?: string[] } — stage all if omitted
+
 router.post('/add', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
     const files = Array.isArray(req.body?.files) && req.body.files.length ? req.body.files : ['-A'];
-    // Sanitize: no path traversal
+    
     const safe = files.map((f) => String(f)).filter((f) => !f.includes('..') && !path.isAbsolute(f));
     const r = await git(cwd, ['add', '--', ...safe]);
     if (!r.ok) return res.status(500).json({ error: r.stderr || 'git add failed.' });
@@ -128,25 +128,25 @@ router.post('/add', async (req, res) => {
   }
 });
 
-// POST /api/git/commit { message }
+
 router.post('/commit', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
     const message = String(req.body?.message || '').trim().slice(0, 500);
     if (!message) return res.status(400).json({ error: 'Commit message is required.' });
-    // Ensure identity exists (repairs repos created before auto-config)
+    
     const idCheck = await git(cwd, ['config', 'user.name']);
     if (!idCheck.ok || !idCheck.stdout.trim()) {
       const user = req.user || {};
       await git(cwd, ['config', 'user.name', String(user.username || user.name || 'Synapse User').slice(0, 60)]);
       await git(cwd, ['config', 'user.email', String(user.email || 'user@synapse.local').slice(0, 80)]);
     }
-    // Stage everything first (UI promises auto-stage)
+    
     await git(cwd, ['add', '-A']);
     const r = await git(cwd, ['commit', '-m', message]);
     if (!r.ok) {
       const errOut = (r.stderr || r.stdout || '').trim();
-      // Friendlier message for common cases
+      
       if (/nothing to commit/i.test(errOut)) {
         return res.status(400).json({ error: 'Nothing to commit — working tree is clean.' });
       }
@@ -158,7 +158,7 @@ router.post('/commit', async (req, res) => {
   }
 });
 
-// GET /api/git/log?roomId=XXX&limit=20
+
 router.get('/log', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
@@ -170,7 +170,7 @@ router.get('/log', async (req, res) => {
       '--pretty=format:%H%x1f%an%x1f%ad%x1f%s%x1e',
       '--date=relative',
     ]);
-    // No commits yet -> not an error, just empty
+    
     if (!r.ok) return res.json({ commits: [] });
     const commits = r.stdout
       .split('\x1e')
@@ -185,7 +185,7 @@ router.get('/log', async (req, res) => {
   }
 });
 
-// POST /api/git/push / pull — pass through git output (may need auth in terminal)
+
 router.post('/push', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
@@ -206,7 +206,7 @@ router.post('/pull', async (req, res) => {
   }
 });
 
-// GET /api/git/diff?file=xxx — diff for a single file
+
 router.get('/diff', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
@@ -221,10 +221,10 @@ router.get('/diff', async (req, res) => {
   }
 });
 
-// ─── Wave 3: Git superpowers (branches, stash, merge-conflict file I/O) ───
-// All routes below mirror the existing conventions: same auth middleware,
-// workspaceOf(req) resolution (roomId from query for GETs, body for POSTs),
-// execFile('git', ...) via the git() helper, path-sanitized file params.
+
+
+
+
 
 const BRANCH_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 
@@ -241,7 +241,7 @@ function repoDir(cwd) {
   return fs.existsSync(path.join(cwd, '.git')) ? cwd : null;
 }
 
-// GET /api/git/branches?roomId=XXX → { branches: [{name, current}], current }
+
 router.get('/branches', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
@@ -253,7 +253,7 @@ router.get('/branches', async (req, res) => {
 
     const names = list.stdout.split('\n').map((s) => s.trim()).filter(Boolean);
 
-    // Fallback: parse '* <name>' from plain `git branch` (detached HEAD, old git)
+    
     if (!current) {
       const raw = await git(cwd, ['branch']);
       const star = raw.stdout.split('\n').map((s) => s.trim()).find((s) => s.startsWith('* '));
@@ -269,7 +269,7 @@ router.get('/branches', async (req, res) => {
   }
 });
 
-// POST /api/git/branch/create { roomId, name }
+
 router.post('/branch/create', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
@@ -284,8 +284,8 @@ router.post('/branch/create', async (req, res) => {
   }
 });
 
-// POST /api/git/branch/checkout { roomId, name }
-// Checkout failures (dirty tree, conflicts) come back as 409 with git's message.
+
+
 router.post('/branch/checkout', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
@@ -300,7 +300,7 @@ router.post('/branch/checkout', async (req, res) => {
   }
 });
 
-// POST /api/git/branch/delete { roomId, name } — safe delete (-d) only, never current
+
 router.post('/branch/delete', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
@@ -317,7 +317,7 @@ router.post('/branch/delete', async (req, res) => {
   }
 });
 
-// POST /api/git/stash { roomId, action: 'push'|'pop'|'list', message?, index? }
+
 router.post('/stash', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
@@ -344,7 +344,7 @@ router.post('/stash', async (req, res) => {
       const message = String(req.body?.message || 'synapse stash').trim().slice(0, 200) || 'synapse stash';
       const r = await git(cwd, ['stash', 'push', '-m', message]);
       const out = gitErr(r, 'Could not stash changes.');
-      // Some git versions exit 0 with "No local changes to save" when only untracked files exist
+      
       if (/no local changes/i.test(out)) {
         return res.status(400).json({ error: 'Nothing to stash — working tree is clean.' });
       }
@@ -375,7 +375,7 @@ function safeWorkspaceFile(cwd, file) {
   return abs;
 }
 
-// GET /api/git/file-content?roomId=XXX&file=xxx — raw working-tree file (for the conflict resolver)
+
 router.get('/file-content', async (req, res) => {
   try {
     const cwd = workspaceOf(req);
@@ -395,7 +395,7 @@ router.get('/file-content', async (req, res) => {
   }
 });
 
-// POST /api/git/file-content { roomId, file, content } — write to the working tree (conflict resolutions)
+
 router.post('/file-content', async (req, res) => {
   try {
     const cwd = workspaceOf(req);

@@ -1,7 +1,7 @@
 import { resolveFileIcon, resolveFolderIcon } from '../utils/fileIconMap';
 
-// Real Material Icon Theme SVGs (the icons VS Code uses), bundled locally
-// in src/assets/file-icons/ — see MATERIAL-ICON-THEME-LICENSE.txt there.
+
+
 const URLS = {};
 const modules = import.meta.glob('../assets/file-icons/*.svg', {
   eager: true,

@@ -33,13 +33,13 @@ function makeUniqueName(files, base) {
   return name;
 }
 
-// Returns the id of the file created last from `mainFile` (or the first file).
+
 function createProjectFromTemplate(template, projectName, ctx) {
   const { files, createFile, createFolder, updateContent, openTab } = ctx;
   const rootId = createFolder(makeUniqueName(files, projectName), null);
   if (!rootId) return;
 
-  const folderCache = new Map(); // 'src/utils' -> folderId
+  const folderCache = new Map(); 
   const ensureFolder = (relPath) => {
     if (!relPath) return rootId;
     if (folderCache.has(relPath)) return folderCache.get(relPath);
@@ -124,7 +124,7 @@ export default function ProjectTemplatesModal({ open, onClose, theme }) {
         aria-label="New project from template"
         className="w-full max-w-2xl rounded-2xl border border-(--line) bg-(--paper-2) shadow-[0_24px_80px_rgba(0,0,0,0.5)] flex flex-col max-h-[88vh] overflow-hidden"
       >
-        {/* Header */}
+        { }
         <div className="flex items-center justify-between px-6 py-4 border-b border-(--line) shrink-0">
           <div>
             <h2 className="text-lg font-extrabold text-(--ink)">New Project</h2>
@@ -141,7 +141,7 @@ export default function ProjectTemplatesModal({ open, onClose, theme }) {
           </button>
         </div>
 
-        {/* Template grid */}
+        { }
         <div className="grid grid-cols-2 gap-3 px-6 py-5 overflow-y-auto custom-scrollbar">
           {PROJECT_TEMPLATES.map((template) => {
             const Icon = TEMPLATE_ICONS[template.icon] || FolderPlus;
@@ -175,7 +175,7 @@ export default function ProjectTemplatesModal({ open, onClose, theme }) {
           })}
         </div>
 
-        {/* Footer */}
+        { }
         <div className="px-6 py-4 border-t border-(--line) shrink-0 flex items-center gap-3">
           <input
             type="text"
@@ -199,7 +199,7 @@ export default function ProjectTemplatesModal({ open, onClose, theme }) {
   );
 }
 
-// Host: holds modal state and opens on the 'synapse:new-project' window event.
+
 export function ProjectTemplatesHost({ theme }) {
   const [open, setOpen] = useState(false);
 

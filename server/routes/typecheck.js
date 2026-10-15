@@ -4,9 +4,9 @@ const { typecheckFiles } = require('../services/typecheck');
 
 const router = express.Router();
 
-// POST /api/typecheck — TypeScript type-check for the current project files.
-// Body: { files: [{ path, content }] }
-// Returns: { diagnostics: [{ path, line, column, severity, code, message }] }
+
+
+
 router.post('/typecheck', authMiddleware, async (req, res) => {
   try {
     const { files } = req.body || {};

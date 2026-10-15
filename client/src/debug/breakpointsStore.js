@@ -1,12 +1,12 @@
-/**
- * Breakpoint store for the visual debugger.
- * Map: relPath (parentId-chain path, '/'-joined) -> sorted array of 1-based line numbers.
- * Persisted to localStorage so breakpoints survive reloads.
- */
+
+
+
+
+
 
 const STORAGE_KEY = 'synapse-breakpoints';
 
-// relPath -> Set<line>
+
 let store = new Map();
 try {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -69,9 +69,9 @@ export function subscribe(fn) {
   return () => listeners.delete(fn);
 }
 
-// Workspace-relative path for a file, following its parentId chain.
-// Mirrors the walk used by TerminalPanel/DebugPanel (self-contained here
-// so non-component code can use it too).
+
+
+
 export function relPathOf(file, files) {
   if (!file) return null;
   const byId = new Map((files || []).map((f) => [f.id, f]));

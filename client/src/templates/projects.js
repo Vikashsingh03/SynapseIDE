@@ -1,8 +1,8 @@
-// Project starter templates — one click drops a complete, runnable project
-// into the file tree. Each template: { id, name, tagline, icon, accent,
-// rootName, mainFile, files: [{ path, content }] }. `icon` is a lucide icon
-// NAME string; the modal maps it to the component. `mainFile` is the file
-// opened in the editor after creation.
+
+
+
+
+
 
 export const PROJECT_TEMPLATES = [
   {

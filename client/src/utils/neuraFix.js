@@ -1,17 +1,17 @@
-// neuraFix — 'Fix with Neura' helpers for the Problems panel.
-// Pure module: no imports. Builds the agent-mode prompt sent to Neura for a
-// single problem. The reply is parsed server-side by
-// server/services/agentActions.js (```neura-action fenced blocks; types:
-// create_file | replace_file | insert_code).
+
+
+
+
+
 
 export const MAX_FULL_LINES = 400;
 export const MAX_FULL_CHARS = 20000;
 export const CONTEXT_RADIUS = 6;
 
-/**
- * ±radius line window around a 1-based line number, with line numbers and a
- * '→' marker on the error line. Clamps at file start/end.
- */
+
+
+
+
 export function extractContextWindow(content, line, radius = CONTEXT_RADIUS) {
   const lines = String(content || '').split('\n');
   const total = lines.length;
@@ -42,13 +42,13 @@ function languageOf(fileName) {
   return map[ext] || '';
 }
 
-/**
- * Build the agent-mode prompt for one problem.
- * Small files: full content in a fenced block (agent can emit replace_file).
- * Large files (>400 lines or >20k chars): ±6-line numbered window instead,
- * and the model is told NOT to emit replace_file (it can't see the whole
- * file — same rule the agent schema itself enforces).
- */
+
+
+
+
+
+
+
 export function buildFixPrompt({ fileName, relPath, line, column, message, fileContent }) {
   const path = relPath || fileName || 'unknown';
   const lineCount = String(fileContent || '').split('\n').length;

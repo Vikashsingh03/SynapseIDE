@@ -1,26 +1,26 @@
-/**
- * Python debug bridge — visually debugs .py files through the REAL Debug
- * Adapter Protocol (DAP) using debugpy — the same adapter VS Code uses.
- * One PythonDebugSession = one debugpy child process + one DAP TCP channel.
- *
- * Interface mirrors server/services/debugBridge.js (CDP) so both sessions
- * are interchangeable for server/socket/debugManager.js:
- *   start({ cwd, relFile, breakpoints, onEvent })
- *   resume() / stepOver() / stepInto() / stepOut()  (DAP continue/next/stepIn/stepOut)
- *   setBreakpoints(lines)
- *   stop()
- *
- * Events pushed out via the onEvent callback: { kind, ...payload }
- *   'started'     { filePath, breakpoints }
- *   'output'      { type: 'stdout'|'stderr'|'console'|'system', text }
- *   'paused'      { reason, callFrames: [{ functionName, line, column, variables }] }
- *                 variables (name/value/type) are fetched for the TOP frame only.
- *   'resumed'     {}
- *   'terminated'  { code }
- *   'error'       { message }
- *
- * The python command is overridable via SYNAPSE_PYTHON (default 'python3').
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const { spawn } = require('child_process');
 const net = require('net');
 const path = require('path');
@@ -36,9 +36,9 @@ const DEBUGPY_MISSING_MESSAGE =
 class PythonDebugSession {
   constructor() {
     this.child = null;
-    this.dap = null; // net.Socket to debugpy's DAP channel
+    this.dap = null; 
     this.seq = 1;
-    this.pending = new Map(); // seq -> { resolve, reject, timer, command }
+    this.pending = new Map(); 
     this.buf = Buffer.alloc(0);
     this.onEvent = null;
     this.started = false;
@@ -49,8 +49,8 @@ class PythonDebugSession {
     this.threadId = null;
     this.pythonCmd = null;
     this.initializedSeen = false;
-    // debugpy emits 'output' events in small fragments; coalesce consecutive
-    // same-type chunks into whole lines before emitting to the client.
+    
+    
     this.outputBuf = { type: null, text: '' };
   }
 
@@ -66,7 +66,7 @@ class PythonDebugSession {
     } catch {}
   }
 
-  // ─── Port allocation: bind port 0, read it back, close ─────────────────────
+  
   async allocatePort() {
     return new Promise((resolve, reject) => {
       const srv = net.createServer();
@@ -78,7 +78,7 @@ class PythonDebugSession {
     });
   }
 
-  // ─── Preflight: resolve a python command that has debugpy ──────────────────
+  
   async preflight() {
     const override = process.env.SYNAPSE_PYTHON;
     const candidates = override ? [override] : ['python3', 'python'];
@@ -121,7 +121,7 @@ class PythonDebugSession {
     throw new Error(DEBUGPY_MISSING_MESSAGE);
   }
 
-  // ─── DAP framing: 'Content-Length: N\r\n\r\n' + JSON ─────────────────────────
+  
   sendFrame(obj) {
     if (!this.dap || this.dap.destroyed) {
       throw new Error('Debug adapter connection is closed.');
@@ -131,9 +131,9 @@ class PythonDebugSession {
     this.dap.write(Buffer.concat([header, body]));
   }
 
-  // Fire-and-forget request: sends the framed request without tracking a
-  // response. Needed for 'attach' — the adapter only responds to it after
-  // 'configurationDone' is processed, so awaiting it would hang.
+  
+  
+  
   sendOnly(command, args) {
     if (!this.dap || this.dap.destroyed) {
       throw new Error('Debug adapter connection is closed.');
@@ -170,26 +170,26 @@ class PythonDebugSession {
 
   onData(chunk) {
     this.buf = Buffer.concat([this.buf, chunk]);
-    // Reassemble complete frames from the buffer (handles partial frames).
+    
     for (;;) {
       const headerEnd = this.buf.indexOf('\r\n\r\n');
       if (headerEnd === -1) return;
       const header = this.buf.slice(0, headerEnd).toString('utf8');
       const m = header.match(/Content-Length:\s*(\d+)/i);
       if (!m) {
-        // Malformed frame — drop it and continue, never hang.
+        
         this.buf = this.buf.slice(headerEnd + 4);
         continue;
       }
       const len = parseInt(m[1], 10);
-      if (this.buf.length < headerEnd + 4 + len) return; // incomplete body — wait
+      if (this.buf.length < headerEnd + 4 + len) return; 
       const body = this.buf.slice(headerEnd + 4, headerEnd + 4 + len);
       this.buf = this.buf.slice(headerEnd + 4 + len);
       let msg;
       try {
         msg = JSON.parse(body.toString('utf8'));
       } catch {
-        continue; // skip malformed payload, keep parsing
+        continue; 
       }
       this.handleMessage(msg);
     }
@@ -236,7 +236,7 @@ class PythonDebugSession {
         this.cleanup();
         break;
       default:
-        break; // thread/module/loadedSource events etc. are ignored
+        break; 
     }
   }
 
@@ -279,8 +279,8 @@ class PythonDebugSession {
         variables: i === 0 ? [] : undefined,
       }));
 
-      // Top frame variables: prefer the 'Locals' scope, else the first
-      // non-'Globals' scope.
+      
+      
       try {
         const topId = rawFrames[0]?.id;
         if (topId != null) {
@@ -305,7 +305,7 @@ class PythonDebugSession {
           }
         }
       } catch {
-        // Variables are best-effort — never break the pause event.
+        
       }
 
       this.emit('paused', { reason, callFrames });
@@ -330,7 +330,7 @@ class PythonDebugSession {
     return this.threadId;
   }
 
-  // ─── Lifecycle ─────────────────────────────────────────────────────────────
+  
   async start({ cwd, relFile, breakpoints = [], onEvent } = {}) {
     if (this.started) throw new Error('Debug session already started.');
     this.started = true;
@@ -354,8 +354,8 @@ class PythonDebugSession {
         child = spawn(
           this.pythonCmd,
           [
-            // -Xfrozen_modules=off: debugpy warns (and can miss breakpoints)
-            // on Python 3.11+ when the stdlib runs as frozen modules.
+            
+            
             '-Xfrozen_modules=off',
             '-m',
             'debugpy',
@@ -438,12 +438,12 @@ class PythonDebugSession {
   }
 
   async handshake(lines) {
-    // The real DAP handshake for debugpy's CLI server mode
-    // (`python -m debugpy --listen ... --wait-for-client`). This is the same
-    // sequence VS Code performs: the adapter expects 'attach' (not 'launch')
-    // and forwards it to the pydevd server. NOTE: attach arguments MUST be
-    // non-empty — the adapter omits empty {} arguments from forwarded
-    // requests, and pydevd rejects the request as malformed without them.
+    
+    
+    
+    
+    
+    
     await this.request('initialize', {
       clientID: 'synapse',
       adapterID: 'python',
@@ -453,14 +453,14 @@ class PythonDebugSession {
       supportsVariableType: true,
     });
 
-    // 'attach' gets no immediate response — the adapter answers it only
-    // after 'configurationDone'. Fire it and wait for 'initialized'.
-    // redirectOutput: makes the debug server redirect the program's
-    // stdout/stderr into DAP 'output' events (otherwise print() output
-    // never reaches the debug console).
+    
+    
+    
+    
+    
     this.sendOnly('attach', { justMyCode: true, redirectOutput: true });
 
-    // Wait for the adapter's 'initialized' event before configuring.
+    
     const deadline = Date.now() + 8000;
     while (!this.initializedSeen && Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 50));
@@ -486,7 +486,7 @@ class PythonDebugSession {
       for (const b of res.breakpoints || []) {
         if (b.verified) applied.push(b.line);
       }
-      // Fall back to the requested lines if the adapter didn't report back.
+      
       if (!applied.length) applied.push(...clean);
     } catch {}
     return applied;

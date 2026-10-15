@@ -54,16 +54,16 @@ function ActionBtn({ title, onClick, busy, children }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Docker panel (default export — rendered by DockerHost)              */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 export default function DockerPanel({ onClose }) {
-  const [status, setStatus] = useState(null); // { available, version? }
+  const [status, setStatus] = useState(null); 
   const [containers, setContainers] = useState([]);
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(null); // container id with in-flight action
+  const [busy, setBusy] = useState(null); 
   const [logsFor, setLogsFor] = useState(null);
   const [logs, setLogs] = useState('');
   const [logsBusy, setLogsBusy] = useState(false);
@@ -123,7 +123,7 @@ export default function DockerPanel({ onClose }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-(--line) shrink-0">
         <span className="p-1.5 rounded-lg bg-(--blue)/10 border border-(--blue)/25 text-(--blue)">
           <Container size={16} />
@@ -163,7 +163,7 @@ export default function DockerPanel({ onClose }) {
             Probing the Docker daemon…
           </p>
         ) : !status?.available ? (
-          /* Unavailable empty state */
+           
           <div className="rounded-xl border border-(--line) bg-(--paper) p-6 text-center">
             <span className="inline-block p-3 rounded-xl bg-(--ink)/5 border border-(--line) text-(--muted) mb-3">
               <Container size={22} />
@@ -187,7 +187,7 @@ export default function DockerPanel({ onClose }) {
           </div>
         ) : (
           <>
-            {/* Containers */}
+            { }
             <p className="text-[10px] font-bold uppercase tracking-wider text-(--muted) px-1">
               Containers ({containers.length})
             </p>
@@ -263,7 +263,7 @@ export default function DockerPanel({ onClose }) {
               })
             )}
 
-            {/* Images */}
+            { }
             <p className="text-[10px] font-bold uppercase tracking-wider text-(--muted) px-1 pt-1">
               Images ({images.length})
             </p>
@@ -291,9 +291,9 @@ export default function DockerPanel({ onClose }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Host — mounts once per app shell; listens for window events          */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 export function DockerHost() {
   const [open, setOpen] = useState(false);

@@ -13,12 +13,12 @@ import RoomPage from './pages/RoomPage';
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes */}
+      { }
       <Route path="/" element={<LandingPage />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/login" element={<Login />} />
 
-      {/* Protected routes */}
+      { }
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/editor" element={<EditorPage />} />

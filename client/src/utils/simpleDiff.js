@@ -1,6 +1,6 @@
-// Simple line diff via LCS (dynamic programming).
-// Returns [{ type: 'same'|'del'|'add', text }] or null when the matrix would
-// be too big (caller falls back to a "too large" notice).
+
+
+
 
 const MAX_CELLS = 4_000_000;
 
@@ -9,7 +9,7 @@ export function diffLines(oldText, newText) {
   const b = String(newText ?? '').split('\n');
   if (a.length * b.length > MAX_CELLS) return null;
 
-  // DP table of LCS lengths (suffix table: dp[i][j] for a[i:], b[j:]).
+  
   const n = a.length;
   const m = b.length;
   const dp = new Array(n + 1);

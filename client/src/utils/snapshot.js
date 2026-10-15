@@ -1,8 +1,8 @@
-/**
- * Renders the active file's code as a beautiful shareable PNG image
- * (gradient backdrop + editor card + syntax highlighting) using canvas.
- * Zero external dependencies.
- */
+
+
+
+
+
 
 const FONT = '14px "JetBrains Mono", Menlo, Consolas, "Courier New", monospace';
 const LINE_HEIGHT = 24;
@@ -51,15 +51,15 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-/**
- * @param {{ code: string, filename: string }} opts
- * @returns {Promise<void>} downloads a PNG snapshot
- */
+
+
+
+
 export async function exportCodeSnapshot({ code = '', filename = 'code.txt' } = {}) {
   const lines = String(code).split('\n');
   const scale = 2;
 
-  // Measure the widest line so the card fits the code
+  
   const measureCanvas = document.createElement('canvas');
   const mctx = measureCanvas.getContext('2d');
   mctx.font = FONT;
@@ -80,7 +80,7 @@ export async function exportCodeSnapshot({ code = '', filename = 'code.txt' } = 
   const ctx = canvas.getContext('2d');
   ctx.scale(scale, scale);
 
-  // Backdrop gradient
+  
   const bg = ctx.createLinearGradient(0, 0, W, H);
   bg.addColorStop(0, '#1e1b4b');
   bg.addColorStop(0.45, '#312e81');
@@ -88,7 +88,7 @@ export async function exportCodeSnapshot({ code = '', filename = 'code.txt' } = 
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  // Soft glow blobs
+  
   const glow = (x, y, r, color) => {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
     g.addColorStop(0, color);
@@ -99,7 +99,7 @@ export async function exportCodeSnapshot({ code = '', filename = 'code.txt' } = 
   glow(W * 0.15, H * 0.2, 260, 'rgba(139,92,246,0.35)');
   glow(W * 0.85, H * 0.8, 300, 'rgba(34,211,238,0.22)');
 
-  // Editor card
+  
   const cardX = PAD * 1.2;
   const cardY = PAD * 1.2;
   ctx.save();
@@ -115,7 +115,7 @@ export async function exportCodeSnapshot({ code = '', filename = 'code.txt' } = 
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Header: traffic dots + filename
+  
   const dots = ['#ff5f57', '#febc2e', '#28c840'];
   dots.forEach((color, i) => {
     ctx.beginPath();
@@ -128,24 +128,24 @@ export async function exportCodeSnapshot({ code = '', filename = 'code.txt' } = 
   ctx.textBaseline = 'middle';
   ctx.fillText(filename, cardX + 96, cardY + 29);
 
-  // Divider
+  
   ctx.strokeStyle = 'rgba(255,255,255,0.07)';
   ctx.beginPath();
   ctx.moveTo(cardX, cardY + HEADER_H);
   ctx.lineTo(cardX + cardW, cardY + HEADER_H);
   ctx.stroke();
 
-  // Code lines
+  
   ctx.font = FONT;
   const codeTop = cardY + HEADER_H + PAD / 2;
   lines.forEach((rawLine, i) => {
     const y = codeTop + i * LINE_HEIGHT + LINE_HEIGHT / 2;
     const line = rawLine.replace(/\t/g, '    ');
-    // Line number
+    
     ctx.fillStyle = C.muted;
     ctx.textAlign = 'right';
     ctx.fillText(String(i + 1), cardX + PAD + gutterW - 14, y);
-    // Tokens
+    
     ctx.textAlign = 'left';
     let x = cardX + PAD + gutterW;
     for (const tok of tokenizeLine(line)) {
@@ -157,13 +157,13 @@ export async function exportCodeSnapshot({ code = '', filename = 'code.txt' } = 
   });
   ctx.font = FONT;
 
-  // Watermark
+  
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
   ctx.font = '12px Inter, system-ui, sans-serif';
   ctx.textAlign = 'right';
   ctx.fillText('Made with Synapse', cardX + cardW - 20, cardY + cardH - 18);
 
-  // Download
+  
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   if (!blob) throw new Error('Could not render snapshot.');
   const url = URL.createObjectURL(blob);

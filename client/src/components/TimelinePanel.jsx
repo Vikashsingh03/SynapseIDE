@@ -21,7 +21,7 @@ function firstLinePreview(content) {
   return line.length > 80 ? line.slice(0, 80) + '…' : line;
 }
 
-// Collapse runs of >6 unchanged lines into one summary row.
+
 function collapseOps(ops) {
   const out = [];
   let run = [];
@@ -94,7 +94,7 @@ export default function TimelinePanel({ onClose }) {
   const { activeFile, updateContent } = useFiles();
   const [snapshots, setSnapshots] = useState([]);
   const [selectedAt, setSelectedAt] = useState(null);
-  const [tab, setTab] = useState('content'); // 'content' | 'diff'
+  const [tab, setTab] = useState('content'); 
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [restored, setRestored] = useState(false);
 
@@ -119,8 +119,8 @@ export default function TimelinePanel({ onClose }) {
       return;
     }
     try {
-      // Keep a snapshot of the pre-restore content so the restore itself
-      // can be undone from the Timeline.
+      
+      
       recordSnapshot(activeFile.id, activeFile.content || '');
     } catch {}
     updateContent(activeFile.id, selected.content);

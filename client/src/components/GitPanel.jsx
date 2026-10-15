@@ -124,7 +124,7 @@ function HistoryList({ commits, theme }) {
   );
 }
 
-// ─── Wave 3: branch/stash/conflict helpers (same auth + API_BASE pattern as gitService) ───
+
 
 function gitApiHeaders() {
   const token = getToken();
@@ -134,7 +134,7 @@ function gitApiHeaders() {
   };
 }
 
-// Direct caller for the Wave-3 git endpoints (branches, stash, file-content).
+
 async function gitApi(method, endpoint, { roomId, query, body } = {}) {
   const q = new URLSearchParams();
   if (roomId) q.set('roomId', roomId);
@@ -156,14 +156,14 @@ function validBranchName(name) {
   return s.length > 0 && s.length <= 120 && BRANCH_NAME_RE.test(s) && !s.includes('..');
 }
 
-// Porcelain codes for conflicted files: UU, AA, DD, AU, UA, UD, DU
+
 function isConflicted(change) {
   const code = String(change?.code || '');
   return code.includes('U') || code === 'AA' || code === 'DD';
 }
 
-// Best-effort match of a git working-tree path to an open editor file
-// (FileContext files live in localStorage/Yjs and may not mirror disk).
+
+
 function findMatchingEditorFile(files, gitPath) {
   if (!files || !gitPath) return null;
   const byId = new Map(files.map((f) => [f.id, f]));
@@ -222,9 +222,9 @@ function ConflictResolver({ roomId, file, theme, onResolved, onEditorSync }) {
     try {
       const resolved = applyResolutions(content, choices);
       await gitApi('POST', '/file-content', { roomId, body: { file, content: resolved } });
-      // Mark the conflict resolved in the index (existing stage mechanism)
+      
       await gitAdd(roomId, [file]);
-      // Refresh the open editor copy if one matches (best-effort)
+      
       if (onEditorSync) {
         try {
           await onEditorSync(file, resolved);
@@ -340,9 +340,9 @@ export default function GitPanel({ theme, roomId }) {
   const [notice, setNotice] = useState('');
   const [expandedFile, setExpandedFile] = useState(null);
   const [diffs, setDiffs] = useState({});
-  const [view, setView] = useState('changes'); // 'changes' | 'history'
+  const [view, setView] = useState('changes'); 
 
-  // ─── Wave 3: branches / stash / conflicts ───
+  
   const [branches, setBranches] = useState([]);
   const [branchOpen, setBranchOpen] = useState(false);
   const [newBranch, setNewBranch] = useState('');
@@ -351,7 +351,7 @@ export default function GitPanel({ theme, roomId }) {
   const [stashOpen, setStashOpen] = useState(false);
   const [resolvingFile, setResolvingFile] = useState(null);
 
-  // Editor file sync for the conflict resolver (best-effort; panel always sits inside FileProvider)
+  
   let editorFiles = null;
   let editorUpdateContent = null;
   try {
@@ -392,7 +392,7 @@ export default function GitPanel({ theme, roomId }) {
     try {
       const result = await fn();
       if (result && result.output) {
-        // Show only the commit summary line, not the full diff stat
+        
         const firstLine = String(result.output).split('\n').find((l) => l.includes(']')) || 'Done!';
         setNotice(firstLine.trim().slice(0, 120));
       }
@@ -425,7 +425,7 @@ export default function GitPanel({ theme, roomId }) {
     run('commit', () => gitCommit(roomId, message.trim())).then(() => setMessage(''));
   };
 
-  // ─── Wave 3: branch ops ───
+  
   const createBranch = () => {
     const name = newBranch.trim();
     if (!validBranchName(name) || busy) return;
@@ -455,7 +455,7 @@ export default function GitPanel({ theme, roomId }) {
     });
   };
 
-  // ─── Wave 3: stash ops ───
+  
   const pushStash = () => {
     if (busy) return;
     run('stash-push', () => gitApi('POST', '/stash', { roomId, body: { action: 'push' } })).then((ok) => {
@@ -472,9 +472,9 @@ export default function GitPanel({ theme, roomId }) {
     });
   };
 
-  // ─── Wave 3: conflict resolver editor sync (solo only — rooms bind via Yjs) ───
+  
   const syncEditorFile = async (gitPath, resolvedContent) => {
-    if (roomId) return; // rooms: git working tree is the source of truth; editor syncs via Yjs
+    if (roomId) return; 
     const match = findMatchingEditorFile(editorFiles, gitPath);
     if (match && editorUpdateContent) {
       editorUpdateContent(match.id, resolvedContent);
@@ -490,7 +490,7 @@ export default function GitPanel({ theme, roomId }) {
     );
   }
 
-  // ─── Not a repo yet ───
+  
   if (status && !status.isRepo) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 h-full min-h-[160px] px-6 text-center">
@@ -520,9 +520,9 @@ export default function GitPanel({ theme, roomId }) {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* ─── Top bar: branch + actions ─── */}
+      { }
       <div className={`flex items-center gap-2 px-4 py-2 border-b ${t.border} shrink-0 bg-(--panel)/50`}>
-        {/* ─── Wave 3: branch switcher dropdown ─── */}
+        { }
         <div className="relative">
           <button
             onClick={() => {
@@ -656,7 +656,7 @@ export default function GitPanel({ theme, roomId }) {
         </div>
       </div>
 
-      {/* ─── Commit bar ─── */}
+      { }
       <div className={`px-4 pt-3 pb-2.5 shrink-0`}>
         <div className={`flex gap-2 p-1.5 rounded-xl border ${t.border} bg-(--panel) focus-within:border-(--blue)/50 transition-colors`}>
           <GitCommit size={15} className={`${t.textMuted} ml-1.5 mt-2 shrink-0`} />
@@ -688,7 +688,7 @@ export default function GitPanel({ theme, roomId }) {
         )}
       </div>
 
-      {/* ─── Wave 3: stash row ─── */}
+      { }
       {(stashes.length > 0 || changes.length > 0) && (
         <div className="px-4 pb-2 shrink-0">
           <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${t.border} bg-(--panel)/60`}>
@@ -741,7 +741,7 @@ export default function GitPanel({ theme, roomId }) {
         </div>
       )}
 
-      {/* ─── View switcher ─── */}
+      { }
       <div className={`flex items-center gap-1 px-4 pb-2 shrink-0`}>
         <div className={`flex p-0.5 rounded-lg border ${t.border} bg-(--panel)`}>
           {[
@@ -764,7 +764,7 @@ export default function GitPanel({ theme, roomId }) {
         </div>
       </div>
 
-      {/* ─── Scrollable content ─── */}
+      { }
       <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 pb-4">
         {view === 'history' ? (
           <HistoryList commits={commits} theme={theme} />

@@ -1,23 +1,23 @@
-/**
- * Synapse Extensions registry (React-free — safe to import from anywhere).
- *
- * Extensions are built-in mini-plugins. Each entry in EXTENSIONS declares
- * an id/name/description/version and the lucide icon NAME to render in the
- * gallery (the panel maps names -> icon components).
- *
- * Enable/disable state lives in localStorage under 'synapse-extensions-enabled'
- * (JSON { id: bool }, default true). getExtensionCommands(ctx) builds the
- * palette commands ONLY from enabled extensions; ctx = { files, activeFile,
- * openTab, updateContent } supplied by the CommandPalette.
- *
- * Cross-component bridges (window events):
- *   - 'synapse:ext-decorations'  CustomEvent { extensionId, items } — editor
- *     decorations bridge (items: [] clears)
- *   - 'synapse:ext-open-markdown' Event — opens the markdown preview drawer
- *   - 'synapse:ext-open-todos'   CustomEvent { items } — TODO explorer drawer
- *   - 'synapse:ext-toast'        CustomEvent { message, kind } — toast stack
- *   - 'synapse:extensions-changed' Event — gallery / palette refresh signal
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import { formatMarkdownTables } from './markdownTables';
 import { generateTypes } from './jsonToTs';
@@ -113,12 +113,12 @@ export function setExtensionEnabled(id, enabled) {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(map));
   } catch {
-    /* storage unavailable — state just won't persist */
+     
   }
   try {
     window.dispatchEvent(new Event('synapse:extensions-changed'));
   } catch {
-    /* no window in tests */
+     
   }
 }
 
@@ -128,13 +128,13 @@ export function extToast(message, kind = 'info') {
       new CustomEvent('synapse:ext-toast', { detail: { message, kind } })
     );
   } catch {
-    /* no window in tests */
+     
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* todo-highlighter                                                    */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 const TODO_PATTERN = /\b(TODO|FIXME|HACK|NOTE)\b/;
 
@@ -144,13 +144,13 @@ export function isTodoHighlightsOn() {
   return todoHighlightsOn;
 }
 
-/**
- * Shared project TODO scan. Returns rich items (used by both the
- * highlighter and the TODO explorer panel).
- * @param {*} files file list
- * @param {number} cap max items
- * @returns {Array<{ fileId, fileName, line, kind, text }>}
- */
+
+
+
+
+
+
+
 export function scanTodos(files, cap = 200) {
   const items = [];
   for (const f of files || []) {
@@ -182,7 +182,7 @@ function dispatchDecorations(items) {
       })
     );
   } catch {
-    /* no window in tests */
+     
   }
 }
 
@@ -198,9 +198,9 @@ export function toggleTodoHighlights(ctx) {
   return todoHighlightsOn;
 }
 
-/* ------------------------------------------------------------------ */
-/* json-tools                                                          */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 function jsonCommand(ctx, op) {
   const f = ctx?.activeFile;
@@ -225,9 +225,9 @@ function jsonCommand(ctx, op) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* markdown-preview                                                    */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 function openMarkdownPreview(ctx) {
   const f = ctx?.activeFile;
@@ -238,13 +238,13 @@ function openMarkdownPreview(ctx) {
   try {
     window.dispatchEvent(new Event('synapse:ext-open-markdown'));
   } catch {
-    /* no window in tests */
+     
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* word-counter                                                        */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 function wordCountToast(ctx) {
   const content = ctx?.activeFile?.content || '';
@@ -254,9 +254,9 @@ function wordCountToast(ctx) {
   extToast(`${words} words · ${chars} chars · ${lines} lines`, 'info');
 }
 
-/* ------------------------------------------------------------------ */
-/* markdown-table                                                      */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 function formatMdTables(ctx) {
   const f = ctx?.activeFile;
@@ -277,9 +277,9 @@ function formatMdTables(ctx) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* todo-panel                                                          */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 function openTodoPanel(ctx) {
   const items = scanTodos(ctx?.files, 200);
@@ -292,13 +292,13 @@ function openTodoPanel(ctx) {
       new CustomEvent('synapse:ext-open-todos', { detail: { items } })
     );
   } catch {
-    /* no window in tests */
+     
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* json-to-ts                                                          */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 function pascalCaseBase(name) {
   const base = String(name || '').replace(/\.[^.]+$/, '');
@@ -346,15 +346,15 @@ function jsonToTsCommand(ctx) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* command builder                                                     */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
-/**
- * Palette-ready commands built ONLY from enabled extensions.
- * Each item: { key, label, hint, run }. The palette maps these to its own
- * item shape (adds a generic icon + closes the palette on run).
- */
+
+
+
+
+
 export function getExtensionCommands(ctx) {
   const cmds = [];
 
@@ -417,7 +417,7 @@ export function getExtensionCommands(ctx) {
         try {
           window.dispatchEvent(new Event('synapse:format-document'));
         } catch {
-          /* no window in tests */
+           
         }
       },
     });

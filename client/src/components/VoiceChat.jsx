@@ -27,7 +27,7 @@ import { getLivekitToken, endLivekitMeeting } from '../services/livekitService';
 import { getThemeClasses } from '../utils/theme';
 import { getUserInitial } from '../utils/avatar';
 
-/* ── Inner room UI (must live inside <LiveKitRoom>) ── */
+ 
 
 function ParticipantCount() {
   const participants = useParticipants();
@@ -89,8 +89,8 @@ function ControlBar({ roomId, onLeave }) {
     try {
       await endLivekitMeeting(roomId);
     } catch {
-      // Even if the API fails, leave locally — the room will
-      // expire on its own via LiveKit's empty timeout.
+      
+      
     } finally {
       onLeave();
     }
@@ -169,7 +169,7 @@ function VoiceRoom({ roomId, onLeave, onError }) {
   );
 }
 
-/* ── Public component: fetches token, then mounts the room ── */
+ 
 
 export default function VoiceChat({ roomId, theme, onClose }) {
   const t = getThemeClasses(theme);

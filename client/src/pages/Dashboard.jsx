@@ -254,7 +254,7 @@ export default function Dashboard() {
     }
   }
 
-  /* ---------- helpers ---------- */
+   
   function timeAgo(dateStr, currentTime) {
     const diff = currentTime - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
@@ -282,7 +282,7 @@ export default function Dashboard() {
     [...recentRooms, ...sharedRooms].map((room) => room.roomId)
   ).size;
 
-  /* ---------- stats ---------- */
+   
   const stats = useMemo(() => {
     const totalLinesContributed = recentRooms.reduce((total, room) => {
       const roomLineCount = Array.isArray(room.files)
@@ -323,7 +323,7 @@ export default function Dashboard() {
 
   return (
     <div className={`min-h-screen syn-grain ${t.page}`} data-theme={theme}>
-      {/* ─── Header ─── */}
+      { }
       <header className={t.header}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5">
@@ -370,9 +370,9 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* ─── Main ─── */}
+      { }
       <main className="max-w-6xl mx-auto px-6 pt-12 pb-20">
-        {/* Hero */}
+        { }
         <div className="mb-10 animate-fade-up">
           <p className={`${t.eyebrow} inline-flex items-center gap-2 mb-5`}>
             <span className="relative flex h-2 w-2">
@@ -401,7 +401,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats */}
+        { }
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           {stats.map((stat, i) => (
             <div
@@ -438,19 +438,19 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Actions */}
+        { }
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
           {ACTIONS.map((action, i) => (
             <ActionCard key={action.to} action={action} index={i} t={t} />
           ))}
         </section>
 
-        {/* Analytics */}
+        { }
         <section className="mb-12 animate-fade-up" style={{ animationDelay: '80ms' }}>
           <AnalyticsSection theme={theme} />
         </section>
 
-        {/* Rooms */}
+        { }
         <section className="animate-fade-up" style={{ animationDelay: '100ms' }}>
           <div className="flex items-center justify-between flex-wrap gap-4 mb-5">
             <div className="flex items-center gap-6">
@@ -557,7 +557,7 @@ export default function Dashboard() {
         </section>
       </main>
 
-      {/* Delete confirmation */}
+      { }
       {roomToDelete && (
         <div className={t.modalOverlay} onClick={() => setRoomToDelete(null)}>
           <div

@@ -15,7 +15,7 @@ export async function getNotifications(limit = 20) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Could not load notifications.');
-  return data; // { notifications, unreadCount }
+  return data; 
 }
 
 export async function markNotificationRead(id) {

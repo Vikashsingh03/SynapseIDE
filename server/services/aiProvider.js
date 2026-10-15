@@ -1,16 +1,16 @@
-/**
- * Provider-agnostic AI chat service for Neura.
- *
- * Switch providers with ONE env var — no code changes needed:
- *
- *   AI_PROVIDER=groq     → Groq (GROQ_API_KEY, GROQ_MODEL)
- *   AI_PROVIDER=gemini   → Google Gemini, free tier (GEMINI_API_KEY, GEMINI_MODEL)
- *   AI_PROVIDER=openai   → OpenAI (OPENAI_API_KEY, OPENAI_MODEL)
- *   AI_PROVIDER=deepseek → DeepSeek (DEEPSEEK_API_KEY, DEEPSEEK_MODEL)
- *
- * All four expose an OpenAI-compatible /chat/completions endpoint,
- * so the request/response shape stays identical.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 const axios = require('axios');
 const { AGENT_SYSTEM_SUFFIX } = require('./agentActions');
 const { sanitizeCompletion } = require('./completionSanitize');
@@ -26,8 +26,8 @@ const PROVIDERS = {
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     keyVar: 'GEMINI_API_KEY',
     modelVar: 'GEMINI_MODEL',
-    // Free-tier model (verified Oct 2026). Alternatives on free tier:
-    // 'gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.1-flash-lite'
+    
+    
     defaultModel: 'gemini-3.8-flash',
   },
   openai: {
@@ -155,7 +155,7 @@ async function requestAIChat({ message, history, context, agent = false }) {
         Authorization: `Bearer ${cfg.apiKey}`,
         'Content-Type': 'application/json',
       },
-      // Ignore broken global proxy env vars when talking to the provider directly.
+      
       proxy: false,
       timeout: 45000,
     }
@@ -176,14 +176,14 @@ const COMPLETION_SYSTEM_PROMPT = [
   'If nothing sensible completes the code, output nothing.',
 ].join(' ');
 
-/**
- * Fill-in-the-middle style completion over the existing chat transport.
- *
- * @param {string} prefix   code before the cursor (tail-capped by the caller)
- * @param {string} suffix   code after the cursor (head-capped by the caller)
- * @param {string} language monaco language id, e.g. 'javascript', 'python'
- * @returns {Promise<string>} sanitized completion ('' when empty)
- */
+
+
+
+
+
+
+
+
 async function requestAICompletion({ prefix, suffix, language }) {
   const cfg = getProviderConfig();
 
@@ -214,7 +214,7 @@ async function requestAICompletion({ prefix, suffix, language }) {
         Authorization: `Bearer ${cfg.apiKey}`,
         'Content-Type': 'application/json',
       },
-      // Ignore broken global proxy env vars when talking to the provider directly.
+      
       proxy: false,
       timeout: 20000,
     }
@@ -226,11 +226,11 @@ async function requestAICompletion({ prefix, suffix, language }) {
 
 module.exports = {
   requestAIChat,
-  // Copilot-style inline completions (Wave 6). Same provider transport as
-  // chat, but with completion-tuned temperature/token budget. Returns the
-  // sanitized completion string ('' when there is nothing sensible).
+  
+  
+  
   requestAICompletion,
-  // Backwards-compatible alias (old route code used this name).
+  
   requestGroqChat: requestAIChat,
   getProviderConfig,
   PROVIDERS,

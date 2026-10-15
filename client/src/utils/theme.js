@@ -1,14 +1,14 @@
-/**
- * Synapse theme tokens ("Editorial" v3) — replicates the v2 demo.
- * Warm paper background, ink text, red/blue/acid accents,
- * hard-offset neo-brutalist shadows. Light + dark via tokens.
- * Every key returns a complete Tailwind class string for the active theme.
- */
+
+
+
+
+
+
 export function getThemeClasses(theme) {
   const dark = theme === 'dark';
 
   return {
-    /* ── legacy keys (kept for compatibility) ── */
+     
     bg: dark ? 'bg-[#111310]' : 'bg-[#f3f1eb]',
     header: dark
       ? 'bg-[#111310]/90 backdrop-blur-md border-b border-[#343730]'
@@ -23,11 +23,11 @@ export function getThemeClasses(theme) {
     tabInactive: dark
       ? 'text-[#6b6e66] hover:text-[#a8aba3]'
       : 'text-[#8a8d85] hover:text-[#60635d]',
-    // Editor is ALWAYS dark (like the v2 demo's IDE mockup)
+    
     editorBg: 'bg-[#121824]',
     consoleHeader: 'bg-[#182131] border-b border-[#283348]',
 
-    /* ── editorial tokens ── */
+     
     page: dark ? 'bg-[#111310] text-[#a8aba3]' : 'bg-[#f3f1eb] text-[#60635d]',
 
     card: dark
@@ -49,12 +49,12 @@ export function getThemeClasses(theme) {
       ? 'w-full rounded-lg bg-[#171916] border border-[#343730] px-3 py-2 text-sm text-[#f3f2ec] placeholder:text-[#6b6e66] outline-none focus:border-[#1557ff] transition-colors'
       : 'w-full rounded-lg bg-white border border-[#d6d4cc] px-3 py-2 text-sm text-[#141514] placeholder:text-[#8a8d85] outline-none focus:border-[#1557ff] transition-colors',
 
-    // Primary: solid ink (light) / paper (dark) — v2 demo style
+    
     btnPrimary: dark
       ? 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-extrabold text-[#111310] bg-[#f3f2ec] border border-[#f3f2ec] hover:-translate-y-px transition-all duration-200 cursor-pointer'
       : 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-extrabold text-[#faf9f5] bg-[#141514] border border-[#141514] hover:-translate-y-px transition-all duration-200 cursor-pointer',
 
-    // Accent CTA: red with hard offset shadow (v2 signature)
+    
     btnAccent:
       'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-extrabold text-white bg-[#ff4d35] border border-[#141514] shadow-[4px_4px_0_#141514] hover:shadow-[6px_6px_0_#141514] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0_#141514] transition-all duration-200 cursor-pointer',
 
@@ -70,7 +70,7 @@ export function getThemeClasses(theme) {
       ? 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold text-[#ff8a75] bg-[#ff4d35]/10 border border-[#ff4d35]/30 hover:bg-[#ff4d35] hover:text-white transition-colors cursor-pointer'
       : 'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold text-[#d93824] bg-[#ff4d35]/7 border border-[#ff4d35]/25 hover:bg-[#ff4d35] hover:text-white transition-colors cursor-pointer',
 
-    // RUN button: acid lime, mono (v2 signature) — with signature glow
+    
     btnRun:
       'inline-flex items-center justify-center gap-2 rounded-[5px] px-3 py-1.5 font-mono text-[11px] font-bold text-[#10140b] bg-[#d9ff3f] border border-[#1e2411] shadow-[0_0_18px_rgba(217,255,63,0.35)] hover:shadow-[0_0_26px_rgba(217,255,63,0.5)] hover:brightness-105 active:brightness-95 transition-all cursor-pointer',
 

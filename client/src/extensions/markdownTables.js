@@ -1,17 +1,17 @@
-/**
- * Markdown table formatter (pure, React-free).
- *
- * Finds GitHub-style table blocks — a header row starting with '|' followed
- * immediately by a separator row of dashes — and reformats them: every
- * column is padded to its widest cell (min width 3), the separator row is
- * rebuilt with dashes matching each column width, and alignment colons
- * (:---, ---:, :-:) are preserved. Everything else is untouched.
- */
+
+
+
+
+
+
+
+
+
 
 const HEADER_MIN_WIDTH = 3;
 
 function splitCells(line) {
-  // Trim the outer pipes, then split on the remaining ones.
+  
   let s = line.trim();
   if (s.startsWith('|')) s = s.slice(1);
   if (s.endsWith('|')) s = s.slice(0, -1);
@@ -19,7 +19,7 @@ function splitCells(line) {
 }
 
 function isSeparatorCell(cell) {
-  // e.g. ---, :--, --:, :-:, with optional inner spaces (trimmed already).
+  
   return /^:?-+:?$/.test(cell) && cell.includes('-');
 }
 
@@ -56,10 +56,10 @@ function renderRow(cells, widths) {
   return `| ${padded.join(' | ')} |`;
 }
 
-/**
- * @param {string} text markdown source
- * @returns {{ text: string, count: number }} reformatted source + #tables
- */
+
+
+
+
 export function formatMarkdownTables(text) {
   const lines = String(text ?? '').split('\n');
   const out = [];
@@ -81,7 +81,7 @@ export function formatMarkdownTables(text) {
       continue;
     }
 
-    // Collect the whole block: header + separator + body rows starting with '|'.
+    
     const header = splitCells(line);
     const sepCells = splitCells(next);
     const body = [];
@@ -90,8 +90,8 @@ export function formatMarkdownTables(text) {
       body.push(splitCells(lines[j]));
       j += 1;
     }
-    // If a second separator appears (multiple header blocks) — stop there;
-    // it'll be formatted as its own table on the next pass.
+    
+    
     const nCols = Math.max(header.length, sepCells.length, ...body.map((r) => r.length));
     const widths = [];
     for (let c = 0; c < nCols; c += 1) {

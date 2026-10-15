@@ -1,11 +1,11 @@
 ﻿import { API_BASE } from '../config/apiConfig';
 import { getToken } from './authService';
 
-/**
- * Fetch a short-lived LiveKit access token for the given room.
- * The backend signs it with the server's LiveKit API secret —
- * the secret never leaves the server.
- */
+
+
+
+
+
 export async function getLivekitToken(roomId) {
   const token = getToken();
   const response = await fetch(
@@ -24,14 +24,14 @@ export async function getLivekitToken(roomId) {
     throw new Error(data.error || 'Could not get voice chat token.');
   }
 
-  return data; // { token, url }
+  return data; 
 }
 
-/**
- * End the meeting for EVERYONE.
- * Deletes the LiveKit room on the server — all participants
- * get disconnected automatically.
- */
+
+
+
+
+
 export async function endLivekitMeeting(roomId) {
   const token = getToken();
   const response = await fetch(
@@ -51,5 +51,5 @@ export async function endLivekitMeeting(roomId) {
     throw new Error(data.error || 'Could not end the meeting.');
   }
 
-  return data; // { ended: true, room }
+  return data; 
 }

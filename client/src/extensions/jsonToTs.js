@@ -1,12 +1,12 @@
-/**
- * JSON → TypeScript interface generator (pure, React-free).
- *
- * generateTypes(jsonValue, rootName) → TypeScript source string.
- * Nested objects become separate interfaces named Parent + PascalCase(key);
- * name collisions across branches get numeric suffixes (User, User2).
- * Arrays take the item type from the FIRST element; empty arrays → unknown[].
- * Primitives map naturally; null → unknown.
- */
+
+
+
+
+
+
+
+
+
 
 function pascalCase(raw) {
   const parts = String(raw ?? '')
@@ -38,14 +38,14 @@ function isPlainObject(v) {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-/**
- * @param {*} jsonValue parsed JSON value
- * @param {string} rootName desired root interface/type name (already sanitized)
- * @returns {string} TypeScript declarations
- */
+
+
+
+
+
 export function generateTypes(jsonValue, rootName) {
   const root = sanitizeTypeName(rootName, 'Root');
-  const decls = []; // { name, text }
+  const decls = []; 
   const taken = new Set();
 
   function uniqueName(base) {
@@ -59,7 +59,7 @@ export function generateTypes(jsonValue, rootName) {
     return name;
   }
 
-  // Returns the TS type for a value; registers interfaces as a side effect.
+  
   function typeOf(value, suggestedName) {
     if (Array.isArray(value)) {
       if (value.length === 0) return 'unknown[]';

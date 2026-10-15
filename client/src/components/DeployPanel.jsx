@@ -24,9 +24,9 @@ const PROVIDERS = [
   { label: 'Open Render', href: 'https://dashboard.render.com' },
 ];
 
-/* ------------------------------------------------------------------ */
-/* Deploy panel (default export — rendered by DeployHost)              */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 export default function DeployPanel({ onClose }) {
   const { files, createFile, updateContent } = useFiles();
@@ -42,7 +42,7 @@ export default function DeployPanel({ onClose }) {
     setName(d.name);
     setPort(d.port);
     if (d.entry) setEntry(d.entry);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   const configs = useMemo(() => {
@@ -83,7 +83,7 @@ export default function DeployPanel({ onClose }) {
 
   const handleCreate = (fname, content) => {
     if (created[fname] || rootFileExists(fname)) return;
-    // createFile(name, parentId) returns the new file's id; parentId null = project root
+    
     const id = createFile(fname, null);
     updateContent(id, content);
     setCreated((c) => ({ ...c, [fname]: true }));
@@ -93,7 +93,7 @@ export default function DeployPanel({ onClose }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-(--line) shrink-0">
         <span className="p-1.5 rounded-lg bg-(--blue)/10 border border-(--blue)/25 text-(--blue)">
           <Rocket size={16} />
@@ -112,7 +112,7 @@ export default function DeployPanel({ onClose }) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-        {/* Detection */}
+        { }
         {detected && (
           <div className="rounded-xl border border-(--line) bg-(--paper) p-4">
             <div className="flex items-center gap-2 flex-wrap">
@@ -169,7 +169,7 @@ export default function DeployPanel({ onClose }) {
           </div>
         )}
 
-        {/* Config cards */}
+        { }
         {configs.map((c) => {
           const exists = rootFileExists(c.fname);
           const done = created[c.fname];
@@ -209,7 +209,7 @@ export default function DeployPanel({ onClose }) {
           );
         })}
 
-        {/* Provider links */}
+        { }
         <div className="rounded-xl border border-(--line) bg-(--paper) p-4">
           <p className="text-[10px] font-bold uppercase tracking-wider text-(--muted) mb-2.5">
             Launch a provider
@@ -236,7 +236,7 @@ export default function DeployPanel({ onClose }) {
         </div>
       </div>
 
-      {/* Footer */}
+      { }
       <div className="px-5 py-3.5 border-t border-(--line) shrink-0">
         <p className="text-[11px] text-(--muted) leading-relaxed">
           Synapse generates the config + steps. The deploy itself runs on the
@@ -247,9 +247,9 @@ export default function DeployPanel({ onClose }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Host — mounts once per app shell; listens for window events          */
-/* ------------------------------------------------------------------ */
+ 
+ 
+ 
 
 export function DeployHost() {
   const [open, setOpen] = useState(false);

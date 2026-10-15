@@ -21,7 +21,7 @@ import { fontStackFor } from '../hooks/useEditorSettings';
 import { getThemeClasses } from '../utils/theme';
 import { Loader2, Users, FileCode2 } from 'lucide-react';
 
-/** Custom Monaco editor color themes (defined once per mount, idempotent). */
+ 
 function defineCustomEditorThemes(monaco) {
   if (!monaco?.editor?.defineTheme) return;
   const themes = {
@@ -118,7 +118,7 @@ function defineCustomEditorThemes(monaco) {
     try {
       monaco.editor.defineTheme(name, def);
     } catch {
-      /* theme already defined — ignore */
+       
     }
   }
 }
@@ -144,7 +144,7 @@ function ensurePresenceStyle(userId, cursorColor) {
 
   const safeId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '-');
   const styleId = `presence-style-${safeId}`;
-  // Always recreate if color changed (remove old style)
+  
   const existing = document.getElementById(styleId);
   if (existing) return;
 
@@ -180,7 +180,7 @@ function ensurePresenceStyle(userId, cursorColor) {
   document.head.appendChild(style);
 }
 
-/** "Who is editing" indicator bar */
+ 
 function EditingIndicatorBar({ editingUsers = {}, activeFileId, theme }) {
   const editors = Object.values(editingUsers).filter(
     (u) => !activeFileId || u.fileId === activeFileId
@@ -219,8 +219,8 @@ function EditingIndicatorBar({ editingUsers = {}, activeFileId, theme }) {
 }
 
 function FileLockBanner({ activeFileLock, lockedByOther, lockNotice, theme }) {
-  // Google Docs mode: no exclusive locks — this is now just a friendly
-  // presence hint shown when someone else is also in this file.
+  
+  
   if (!lockedByOther && !lockNotice) return null;
 
   const message = lockedByOther && activeFileLock
@@ -260,34 +260,34 @@ export default function EditorPanel({
   const monacoRef = useRef(null);
   const decorationsRef = useRef([]);
   const bindingRef = useRef(null);
-  // Latest FileContext files, for the async Prettier config lookup
-  // (the format listener below reads it via ref so it registers once).
+  
+  
   const filesRef = useRef([]);
   useEffect(() => {
     filesRef.current = files;
   }, [files]);
 
-  // ── Split-editor support (solo page only) ──
-  // effectiveFile is the file THIS panel instance renders: normally the
-  // global activeFile, or the pinned split file when fileIdOverride is set.
-  // fileIdOverride is never passed in rooms, so the room path is untouched.
+  
+  
+  
+  
   const effectiveFile =
     fileIdOverride != null
       ? files.find((f) => f.id === fileIdOverride) || null
       : activeFile;
 
-  // ── Empty-file watermark: show a premium overlay when the file has no content ──
+  
   const [isEmpty, setIsEmpty] = useState(
     () => !(effectiveFile?.content && effectiveFile.content.trim())
   );
   useEffect(() => {
-    // Reset on file switch; check initial content (non-Yjs path)
+    
     if (!sharedText) {
       setIsEmpty(!(effectiveFile?.content && effectiveFile.content.trim()));
     }
-  }, [effectiveFile?.id, sharedText]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [effectiveFile?.id, sharedText]); 
   useEffect(() => {
-    // Observe Yjs shared text so remote edits also dismiss the watermark
+    
     if (!sharedText) return;
     const update = () => setIsEmpty(sharedText.toString().trim().length === 0);
     update();
@@ -295,8 +295,8 @@ export default function EditorPanel({
     return () => sharedText.unobserve(update);
   }, [sharedText]);
 
-  // Bumped every time onMount fires — this is what lets the binding
-  // effect re-run AFTER the editor reference is set.
+  
+  
   const [editorMountKey, setEditorMountKey] = useState(0);
 
   const activeFileId = activeFileIdProp || effectiveFile?.id;
@@ -309,17 +309,17 @@ export default function EditorPanel({
         : 'vs';
   const language = effectiveFile ? getMonacoLanguage(effectiveFile.name) : 'plaintext';
 
-  // Re-register snippet provider when the file language changes
+  
   useEffect(() => {
     if (monacoRef.current && language !== 'plaintext') {
       registerSnippetProvider(monacoRef.current, language).catch(() => {});
     }
   }, [language]);
 
-  // Wave 5: keep the TS/JS worker's project graph in sync with the file tree.
-  // The sync itself is trailing-debounced (400ms) inside syncProjectFiles —
-  // this effect may fire on every keystroke (FileContext updates `files`
-  // per keystroke) without churning the worker.
+  
+  
+  
+  
   useEffect(() => {
     if (monacoRef.current) {
       try {
@@ -328,9 +328,9 @@ export default function EditorPanel({
     }
   }, [files]);
 
-  // Breadcrumbs symbol click → jump the editor to that line.
-  // Primary panel only — the split panel has its own pinned file and the
-  // Breadcrumbs trail describes the primary file.
+  
+  
+  
   useEffect(() => {
     if (!isPrimary) return;
     const onGotoLine = (e) => {
@@ -347,15 +347,15 @@ export default function EditorPanel({
     return () => window.removeEventListener('synapse:goto-line', onGotoLine);
   }, [isPrimary]);
 
-  // Keep the active file identity fresh for the problems bridge below.
-  // Primary panel only — the split panel never feeds the problems store
-  // (the primary owns the status bar + problems attribution).
+  
+  
+  
   const activeFileForProblemsRef = useRef(null);
-  // Extensions decorations bridge state: last 'synapse:ext-decorations'
-  // payload + the live Monaco decorations collection for the current editor.
+  
+  
   const extDecoRef = useRef({ detail: null, collection: null, collectionFor: null, cleanup: null });
-  // Visual debugger state: breakpoint dots + execution line decorations,
-  // re-created per editor instance (onMount), cleaned up on unmount.
+  
+  
   const bpDecoRef = useRef({ collection: null, collectionFor: null, unsubscribe: null });
   const lineDecoRef = useRef({ collection: null, collectionFor: null });
   useEffect(() => {
@@ -370,9 +370,9 @@ export default function EditorPanel({
     }
   }, [effectiveFile, isPrimary]);
 
-  // Neura Agent: apply an approved action to the ACTIVE file's Monaco model
-  // (executeEdits keeps undo + the Yjs binding in sync; non-active targets
-  // are written by NeuraPanel via updateContent instead). Primary only.
+  
+  
+  
   useEffect(() => {
     if (!isPrimary) return undefined;
     const onNeuraApply = (e) => {
@@ -416,12 +416,12 @@ export default function EditorPanel({
     return () => window.removeEventListener('synapse:neura-apply', onNeuraApply);
   }, [isPrimary]);
 
-  // Extensions: 'Format Document' command → REAL Prettier formatting
-  // (what VS Code users actually run) for JS/TS/JSON/CSS/HTML.
-  // Undo-friendly executeEdits keep undo + the Yjs binding in sync.
-  // Falls back to Monaco's built-in formatter when Prettier can't handle
-  // the file (unsupported extension / syntax error). Primary only;
-  // registers once ([isPrimary] deps) and reads fresh state via refs.
+  
+  
+  
+  
+  
+  
   useEffect(() => {
     if (!isPrimary) return undefined;
     const onFormat = async () => {
@@ -430,7 +430,7 @@ export default function EditorPanel({
         if (!editor) return;
         const model = editor.getModel();
         if (!model) return;
-        const info = activeFileForProblemsRef.current; // { id, name }, primary-only fresh
+        const info = activeFileForProblemsRef.current; 
         const fileName = (info && info.name) || '';
         const current = model.getValue();
         let result = null;
@@ -455,9 +455,9 @@ export default function EditorPanel({
     return () => window.removeEventListener('synapse:format-document', onFormat);
   }, [isPrimary]);
 
-  // Visual debugger: highlight the line the debugger is paused on.
-  // Listens for 'synapse:debug-line' { relPath, line } (line null = clear).
-  // Primary panel only; the listener refreshes when the active file changes.
+  
+  
+  
   useEffect(() => {
     if (!isPrimary) return;
     const applyLine = (rel, line) => {
@@ -488,14 +488,14 @@ export default function EditorPanel({
     };
     const onLine = (e) => applyLine(e.detail?.relPath, e.detail?.line ?? null);
     window.addEventListener('synapse:debug-line', onLine);
-    // File switched: clear any stale execution line on the new editor.
+    
     try {
       lineDecoRef.current.collection?.set([]);
     } catch {}
     return () => window.removeEventListener('synapse:debug-line', onLine);
   }, [isPrimary, effectiveFile]);
 
-  // Collect current selection for "save as snippet"
+  
   useEffect(() => {
     const onCollect = () => {
       const editor = editorRef.current;
@@ -513,7 +513,7 @@ export default function EditorPanel({
     return () => window.removeEventListener('synapse:collect-selection', onCollect);
   }, []);
 
-  // Insert snippet from SnippetManager (with tab-stop support)
+  
   useEffect(() => {
     const onInsert = (e) => {
       const editor = editorRef.current;
@@ -521,14 +521,14 @@ export default function EditorPanel({
       if (!editor || !code) return;
       editor.focus();
       try {
-        // VS Code's own snippet controller — ${1:...} tab stops work natively
+        
         const ctrl = editor.getContribution('snippetController2');
         if (ctrl && typeof ctrl.insert === 'function') {
           ctrl.insert(code);
           return;
         }
       } catch {}
-      // Fallback: plain insert at cursor
+      
       const sel = editor.getSelection();
       const op = { range: sel, text: code, forceMoveMarkers: true };
       editor.executeEdits('synapse-snippet', [op]);
@@ -537,18 +537,18 @@ export default function EditorPanel({
     return () => window.removeEventListener('synapse:insert-snippet', onInsert);
   }, []);
 
-  // ─── MonacoBinding ──────────────────────────────────────────────────────────
-  //
-  // WHY editorMountKey is in the deps:
-  //   Monaco's onMount fires asynchronously AFTER the React render cycle.
-  //   On first render, editorRef.current is null, so this effect bails out.
-  //   When onMount fires it bumps editorMountKey (state), triggering a new
-  //   render, which re-runs this effect — now with a valid editorRef.current.
-  //
-  // WHY activeFileId is in the deps:
-  //   <Editor key={effectiveFile.id}> remounts Monaco on file switch, so
-  //   editorMountKey increments again via onMount, and we recreate the binding
-  //   for the new file's Y.Text.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   useEffect(() => {
     const editor = editorRef.current;
     if (!sharedText || !editor) return undefined;
@@ -556,7 +556,7 @@ export default function EditorPanel({
     const model = editor.getModel();
     if (!model) return undefined;
 
-    // Destroy any existing binding before creating a new one
+    
     if (bindingRef.current) {
       bindingRef.current.destroy();
       bindingRef.current = null;
@@ -571,7 +571,7 @@ export default function EditorPanel({
     };
   }, [sharedText, editorMountKey, activeFileId]);
 
-  // ─── Remote cursor & selection decorations ──────────────────────────────────
+  
   useEffect(() => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;
@@ -631,7 +631,7 @@ export default function EditorPanel({
     };
   }, [remotePeers, activeFileId]);
 
-  // ─── Scroll to line on jumpTarget change (primary panel only) ────────────────
+  
   useEffect(() => {
     if (!isPrimary) return;
     if (!editorRef.current || !jumpTarget || jumpTarget.fileId !== activeFileId) return;
@@ -642,8 +642,8 @@ export default function EditorPanel({
   }, [jumpTarget, activeFileId, editorMountKey, isPrimary]);
 
   if (!effectiveFile) {
-    // Primary keeps the full premium empty state; the split pane renders a
-    // slim placeholder until a file is picked from its strip.
+    
+    
     if (isPrimary) return <EditorEmptyState />;
     return (
       <div className={`flex-1 overflow-hidden flex items-center justify-center min-h-0 ${t.editorBg}`}>
@@ -654,12 +654,12 @@ export default function EditorPanel({
 
   return (
     <div className={`flex-1 overflow-hidden flex flex-col min-h-0 ${t.editorBg}`}>
-      {/* Real-time "who is editing" indicator */}
+      { }
       <EditingIndicatorBar editingUsers={editingUsers} activeFileId={activeFileId} theme={theme} />
       <FileLockBanner activeFileLock={activeFileLock} lockedByOther={lockedByOther} lockNotice={lockNotice} theme={theme} />
 
       <div style={{ flex: 1, overflow: 'hidden' }} className="min-h-0 relative">
-        {/* ── Empty-file watermark ── */}
+        { }
         {isEmpty && (
           <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none animate-fade-in">
             <div className="flex flex-col items-center gap-4 text-center px-6 max-w-sm">
@@ -703,14 +703,14 @@ export default function EditorPanel({
             editorRef.current = editor;
             monacoRef.current = monaco;
 
-            // ─── Wave 5: give the editor model a file:/// URI matching the
-            // file's project path, so the TS worker resolves RELATIVE imports
-            // across project files (extraLibs alone can't: an inmemory://
-            // model resolves imports inside the inmemory scheme). Solo:
-            // FileContext stays the source of truth — a reused model is
-            // re-synced from it at mount (external edits while the file was
-            // closed: Replace All, git resolve, Neura). Rooms: skipped —
-            // the MonacoBinding re-syncs the model from its Y.Text.
+            
+            
+            
+            
+            
+            
+            
+            
             try {
               if (effectiveFile) {
                 const rel = relPathOf(effectiveFile, files);
@@ -734,38 +734,38 @@ export default function EditorPanel({
               }
             } catch {}
 
-            // Register custom color themes (Dracula, Monokai, Night Owl, GitHub Dark)
+            
             defineCustomEditorThemes(monaco);
             try {
               registerPremiumThemes(monaco);
             } catch {}
 
-            // ─── Snippet Tab-completion (VS Code style) ───
+            
             try {
               const mLang = getMonacoLanguage(effectiveFile?.name || '');
               registerSnippetProvider(monaco, mLang);
               registerSnippetUseCommand(editor);
             } catch {}
 
-            // ─── VS Code Wave 1: IntelliSense (React/Tailwind/JSON) + Emmet ───
+            
             try {
               registerIntellisense(monaco);
-              syncProjectFiles(monaco, files); // Wave 5: first project-graph sync
+              syncProjectFiles(monaco, files); 
             try {
-              // Wave 6: Prettier DocumentFormattingEditProvider (Shift+Alt+F).
-              // Global per language; internally once-guarded.
+              
+              
               registerPrettierFormattingProvider(monaco, () => filesRef.current);
             } catch {}
             } catch {}
             try {
               registerEmmet(editor, monaco);
             } catch {}
-            // ─── Wave 6: Copilot-style ghost text (inline completions) ───
+            
             try {
               registerGhostText(monaco);
             } catch {}
 
-            // ─── Problems bridge: Monaco markers → problems store (primary only) ───
+            
             if (isPrimary) {
             try {
               const modelUri = editor.getModel()?.uri?.toString();
@@ -799,10 +799,10 @@ export default function EditorPanel({
             } catch {}
             }
 
-            // ─── Extensions decorations bridge: extension line highlights ───
-            // (e.g. TODO highlighter) applied to this editor's file only.
-            // The last payload is kept in a ref and re-applied on every
-            // editor mount, so highlights survive file switches.
+            
+            
+            
+            
             if (isPrimary) {
             try {
               extDecoRef.current.cleanup?.();
@@ -840,9 +840,9 @@ export default function EditorPanel({
             } catch {}
             }
 
-            // ─── Visual debugger: breakpoint gutter ───
-            // Click the glyph margin to toggle a breakpoint on that line.
-            // Dots render for the active file's breakpoints (primary only).
+            
+            
+            
             if (isPrimary) {
             try {
               bpDecoRef.current.unsubscribe?.();
@@ -885,21 +885,21 @@ export default function EditorPanel({
             } catch {}
             }
 
-            // The binding is created ONLY by the binding useEffect below (it
-            // re-runs on the editorMountKey bump). Creating one here as well
-            // would risk two live MonacoBindings on the same Y.Text + model —
-            // each binding has its own mutex, so a double-bound pair
-            // echo-duplicates every keystroke (Enter included).
-            // Bump the mount key so the binding useEffect re-evaluates with
-            // the now-valid editorRef.current (handles the case where sharedText
-            // arrives AFTER the editor mounts).
+            
+            
+            
+            
+            
+            
+            
+            
             setEditorMountKey((k) => k + 1);
 
             editor.onDidChangeCursorSelection((event) => {
               onCursorMove?.(event.selection.getPosition());
-              // Bridge for StatusBar + Breadcrumbs (VS Code chrome).
-              // Primary panel only — the split panel must not hijack the
-              // status bar or the symbol tracking.
+              
+              
+              
               if (isPrimary) {
               try {
                 const sel = event.selection;

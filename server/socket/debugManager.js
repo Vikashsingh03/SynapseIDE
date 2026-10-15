@@ -1,20 +1,20 @@
-/**
- * Visual debugger manager — one DebugSession per socket max.
- * Bridges server/services/debugBridge.js (CDP) to the client's
- * 'debug:*' Socket.IO events. Mirrors terminalManager.js structure.
- *
- * Client → server:
- *   'debug:start'         { roomId?, filePath, breakpoints, files } → emits 'debug:event'
- *   'debug:command'       { command: 'resume'|'stepOver'|'stepInto'|'stepOut'|'stop' }
- *   'debug:setBreakpoints'{ breakpoints }
- * Server → client: 'debug:event' { kind, ...payload }
- */
+
+
+
+
+
+
+
+
+
+
+
 const path = require('path');
 const { DebugSession } = require('../services/debugBridge');
 const { PythonDebugSession } = require('../services/pythonDebugBridge');
 const { prepareWorkspace } = require('./terminalManager');
 
-// socket.id -> DebugSession (one active session max per socket)
+
 const sessions = new Map();
 
 function stopSession(socket) {
@@ -26,7 +26,7 @@ function stopSession(socket) {
   sessions.delete(socket.id);
 }
 
-// filePath must be a plain relative JS or Python path inside the workspace.
+
 function sanitizeFilePath(filePath) {
   const raw = String(filePath || '').replace(/\\/g, '/').trim();
   if (!raw || raw.length > 256) return null;
@@ -48,14 +48,14 @@ async function startSession(socket, { roomId, filePath, breakpoints, files } = {
     return;
   }
 
-  // prepareWorkspace: solo → writes client files to workspaces/solo-<userId>;
-  // room → writes the room's DB files (same as terminal runs).
+  
+  
   const cwd =
     (await prepareWorkspace(roomId, files, socket.data.user?.userId)) ||
     path.join(__dirname, '..', '..');
 
-  // Python files go through the real Debug Adapter Protocol (debugpy —
-  // the same adapter VS Code uses); JS-family files use the CDP bridge.
+  
+  
   const session = safePath.endsWith('.py') ? new PythonDebugSession() : new DebugSession();
   sessions.set(socket.id, session);
   session.onEvent = (evt) => {
@@ -72,9 +72,9 @@ async function startSession(socket, { roomId, filePath, breakpoints, files } = {
     return;
   }
 
-  // The target script may not have parsed yet when --inspect-brk fired
-  // before any scriptParsed arrived; send the freshest breakpoint list again
-  // once the session confirms the script — setBreakpoints is idempotent here.
+  
+  
+  
   console.log('[debug] session started for', socket.id, 'file=' + safePath);
 }
 
@@ -124,7 +124,7 @@ function registerDebugHandlers(io, socket) {
     }
   });
 
-  // Always stop the debug session when the socket goes away
+  
   socket.on('disconnect', () => stopSession(socket));
 }
 

@@ -1,16 +1,16 @@
-/**
- * problemsStore — framework-free pub/sub singleton for the Problems view.
- *
- * Two sources feed it:
- *   - 'monaco'     : live diagnostics from Monaco's own language workers
- *                     (TS/CSS/HTML/JSON markers on the open model)
- *   - 'typecheck'   : project-wide results from POST /api/typecheck
- *
- * Problem shape:
- *   { fileId, fileName, path, line, column, severity, message, source }
- * severity is one of 'error' | 'warning' | 'info'.
- * line/column are 1-based.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 let monacoProblems = [];
 let typecheckProblems = [];
@@ -41,24 +41,24 @@ function normalize(problem) {
   };
 }
 
-/** Replace the live Monaco-worker problems and notify. */
+ 
 export function setMonacoProblems(list) {
   monacoProblems = Array.isArray(list) ? list.map(normalize) : [];
   notify();
 }
 
-/** Replace the project-wide type-check problems and notify. */
+ 
 export function setTypecheckProblems(list) {
   typecheckProblems = Array.isArray(list) ? list.map(normalize) : [];
   notify();
 }
 
-/** Merged array: monaco first, then typecheck. */
+ 
 export function getProblems() {
   return [...monacoProblems, ...typecheckProblems];
 }
 
-/** { errors, warnings } counts over the merged list. */
+ 
 export function getCounts() {
   let errors = 0;
   let warnings = 0;
@@ -69,14 +69,14 @@ export function getCounts() {
   return { errors, warnings };
 }
 
-/** Clear both sources and notify. */
+ 
 export function clearProblems() {
   monacoProblems = [];
   typecheckProblems = [];
   notify();
 }
 
-/** Subscribe; returns an unsubscribe function. */
+ 
 export function subscribe(listener) {
   if (typeof listener !== 'function') return () => {};
   listeners.add(listener);

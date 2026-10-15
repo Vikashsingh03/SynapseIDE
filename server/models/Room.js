@@ -14,7 +14,7 @@ const fileSchema = new mongoose.Schema({
 const versionSchema = new mongoose.Schema({
   content: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
-  fileId: { type: String, required: true }, // Optional but good for multiple files
+  fileId: { type: String, required: true }, 
 });
 
 const roomMemberSchema = new mongoose.Schema(

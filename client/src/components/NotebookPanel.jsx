@@ -1,11 +1,11 @@
-// NotebookPanel.jsx — cell-based notebook workspace (.nb files).
-//
-// A .nb file's content is a JSON string:
-//   { "language": "python" | "javascript",
-//     "cells": [ { "type": "code" | "md", "source": "...", "output": "...", "error": false } ] }
-// Code runs through the app's JDoodle-backed executeCode (python 71, javascript 63),
-// the same way Toolbar.jsx runs files (stdout / stderr / compile_output / status / error).
-// Outputs persist inside the .nb file — that is the notebook feel.
+
+
+
+
+
+
+
+
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -99,7 +99,7 @@ export default function NotebookPanel({ onClose }) {
   const fileRef = useRef(file);
   fileRef.current = file;
 
-  // keep selection valid as the file list changes
+  
   useEffect(() => {
     if (!notebooks.find((n) => n.id === selectedId)) {
       setSelectedId(notebooks.length ? notebooks[0].id : null);
@@ -107,7 +107,7 @@ export default function NotebookPanel({ onClose }) {
     }
   }, [notebooks, selectedId]);
 
-  // Esc closes while mounted
+  
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') onClose?.();
@@ -121,8 +121,8 @@ export default function NotebookPanel({ onClose }) {
     [updateContent]
   );
 
-  // Re-parse the LATEST file content before every mutation so sequential
-  // runs (Run All) don't clobber each other with stale snapshots.
+  
+  
   const mutateCells = useCallback(
     (fn) => {
       const f = fileRef.current;
@@ -137,7 +137,7 @@ export default function NotebookPanel({ onClose }) {
     [persist]
   );
 
-  // ── create ──────────────────────────────────────────────
+  
   const handleCreate = () => {
     const base = (createName || 'notebook').trim() || 'notebook';
     const name = base.endsWith('.nb') ? base : `${base}.nb`;
@@ -153,7 +153,7 @@ export default function NotebookPanel({ onClose }) {
     persist(file.id, freshNotebook(fileLanguage));
   };
 
-  // ── cell ops ────────────────────────────────────────────
+  
   const updateCellSource = (i, source) =>
     mutateCells((nb) => {
       nb.cells[i] = { ...nb.cells[i], source };
@@ -184,10 +184,10 @@ export default function NotebookPanel({ onClose }) {
 
   const clearOutput = (i) => updateCell(i, { output: '', error: false });
 
-  // ── run ─────────────────────────────────────────────────
-  // Response-field handling mirrors Toolbar.jsx: executeCode resolves with
-  // { stdout, stderr, compile_output, status, error }. OutputPanel.jsx treats
-  // stderr || compile_output || error as the error signal; stdout is the success text.
+  
+  
+  
+  
   const runCell = useCallback(
     async (i) => {
       const f = fileRef.current;
@@ -231,7 +231,7 @@ export default function NotebookPanel({ onClose }) {
     [persist, running]
   );
 
-  // Run All: sequential, awaits each cell; continues on error (notebook convention).
+  
   const runAll = useCallback(async () => {
     if (runningAll) return;
     setRunningAll(true);
@@ -250,7 +250,7 @@ export default function NotebookPanel({ onClose }) {
     }
   }, [runCell, runningAll]);
 
-  // ── render state ────────────────────────────────────────
+  
   const parsed = file ? safeParse(file.content) : { ok: false, loading: true };
   const nb = parsed.ok ? parsed.nb : null;
   const fileLanguage = nb?.language === 'javascript' ? 'javascript' : 'python';
@@ -260,7 +260,7 @@ export default function NotebookPanel({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-[65] bg-[#0A0E17] text-slate-200 flex flex-col animate-fade-in">
-      {/* header */}
+      { }
       <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-white/[0.02]">
         <NotebookPen size={18} className="text-[#58A6FF]" />
         <span className="font-semibold text-[15px] text-slate-100">Notebook</span>
@@ -312,7 +312,7 @@ export default function NotebookPanel({ onClose }) {
         </button>
       </div>
 
-      {/* body */}
+      { }
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="max-w-3xl mx-auto">
           {showCreateForm ? (
@@ -380,7 +380,7 @@ export default function NotebookPanel({ onClose }) {
                 return (
                   <div key={i}>
                     <div className="border border-white/10 rounded-lg bg-white/[0.02] mb-1">
-                      {/* cell header */}
+                      { }
                       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-white/[0.07]">
                         <span
                           className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
@@ -431,7 +431,7 @@ export default function NotebookPanel({ onClose }) {
                         </button>
                       </div>
 
-                      {/* cell body */}
+                      { }
                       {cell.type === 'code' ? (
                         <div>
                           <textarea
@@ -506,7 +506,7 @@ export default function NotebookPanel({ onClose }) {
         </div>
       </div>
 
-      {/* footer */}
+      { }
       <div className="px-4 py-2 border-t border-white/10 bg-white/[0.02] text-center">
         <span className="text-[11px] text-slate-500">
           Runs use the JDoodle free tier (20 runs/day). Outputs are saved inside the .nb file.
@@ -516,7 +516,7 @@ export default function NotebookPanel({ onClose }) {
   );
 }
 
-// Host: holds open state and opens on the 'synapse:open-notebook' window event.
+
 export function NotebookHost() {
   const [open, setOpen] = useState(false);
 
