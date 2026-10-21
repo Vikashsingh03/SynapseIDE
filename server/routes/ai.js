@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const authMiddleware = require('../middleware/auth');
 const { aiChatLimiter } = require('../middleware/rateLimits');
 const { requestAIChat, requestAICompletion } = require('../services/aiProvider');
+const { buildCommitPrompt, cleanCommitMessage } = require('../services/commitPrompt');
 const { extractAgentActions } = require('../services/agentActions');
 const Conversation = require('../models/Conversation');
 const AIMessage = require('../models/AIMessage');
@@ -97,6 +98,35 @@ router.post('/complete', async (req, res) => {
         error.response?.data?.error?.message ||
         error.message ||
         'Completion failed.',
+    });
+  }
+});
+
+router.post('/commit-message', async (req, res) => {
+  try {
+    const { files, diff } = req.body || {};
+    const safeDiff = typeof diff === 'string' ? diff : '';
+    if (!safeDiff.trim()) {
+      return res.status(400).json({ error: 'A diff of the changes is required.' });
+    }
+    const safeFiles = Array.isArray(files)
+      ? files.filter((f) => typeof f === 'string' && f.trim()).slice(0, 100)
+      : [];
+    const prompt = buildCommitPrompt({ files: safeFiles, diff: safeDiff });
+    const reply = await requestAIChat({
+      message: prompt,
+      history: [],
+      context: {},
+      agent: false,
+    });
+    return res.json({ message: cleanCommitMessage(reply) });
+  } catch (error) {
+    console.error('AI commit message error:', error.response?.data || error.message);
+    return res.status(502).json({
+      error:
+        error.response?.data?.error?.message ||
+        error.message ||
+        'Commit message generation failed.',
     });
   }
 });

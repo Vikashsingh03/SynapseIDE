@@ -7,6 +7,7 @@ import {
   ArrowDown,
   Plus,
   RefreshCw,
+  Sparkles,
   ChevronRight,
   ChevronDown,
   History,
@@ -23,6 +24,7 @@ import { API_BASE } from '../config/apiConfig';
 import { getToken } from '../services/authService';
 import { useFiles } from '../contexts/FileContext';
 import { parseConflicts, applyResolutions } from '../utils/gitConflicts';
+import { cleanCommitMessage, assembleCommitDiff, MAX_COMMIT_DIFF_FILES } from '../utils/commitMessage';
 import {
   gitStatus,
   gitInit,
@@ -336,6 +338,7 @@ export default function GitPanel({ theme, roomId }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
+  const [writingMsg, setWritingMsg] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [expandedFile, setExpandedFile] = useState(null);
@@ -423,6 +426,46 @@ export default function GitPanel({ theme, roomId }) {
   const doCommit = () => {
     if (!message.trim() || busy) return;
     run('commit', () => gitCommit(roomId, message.trim())).then(() => setMessage(''));
+  };
+
+  const writeWithNeura = async () => {
+    if (writingMsg || busy || changes.length === 0) return;
+    setWritingMsg(true);
+    setError('');
+    try {
+      const targets = changes.slice(0, MAX_COMMIT_DIFF_FILES);
+      const perFile = [];
+      for (const ch of targets) {
+        let d = diffs[ch.file];
+        if (d === undefined) {
+          d = await gitDiff(roomId, ch.file);
+          setDiffs((prev) => ({ ...prev, [ch.file]: d }));
+        }
+        perFile.push({ file: ch.file, diff: d });
+      }
+      const { diff } = assembleCommitDiff(perFile, changes.length);
+      if (!diff.trim()) {
+        throw new Error('No diff available for these changes yet.');
+      }
+      const res = await fetch(`${API_BASE}/ai/commit-message`, {
+        method: 'POST',
+        headers: gitApiHeaders(),
+        body: JSON.stringify({ files: changes.map((c) => c.file), diff }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Neura could not write a commit message.');
+      }
+      const cleaned = cleanCommitMessage(data.message || '');
+      if (!cleaned) {
+        throw new Error('Neura returned an empty commit message.');
+      }
+      setMessage(cleaned);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setWritingMsg(false);
+    }
   };
 
   
@@ -667,6 +710,15 @@ export default function GitPanel({ theme, roomId }) {
             placeholder="Commit message… (Enter to commit)"
             className={`flex-1 bg-transparent outline-none ${t.textPrimary} text-[13px] font-mono py-1.5 placeholder:${t.textMuted}`}
           />
+          <button
+            onClick={writeWithNeura}
+            disabled={changes.length === 0 || writingMsg || !!busy}
+            title="Write with Neura"
+            className={`${t.iconBtn} shrink-0 self-center flex items-center gap-1.5 px-2.5! py-1.5! rounded-lg! disabled:opacity-40`}
+          >
+            {writingMsg ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+            <span className="hidden xl:inline font-mono text-[11px] font-bold">{writingMsg ? 'Writing…' : 'Neura'}</span>
+          </button>
           <button
             onClick={doCommit}
             disabled={!message.trim() || !!busy}
