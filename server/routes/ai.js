@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/auth');
 const { aiChatLimiter } = require('../middleware/rateLimits');
 const { requestAIChat, requestAICompletion } = require('../services/aiProvider');
 const { buildCommitPrompt, cleanCommitMessage } = require('../services/commitPrompt');
+const { buildReadmePrompt, cleanReadmeMarkdown } = require('../services/readmePrompt');
 const { extractAgentActions } = require('../services/agentActions');
 const Conversation = require('../models/Conversation');
 const AIMessage = require('../models/AIMessage');
@@ -127,6 +128,50 @@ router.post('/commit-message', async (req, res) => {
         error.response?.data?.error?.message ||
         error.message ||
         'Commit message generation failed.',
+    });
+  }
+});
+
+router.post('/readme', async (req, res) => {
+  try {
+    const { projectName, tagline, summary } = req.body || {};
+    const safeSummary = summary && typeof summary === 'object' ? summary : {};
+    const tree = typeof safeSummary.tree === 'string' ? safeSummary.tree : '';
+    if (!tree.trim()) {
+      return res.status(400).json({ error: 'A project file tree is required.' });
+    }
+    const safeName =
+      typeof projectName === 'string' && projectName.trim()
+        ? projectName.trim().slice(0, 120)
+        : 'My Project';
+    const safeTagline = typeof tagline === 'string' ? tagline.trim().slice(0, 200) : '';
+    const safePkg = (pkg) =>
+      pkg && typeof pkg === 'object' && !Array.isArray(pkg) ? pkg : null;
+    const prompt = buildReadmePrompt({
+      projectName: safeName,
+      tagline: safeTagline,
+      summary: {
+        tree,
+        clientPkg: safePkg(safeSummary.clientPkg),
+        serverPkg: safePkg(safeSummary.serverPkg),
+        existingReadme:
+          typeof safeSummary.existingReadme === 'string' ? safeSummary.existingReadme : null,
+      },
+    });
+    const reply = await requestAIChat({
+      message: prompt,
+      history: [],
+      context: {},
+      agent: false,
+    });
+    return res.json({ markdown: cleanReadmeMarkdown(reply, safeName) });
+  } catch (error) {
+    console.error('AI README error:', error.response?.data || error.message);
+    return res.status(502).json({
+      error:
+        error.response?.data?.error?.message ||
+        error.message ||
+        'README generation failed.',
     });
   }
 });

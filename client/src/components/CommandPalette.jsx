@@ -48,6 +48,7 @@ import {
   Monitor,
   FlaskConical,
   History,
+  BookOpen,
 } from 'lucide-react';
 import { fontLabelFor } from '../hooks/useEditorSettings';
 import { getExtensionCommands } from '../extensions/registry';
@@ -326,6 +327,13 @@ export default function CommandPalette({
         label: 'Review code with Neura',
         hint: 'AI',
         run: () => onOpenReview?.(),
+      },
+      {
+        key: 'generate-readme',
+        icon: BookOpen,
+        label: 'Generate README with Neura',
+        hint: 'README.md',
+        run: () => window.dispatchEvent(new Event('synapse:generate-readme')),
       },
       {
         key: 'snippets',

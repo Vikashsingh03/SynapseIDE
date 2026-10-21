@@ -24,6 +24,7 @@ import { TasksHost } from '../components/TasksPanel';
 import { PreviewHost } from '../components/PreviewPanel';
 import { TestHost } from '../components/TestPanel';
 import { TimelineHost } from '../components/TimelinePanel';
+import { ReadmeHost } from '../components/ReadmeModal';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import CommandPalette from '../components/CommandPalette';
@@ -359,6 +360,7 @@ function EditorPage() {
         <PreviewHost />
         <TestHost />
         <TimelineHost />
+        <ReadmeHost theme={theme} />
 
         { }
         <CodeReviewModal
