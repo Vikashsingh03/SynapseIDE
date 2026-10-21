@@ -3,6 +3,7 @@ import Editor from '@monaco-editor/react';
 import { MonacoBinding } from 'y-monaco';
 import { useFiles } from '../contexts/FileContext';
 import { getMonacoLanguage } from '../utils/languageMap';
+import { buildExplainSelectionPrompt } from '../utils/selectionActions';
 import { registerSnippetProvider, registerSnippetUseCommand } from '../services/snippetProvider';
 import { registerIntellisense, syncProjectFiles } from '../editor/intellisense';
 import { registerGhostText } from '../editor/ghostText';
@@ -250,6 +251,7 @@ export default function EditorPanel({
   activeFileId: activeFileIdProp,
   activeFileLock = null,
   isReadOnly = false,
+  forceReadOnly = false,
   lockedByOther = false,
   lockNotice = '',
   fileIdOverride = null,
@@ -765,6 +767,77 @@ export default function EditorPanel({
               registerGhostText(monaco);
             } catch {}
 
+            if (isPrimary) {
+            try {
+              const dispatchSelectionAction = (kind) => {
+                try {
+                  const sel = editor.getSelection();
+                  const model = editor.getModel();
+                  if (!sel || sel.isEmpty() || !model) return;
+                  const selectionText = model.getValueInRange(sel);
+                  if (!selectionText.trim()) return;
+                  const list = filesRef.current && filesRef.current.length ? filesRef.current : files;
+                  const file = (list || []).find((f) => f.id === effectiveFile?.id) || effectiveFile;
+                  if (!file) return;
+                  const startLine = sel.startLineNumber;
+                  const endLine = sel.endLineNumber;
+                  if (kind === 'explain') {
+                    window.dispatchEvent(
+                      new CustomEvent('synapse:ask-neura', {
+                        detail: {
+                          prompt: buildExplainSelectionPrompt({
+                            fileName: file.name,
+                            startLine,
+                            endLine,
+                            selectionText,
+                          }),
+                        },
+                      })
+                    );
+                    return;
+                  }
+                  window.dispatchEvent(
+                    new CustomEvent('synapse:neura-selection', {
+                      detail: {
+                        kind,
+                        fileId: file.id,
+                        relPath: relPathOf(file, list),
+                        fileName: file.name,
+                        startLine,
+                        endLine,
+                        selectionText,
+                      },
+                    })
+                  );
+                } catch {}
+              };
+              editor.addAction({
+                id: 'synapse.neuraExplainSelection',
+                label: 'Explain Selection',
+                contextMenuGroupId: '9_neura',
+                contextMenuOrder: 1,
+                precondition: 'editorHasSelection',
+                run: () => dispatchSelectionAction('explain'),
+              });
+              editor.addAction({
+                id: 'synapse.neuraFixSelection',
+                label: 'Fix Selection',
+                contextMenuGroupId: '9_neura',
+                contextMenuOrder: 2,
+                precondition: 'editorHasSelection',
+                run: () => dispatchSelectionAction('fix'),
+              });
+              editor.addAction({
+                id: 'synapse.neuraRefactorSelection',
+                label: 'Refactor Selection',
+                contextMenuGroupId: '9_neura',
+                contextMenuOrder: 3,
+                precondition: 'editorHasSelection',
+                run: () => dispatchSelectionAction('refactor'),
+              });
+            } catch {}
+            }
+
             
             if (isPrimary) {
             try {
@@ -934,8 +1007,8 @@ export default function EditorPanel({
             </div>
           }
           options={{
-            readOnly: isReadOnly,
-            domReadOnly: isReadOnly,
+            readOnly: isReadOnly || !!forceReadOnly,
+            domReadOnly: isReadOnly || !!forceReadOnly,
             fontSize: editorSettings?.fontSize ?? 15,
             fontFamily: fontStackFor(editorSettings?.fontFamily),
             fontLigatures: true,

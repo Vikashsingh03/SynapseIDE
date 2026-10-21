@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { LANGUAGES, getLanguageByExtension } from '../utils/languageMap';
 import { readStorage, writeStorage } from '../utils/storage';
 import { recordSnapshot } from '../history/historyStore';
+import TabSessionManager from '../hooks/useTabSession';
 
 const FileContext = createContext();
 
@@ -353,6 +354,7 @@ export function FileProvider({ children, storageKey = STORAGE_KEY }) {
         jumpToFileLine,
       }}
     >
+      <TabSessionManager />
       {children}
     </FileContext.Provider>
   );

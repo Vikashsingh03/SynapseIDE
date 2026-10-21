@@ -36,6 +36,7 @@ import { API_BASE } from '../config/apiConfig';
 import { getToken } from '../services/authService';
 import { copyText } from '../utils/clipboard';
 import { buildFixPrompt } from '../utils/neuraFix';
+import { buildSelectionTaskPrompt } from '../utils/selectionActions';
 
 const PANEL_WIDTH_KEY = 'synapse-neura-width';
 const MIN_PANEL_WIDTH = 300;
@@ -750,11 +751,80 @@ export default function NeuraPanel({ theme, forceOpen = false, onClose }) {
       });
       setTimeout(() => handleSendRef.current?.(prompt), 60);
     };
+    const onNeuraSelection = (e) => {
+      const d = e?.detail || {};
+      const kind = d.kind === 'refactor' ? 'refactor' : 'fix';
+      const list = filesRef.current || [];
+      const norm = (s) => String(s || '').toLowerCase();
+      let target = null;
+      if (d.fileId) target = list.find((x) => x.id === d.fileId) || null;
+      if (!target && d.relPath) {
+        const t = norm(d.relPath);
+        target = list.find((x) => x.type === 'file' && norm(buildRelPath(x, list)) === t) || null;
+      }
+      if (!target && d.fileName) {
+        const cands = list.filter((x) => x.type === 'file' && norm(x.name) === norm(d.fileName));
+        target = cands.length === 1 ? cands[0] : null;
+      }
+
+      setIsOpen(true);
+
+      const pushLocalNote = (content) => {
+        setMessages((current) => [
+          ...current.filter((m) => m._id !== 'welcome'),
+          {
+            _id: `local-note-${Date.now()}`,
+            role: 'assistant',
+            content,
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+      };
+
+      if (!target || typeof target.content !== 'string') {
+        setTimeout(
+          () => pushLocalNote('That file is no longer in the project — select the code again and retry.'),
+          60
+        );
+        return;
+      }
+      if (isSendingRef.current) {
+        setTimeout(
+          () => pushLocalNote('Neura is finishing the current reply — try the selection action again in a moment.'),
+          60
+        );
+        return;
+      }
+
+      const startLine = Number(d.startLine) || 1;
+      const endLine = Number(d.endLine) || startLine;
+      let selectionText = typeof d.selectionText === 'string' ? d.selectionText : '';
+      if (!selectionText) {
+        selectionText = String(target.content || '')
+          .split('\n')
+          .slice(startLine - 1, endLine)
+          .join('\n');
+      }
+
+      setAgentMode(true);
+      const prompt = buildSelectionTaskPrompt({
+        kind,
+        fileName: target.name,
+        relPath: buildRelPath(target, list),
+        startLine,
+        endLine,
+        selectionText,
+        fileContent: target.content || '',
+      });
+      setTimeout(() => handleSendRef.current?.(prompt), 60);
+    };
     window.addEventListener('synapse:ask-neura', onAskNeura);
     window.addEventListener('synapse:neura-fix', onNeuraFix);
+    window.addEventListener('synapse:neura-selection', onNeuraSelection);
     return () => {
       window.removeEventListener('synapse:ask-neura', onAskNeura);
       window.removeEventListener('synapse:neura-fix', onNeuraFix);
+      window.removeEventListener('synapse:neura-selection', onNeuraSelection);
     };
   }, []);
 

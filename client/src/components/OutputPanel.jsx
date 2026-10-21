@@ -20,7 +20,7 @@ import GitPanel from './GitPanel';
 import ProblemsPanel from './ProblemsPanel';
 import { getRunErrorText, buildExplainPrompt, buildRunFixDetail } from '../utils/runError';
 
-export default function OutputPanel({ theme, output, roomId }) {
+export default function OutputPanel({ theme, output, roomId, myRole }) {
   const [activeTab, setActiveTab] = useState('output');
   const [isOutputExpanded, setIsOutputExpanded] = useState(true);
   const { activeFile } = useFiles();
@@ -34,6 +34,20 @@ export default function OutputPanel({ theme, output, roomId }) {
     window.addEventListener('synapse:open-problems', openProblems);
     return () => window.removeEventListener('synapse:open-problems', openProblems);
   }, []);
+
+  const [roleNow, setRoleNow] = useState(myRole || null);
+  useEffect(() => {
+    setRoleNow(myRole || null);
+  }, [myRole]);
+  useEffect(() => {
+    const onRole = (e) => {
+      if (!roomId || e.detail?.roomId === roomId) setRoleNow(e.detail?.role || null);
+    };
+    window.addEventListener('synapse:room-role', onRole);
+    return () => window.removeEventListener('synapse:room-role', onRole);
+  }, [roomId]);
+  const visibleTabs = roleNow === 'viewer' ? ['output', 'errors'] : ['output', 'errors', 'terminal', 'git'];
+  const shownTab = visibleTabs.includes(activeTab) ? activeTab : 'output';
 
   const t = getThemeClasses(theme);
 
@@ -125,14 +139,14 @@ export default function OutputPanel({ theme, output, roomId }) {
     }
   };
 
-  const panelHeight = !isOutputExpanded ? 'h-10' : activeTab === 'git' ? 'h-[420px]' : 'h-64';
+  const panelHeight = !isOutputExpanded ? 'h-10' : shownTab === 'git' ? 'h-[420px]' : 'h-64';
   return (
     <div className={`border-t border-white/[0.07] flex flex-col transition-[height] duration-200 shrink-0 bg-[#121824] shadow-[inset_0_1px_10px_rgba(0,0,0,0.28)] ${panelHeight}`}>
       { }
       <div className="h-[34px] flex items-center justify-between pl-4 pr-2 border-b border-white/[0.06] bg-[#0B0F16] shrink-0">
         <div className="flex gap-1 h-full items-end">
-          {['output', 'errors', 'terminal', 'git'].map((tab) => {
-            const isActive = activeTab === tab && isOutputExpanded;
+          {visibleTabs.map((tab) => {
+            const isActive = shownTab === tab && isOutputExpanded;
             return (
               <button
                 key={tab}
@@ -176,17 +190,17 @@ export default function OutputPanel({ theme, output, roomId }) {
         </div>
       </div>
 
-      {isOutputExpanded && activeTab === 'terminal' && (
+      {isOutputExpanded && shownTab === 'terminal' && (
         <div className="flex-1 min-h-0">
           <TerminalPanel roomId={roomId} />
         </div>
       )}
-      {isOutputExpanded && activeTab === 'git' && (
+      {isOutputExpanded && shownTab === 'git' && (
         <div className="flex-1 min-h-0">
           <GitPanel theme={theme} roomId={roomId} />
         </div>
       )}
-      {isOutputExpanded && activeTab !== 'terminal' && activeTab !== 'git' && (
+      {isOutputExpanded && shownTab !== 'terminal' && shownTab !== 'git' && (
         <div className="flex-1 overflow-auto font-mono text-[12.5px] leading-relaxed custom-scrollbar min-h-0">
           {runError && (
             <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2 border-b border-red-400/15 bg-[#1a141c]">

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Send, Copy, Check, Pin, Reply, Pencil, Trash2,
-  Search, X, CornerDownRight, MessageSquare
+  Search, X, CornerDownRight, MessageSquare,
+  Crown, Eye, PencilLine, Users
 } from 'lucide-react';
 import { copyText } from '../utils/clipboard';
 import { getAvatarStyle, getUserInitial } from '../utils/avatar';
@@ -262,6 +263,33 @@ export default function ChatPanel({
 
   const displayMessages = searchMode ? searchResults : uniqueMessages;
 
+  const memberList = useMemo(() => {
+    const byUser = new Map();
+    (collaborators || []).forEach((member) => {
+      if (member?.userId && !byUser.has(member.userId)) {
+        byUser.set(member.userId, member);
+      }
+    });
+    return [...byUser.values()];
+  }, [collaborators]);
+
+  const myMemberRole = memberList.find((member) => member.userId === currentUser?.userId)?.role || 'editor';
+  const iAmHost = myMemberRole === 'host';
+
+  const roleBadgeFor = (role) => {
+    if (role === 'host') {
+      return { label: 'Host', Icon: Crown, classes: 'text-amber-500 border-amber-500/30 bg-amber-500/10' };
+    }
+    if (role === 'viewer') {
+      return { label: 'Viewer', Icon: Eye, classes: 'text-(--muted) border-(--line) bg-(--ink)/4' };
+    }
+    return { label: 'Editor', Icon: PencilLine, classes: 'text-(--blue) border-(--blue)/25 bg-(--blue)/10' };
+  };
+
+  const handleRoleChange = (userId, role) => {
+    getSocket?.()?.emit('set-member-role', { userId, role });
+  };
+
   
   const renderMessage = (msg, index) => {
     const isMe = msg.senderId === currentUser?.userId;
@@ -445,6 +473,51 @@ export default function ChatPanel({
           </>
         )}
       </div>
+
+      {memberList.length > 0 && (
+        <div className={`px-3 py-2 border-b ${border} shrink-0`}>
+          <div className={`flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] mb-1.5 ${textMuted}`}>
+            <Users size={11} /> Members · {memberList.length}
+          </div>
+          <div className="space-y-0.5 max-h-36 overflow-y-auto custom-scrollbar">
+            {memberList.map((member) => {
+              const badge = roleBadgeFor(member.role || 'editor');
+              const RoleIcon = badge.Icon;
+              const isMe = member.userId === currentUser?.userId;
+              return (
+                <div key={member.userId} className="flex items-center gap-2 px-1 py-1">
+                  <div
+                    className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold border ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
+                    style={getAvatarStyle({ userId: member.userId, name: member.username }, member.cursorColor)}
+                  >
+                    {getUserInitial(member.username)}
+                  </div>
+                  <span className={`text-xs font-medium truncate flex-1 ${t.textPrimary}`}>
+                    {member.username || 'Unknown'}
+                    {isMe && <span className={textMuted}> (You)</span>}
+                  </span>
+                  {iAmHost && member.role !== 'host' ? (
+                    <select
+                      value={member.role === 'viewer' ? 'viewer' : 'editor'}
+                      onChange={(e) => handleRoleChange(member.userId, e.target.value)}
+                      className="text-[10px] font-semibold px-1.5 py-1 rounded-md border cursor-pointer bg-(--paper-2) border-(--line) text-(--ink) outline-none"
+                      title="Change member role"
+                    >
+                      <option value="editor">Editor</option>
+                      <option value="viewer">Viewer</option>
+                    </select>
+                  ) : (
+                    <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wide border ${badge.classes}`}>
+                      <RoleIcon size={10} />
+                      {badge.label}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       { }
       {showPinned && pinnedMessages.length > 0 && (

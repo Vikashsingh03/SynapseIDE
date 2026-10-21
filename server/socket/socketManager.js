@@ -56,6 +56,40 @@ function emitParticipants(io, roomId) {
   io.to(roomId).emit('room-users', snapshot.participants);
 }
 
+const ASSIGNABLE_ROLES = ['editor', 'viewer'];
+const roomRoleByUser = new Map();
+
+function resolveMemberRole(roomData, userId) {
+  const targetId = String(userId || '').trim();
+  if (!targetId) {
+    return 'editor';
+  }
+  if (roomData && String(roomData.createdBy || '') === targetId) {
+    return 'host';
+  }
+  const members = Array.isArray(roomData?.members) ? roomData.members : [];
+  const record = members.find((member) => String(member?.userId || '') === targetId);
+  if (record && ASSIGNABLE_ROLES.includes(record.role)) {
+    return record.role;
+  }
+  return 'editor';
+}
+
+function setStoredRole(roomId, userId, role) {
+  const targetId = String(userId || '').trim();
+  if (!roomId || !targetId || !role) {
+    return;
+  }
+  if (!roomRoleByUser.has(roomId)) {
+    roomRoleByUser.set(roomId, new Map());
+  }
+  roomRoleByUser.get(roomId).set(targetId, role);
+}
+
+function socketIsViewer(socket) {
+  return socket?.data?.role === 'viewer';
+}
+
 const FILE_LOCK_TIMEOUT_MS = 45000;
 const roomLocks = new Map();
 
@@ -117,6 +151,7 @@ async function recordRoomMembership(roomId, participant) {
       {
         $set: {
           'members.$.username': username,
+          'members.$.role': participant?.role || 'editor',
           'members.$.lastVisitedAt': now,
         },
       }
@@ -136,6 +171,7 @@ async function recordRoomMembership(roomId, participant) {
           members: {
             userId,
             username,
+            role: participant?.role || 'editor',
             joinedAt: now,
             lastVisitedAt: now,
           },
@@ -294,10 +330,25 @@ function createSocketServer(httpServer) {
       socket.join(normalizedRoomId);
       socket.data.roomId = normalizedRoomId;
 
+      let roomRole = resolveMemberRole(room, socket.data.user.userId);
+      try {
+        const dbRoom = await RoomModel.findOne({ roomId: normalizedRoomId })
+          .select('createdBy members')
+          .lean();
+        if (dbRoom) {
+          roomRole = resolveMemberRole(dbRoom, socket.data.user.userId);
+        }
+      } catch (roleError) {
+        console.error('Failed to resolve room role:', roleError);
+      }
+      setStoredRole(normalizedRoomId, socket.data.user.userId, roomRole);
+      socket.data.role = roomRole;
+
       const participant = {
         socketId: socket.id,
         userId: socket.data.user.userId,
         username: socket.data.user.name,
+        role: roomRole,
         joinedAt: Date.now(),
       };
 
@@ -322,11 +373,14 @@ function createSocketServer(httpServer) {
         participant: currentParticipant,
       });
 
+      socket.emit('room-role', { role: roomRole, roomId: normalizedRoomId });
+
       socket.to(normalizedRoomId).emit('user-joined', {
         userId: currentParticipant.userId,
         username: currentParticipant.username,
         cursorColor: currentParticipant.cursorColor,
         avatarGlyph: currentParticipant.avatarGlyph,
+        role: currentParticipant.role,
       });
       emitParticipants(io, normalizedRoomId);
 
@@ -343,6 +397,99 @@ function createSocketServer(httpServer) {
       } catch (err) {
         console.error('Error creating system join message', err);
       }
+    });
+
+    socket.on('set-member-role', async ({ userId, role } = {}) => {
+      const roomId = socket.data.roomId;
+      if (!roomId) {
+        return;
+      }
+
+      if (socket.data.role !== 'host') {
+        socket.emit('room-role-error', { message: 'Only the host can change member roles.' });
+        return;
+      }
+
+      const targetUserId = String(userId || '').trim();
+      const nextRole = String(role || '').trim();
+      if (!targetUserId || !ASSIGNABLE_ROLES.includes(nextRole)) {
+        socket.emit('room-role-error', { message: 'Invalid member or role.' });
+        return;
+      }
+
+      const liveRoom = getRoom(roomId);
+      if (liveRoom && String(liveRoom.createdBy || '') === targetUserId) {
+        socket.emit('room-role-error', { message: 'The host role cannot be changed.' });
+        return;
+      }
+
+      const snapshot = getRoomSnapshot(roomId);
+      let isKnownMember = Boolean(
+        snapshot?.participants?.some((entry) => String(entry.userId) === targetUserId)
+      );
+      if (!isKnownMember) {
+        try {
+          const found = await RoomModel.findOne({ roomId, 'members.userId': targetUserId })
+            .select('_id')
+            .lean();
+          isKnownMember = Boolean(found);
+        } catch (lookupError) {
+          console.error('Member role lookup error:', lookupError);
+        }
+      }
+      if (!isKnownMember) {
+        socket.emit('room-role-error', { message: 'That user is not a member of this room.' });
+        return;
+      }
+
+      try {
+        const updateResult = await RoomModel.updateOne(
+          { roomId, 'members.userId': targetUserId },
+          { $set: { 'members.$.role': nextRole } }
+        );
+        if (updateResult.matchedCount === 0) {
+          await RoomModel.updateOne(
+            { roomId },
+            {
+              $push: {
+                members: {
+                  userId: targetUserId,
+                  username: '',
+                  role: nextRole,
+                  joinedAt: new Date(),
+                  lastVisitedAt: new Date(),
+                },
+              },
+            }
+          );
+        }
+      } catch (persistError) {
+        console.error('Failed to persist member role:', persistError);
+        socket.emit('room-role-error', { message: 'Could not update the member role.' });
+        return;
+      }
+
+      setStoredRole(roomId, targetUserId, nextRole);
+
+      const targetSockets = userSockets.get(targetUserId);
+      if (targetSockets) {
+        targetSockets.forEach((targetSocketId) => {
+          const targetSocket = io.sockets.sockets.get(targetSocketId);
+          if (targetSocket && targetSocket.data.roomId === roomId) {
+            targetSocket.data.role = nextRole;
+          }
+        });
+      }
+      emitToUser(io, targetUserId, 'room-role', { role: nextRole, roomId });
+
+      updateRoomState(roomId, (room) => {
+        room.participants.forEach((entry) => {
+          if (String(entry.userId) === targetUserId) {
+            entry.role = nextRole;
+          }
+        });
+      });
+      emitParticipants(io, roomId);
     });
 
     socket.on('leave-room', async () => {
@@ -589,6 +736,9 @@ function createSocketServer(httpServer) {
       if (!roomId) {
         return;
       }
+      if (socketIsViewer(socket)) {
+        return;
+      }
 
       const snapshot = updateRoomState(roomId, (room) => {
         room.files = Array.isArray(payload.files)
@@ -660,6 +810,7 @@ function createSocketServer(httpServer) {
     socket.on('autosave', async ({ roomId, fileId, content } = {}) => {
       const activeRoomId = normalizeRoomId(roomId || socket.data.roomId);
       if (!activeRoomId || !fileId || content === undefined) return;
+      if (socketIsViewer(socket)) return;
 
       try {
         await RoomModel.updateOne(
@@ -680,6 +831,7 @@ function createSocketServer(httpServer) {
     socket.on('save-version', async ({ roomId, fileId, content } = {}) => {
       const activeRoomId = normalizeRoomId(roomId || socket.data.roomId);
       if (!activeRoomId || !fileId || content === undefined) return;
+      if (socketIsViewer(socket)) return;
 
       try {
         await RoomModel.updateOne(
@@ -770,6 +922,9 @@ function createSocketServer(httpServer) {
       if (!activeRoomId || !fileId || !changes) {
         return;
       }
+      if (socketIsViewer(socket)) {
+        return;
+      }
 
       
       const senderId = socket.data.user.userId;
@@ -810,6 +965,9 @@ function createSocketServer(httpServer) {
     socket.on('legacy-code-change', ({ fileId, content, updatedAt } = {}) => {
       const roomId = socket.data.roomId;
       if (!roomId || !fileId) {
+        return;
+      }
+      if (socketIsViewer(socket)) {
         return;
       }
 
@@ -887,4 +1045,4 @@ function createSocketServer(httpServer) {
   return io;
 }
 
-module.exports = { createSocketServer, escapeRegExp };
+module.exports = { createSocketServer, escapeRegExp, resolveMemberRole, socketIsViewer, ASSIGNABLE_ROLES };

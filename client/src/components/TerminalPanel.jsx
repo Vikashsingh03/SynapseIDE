@@ -10,6 +10,7 @@ import {
   ZoomOut,
   Eraser,
   PackagePlus,
+  Users,
 } from 'lucide-react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
@@ -62,6 +63,11 @@ export default function TerminalPanel({ roomId } = {}) {
   const [globalError, setGlobalError] = useState('');
   const activeIdRef = useRef(null);
   activeIdRef.current = activeId;
+  const tabsRef = useRef([]);
+  tabsRef.current = tabs;
+  const scrollbackRef = useRef(new Map());
+  const attachingRef = useRef(new Set());
+  const focusOnReadyRef = useRef(new Set());
 
   const fitActive = useCallback(() => {
     const entry = termsRef.current.get(activeIdRef.current);
@@ -74,15 +80,37 @@ export default function TerminalPanel({ roomId } = {}) {
           terminalId: activeIdRef.current,
           cols,
           rows,
+          roomId,
         });
       }
     } catch {}
-  }, []);
+  }, [roomId]);
+
+  const attachSharedTab = useCallback(
+    (tabId, focus = false) => {
+      if (focus) focusOnReadyRef.current.add(tabId);
+      if (attachingRef.current.has(tabId)) return;
+      attachingRef.current.add(tabId);
+      socketRef.current?.emit('terminal:create', { roomId, shared: true, tabId });
+    },
+    [roomId]
+  );
 
   const createTerminal = useCallback(() => {
     setGlobalError('');
-    socketRef.current?.emit('terminal:create', { roomId, files: roomId ? undefined : localFilesRef.current });
-  }, [roomId]);
+    if (roomId) {
+      const used = new Set(tabsRef.current.map((t) => t.id));
+      let tabId = 'main';
+      let n = 2;
+      while (used.has(tabId)) {
+        tabId = `t${n}`;
+        n += 1;
+      }
+      attachSharedTab(tabId, true);
+      return;
+    }
+    socketRef.current?.emit('terminal:create', { roomId, files: localFilesRef.current });
+  }, [roomId, attachSharedTab]);
 
   
   const mountTerminal = useCallback(
@@ -107,9 +135,14 @@ export default function TerminalPanel({ roomId } = {}) {
 
       term.writeln('\x1b[1;32m◈ Synapse Terminal\x1b[0m \x1b[2m— starting shell…\x1b[0m');
 
-      
+      const backlog = scrollbackRef.current.get(String(terminalId));
+      if (backlog) {
+        term.write(backlog);
+        scrollbackRef.current.delete(String(terminalId));
+      }
+
       const disposeData = term.onData((data) =>
-        socketRef.current?.emit('terminal:input', { terminalId, data })
+        socketRef.current?.emit('terminal:input', { terminalId, data, roomId })
       );
 
       
@@ -117,7 +150,7 @@ export default function TerminalPanel({ roomId } = {}) {
         e.preventDefault();
         try {
           const text = await navigator.clipboard.readText();
-          if (text) socketRef.current?.emit('terminal:input', { terminalId, data: text });
+          if (text) socketRef.current?.emit('terminal:input', { terminalId, data: text, roomId });
         } catch {}
       };
       container.addEventListener('contextmenu', handleContextMenu);
@@ -132,7 +165,7 @@ export default function TerminalPanel({ roomId } = {}) {
         }
         if (e.ctrlKey && e.key === 'v') {
           navigator.clipboard.readText().then((text) => {
-            if (text) socketRef.current?.emit('terminal:input', { terminalId, data: text });
+            if (text) socketRef.current?.emit('terminal:input', { terminalId, data: text, roomId });
           }).catch(() => {});
           return false;
         }
@@ -155,11 +188,11 @@ export default function TerminalPanel({ roomId } = {}) {
         if (activeIdRef.current === terminalId) fitActive();
       }, 50);
     },
-    [fitActive, fontSize]
+    [fitActive, fontSize, roomId]
   );
 
   const killTerminal = useCallback((terminalId) => {
-    socketRef.current?.emit('terminal:kill', { terminalId });
+    socketRef.current?.emit('terminal:kill', { terminalId, roomId, shared: roomId ? true : undefined });
     const entry = termsRef.current.get(terminalId);
     if (entry) {
       entry.dispose();
@@ -172,7 +205,7 @@ export default function TerminalPanel({ roomId } = {}) {
       }
       return next;
     });
-  }, []);
+  }, [roomId]);
 
   const clearActive = useCallback(() => {
     termsRef.current.get(activeIdRef.current)?.term.clear();
@@ -219,7 +252,7 @@ export default function TerminalPanel({ roomId } = {}) {
         return;
       }
       setInstallError('');
-      socketRef.current?.emit('terminal:input', { terminalId, data: `npm install ${name}\r` });
+      socketRef.current?.emit('terminal:input', { terminalId, data: `npm install ${name}\r`, roomId });
       setInstallStatus(`Installing ${name}…`);
     };
     if (!activeIdRef.current) {
@@ -246,7 +279,7 @@ export default function TerminalPanel({ roomId } = {}) {
         const send = () => {
           const terminalId = activeIdRef.current;
           if (!terminalId) return;
-          socketRef.current?.emit('terminal:input', { terminalId, data: `${command}\r` });
+          socketRef.current?.emit('terminal:input', { terminalId, data: `${command}\r`, roomId });
         };
         if (!activeIdRef.current) {
           createTerminal();
@@ -265,17 +298,35 @@ export default function TerminalPanel({ roomId } = {}) {
     const socket = createCollaborationSocket();
     socketRef.current = socket;
 
-    socket.on('terminal:ready', ({ terminalId, label }) => {
+    socket.on('terminal:ready', ({ terminalId, label, shared, scrollback, tabs: roomTabs }) => {
+      const id = String(terminalId);
+      if (scrollback) {
+        const entry = termsRef.current.get(id);
+        if (entry) entry.term.write(scrollback);
+        else scrollbackRef.current.set(id, scrollback);
+      }
       setTabs((prev) => {
-        if (prev.some((t) => t.id === terminalId)) return prev;
+        if (prev.some((t) => t.id === id)) return prev;
         const tab = {
-          id: terminalId,
+          id,
           label: `${label || 'shell'}${prev.length > 0 ? ` ${prev.length + 1}` : ''}`,
           status: 'ready',
+          shared: Boolean(shared),
         };
         return [...prev, tab];
       });
-      setActiveId(terminalId);
+      if (!shared || focusOnReadyRef.current.has(id)) {
+        focusOnReadyRef.current.delete(id);
+        setActiveId(id);
+      }
+      if (shared && Array.isArray(roomTabs)) {
+        for (const t of roomTabs) {
+          if (t?.tabId && t.tabId !== id) attachSharedTab(t.tabId);
+        }
+      }
+      if (shared && !attachingRef.current.has(id)) {
+        attachSharedTab(id);
+      }
     });
 
     socket.on('terminal:output', ({ terminalId, data }) => {
@@ -293,6 +344,9 @@ export default function TerminalPanel({ roomId } = {}) {
 
     socket.on('terminal:killed', ({ terminalId }) => {
       setTabs((prev) => prev.map((t) => (t.id === String(terminalId) ? { ...t, status: 'exited' } : t)));
+      termsRef.current
+        .get(String(terminalId))
+        ?.term.writeln(`\r\n\x1b[2m— session closed.\x1b[0m`);
     });
 
     socket.on('terminal:error', ({ message }) => {
@@ -300,8 +354,12 @@ export default function TerminalPanel({ roomId } = {}) {
     });
 
     socket.connect();
-    
-    socket.emit('terminal:create', { roomId, files: roomId ? undefined : localFilesRef.current });
+
+    if (roomId) {
+      attachSharedTab('main', true);
+    } else {
+      socket.emit('terminal:create', { roomId, files: localFilesRef.current });
+    }
 
     const onResize = () => fitActive();
     window.addEventListener('resize', onResize);
@@ -313,7 +371,7 @@ export default function TerminalPanel({ roomId } = {}) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [fitActive]);
+  }, [fitActive, attachSharedTab]);
 
   
   useEffect(() => {
@@ -339,6 +397,12 @@ export default function TerminalPanel({ roomId } = {}) {
               >
                 <TerminalIcon size={11} className={isActive ? 'text-[#d9ff3f]' : ''} />
                 <span>{tab.label}</span>
+                {roomId && (
+                  <span className="flex items-center gap-0.5 text-[#8290a8]">
+                    <Users size={10} />
+                    <span className="text-[9px] uppercase tracking-wide">Shared</span>
+                  </span>
+                )}
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     tab.status === 'ready' ? 'bg-emerald-400' : 'bg-[#4a5568]'
@@ -490,6 +554,9 @@ export default function TerminalPanel({ roomId } = {}) {
       <div className="px-3 py-1 border-t border-[#1c2942] font-mono text-[10px] text-[#4a5568] shrink-0 flex items-center gap-3">
         <span className="flex items-center gap-1"><Copy size={9} /> select + Ctrl+C = copy</span>
         <span className="flex items-center gap-1"><ClipboardPaste size={9} /> right-click = paste</span>
+        {roomId && (
+          <span className="flex items-center gap-1 text-[#7ddf64]"><Users size={9} /> shared session — everyone in this room can type</span>
+        )}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import throttle from 'lodash.throttle';
 import debounce from 'lodash.debounce';
 import { useCallback } from 'react';
-import { Loader2, AlertTriangle, ArrowLeft, Phone, X } from 'lucide-react';
+import { Loader2, AlertTriangle, ArrowLeft, Phone, X, Eye } from 'lucide-react';
 import { FileProvider, useFiles } from '../contexts/FileContext';
 import { useAuth } from '../context/useAuth';
 import Sidebar from '../components/Sidebar';
@@ -131,6 +131,7 @@ function RoomSession({ roomId }) {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [presence, setPresence] = useState({});
+  const [myRole, setMyRole] = useState('editor');
   const [yjsManager, setYjsManager] = useState(null);
   const [, setYjsDocVersion] = useState(0);
   const [editingUsers, setEditingUsers] = useState({});
@@ -166,11 +167,14 @@ function RoomSession({ roomId }) {
       if (!fileId) {
         return false;
       }
+      if (myRole === 'viewer') {
+        return false;
+      }
 
       const lock = fileLocks[fileId];
       return !lock || lock.userId === user?.userId;
     },
-    [fileLocks, user?.userId]
+    [fileLocks, user?.userId, myRole]
   );
 
   const showLockNotice = useCallback((message) => {
@@ -184,6 +188,12 @@ function RoomSession({ roomId }) {
   useEffect(() => {
     canEditFileRef.current = canEditFile;
   }, [canEditFile]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('synapse:room-role', { detail: { role: myRole, roomId } })
+    );
+  }, [myRole, roomId]);
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -204,11 +214,14 @@ function RoomSession({ roomId }) {
   }, []);
 
   const handleSaveVersion = useCallback(() => {
+    if (myRole === 'viewer') {
+      return;
+    }
     if (socketRef.current && activeFileId && yjsManager) {
       const content = yjsManager.getText(activeFileId).toString();
       socketRef.current.emit('save-version', { roomId, fileId: activeFileId, content });
     }
-  }, [activeFileId, yjsManager, roomId]);
+  }, [activeFileId, yjsManager, roomId, myRole]);
 
   useEffect(() => {
     latestRoomStateRef.current = {
@@ -326,6 +339,9 @@ function RoomSession({ roomId }) {
       setRoomReady(true);
       setError('');
       if (participant) {
+        if (participant.role) {
+          setMyRole(participant.role);
+        }
         setPresence((previous) => ({
           ...previous,
           [participant.userId]: {
@@ -333,6 +349,7 @@ function RoomSession({ roomId }) {
             username: participant.username,
             cursorColor: participant.cursorColor,
             avatarGlyph: participant.avatarGlyph,
+            role: participant.role,
           },
         }));
       }
@@ -349,6 +366,7 @@ function RoomSession({ roomId }) {
             username: participant.username,
             cursorColor: participant.cursorColor,
             avatarGlyph: participant.avatarGlyph,
+            role: participant.role,
           };
         });
         return nextPresence;
@@ -417,7 +435,7 @@ function RoomSession({ roomId }) {
       }));
     };
 
-    const handleUserJoined = ({ username, cursorColor, avatarGlyph, userId }) => {
+    const handleUserJoined = ({ username, cursorColor, avatarGlyph, userId, role }) => {
       setPresence((previous) => ({
         ...previous,
         [userId]: {
@@ -426,8 +444,18 @@ function RoomSession({ roomId }) {
           username,
           cursorColor,
           avatarGlyph,
+          role,
         },
       }));
+    };
+
+    const handleRoomRole = ({ role, roomId: roleRoomId } = {}) => {
+      if (roleRoomId && roleRoomId !== roomId) {
+        return;
+      }
+      if (role) {
+        setMyRole(role);
+      }
     };
 
     const handleUserLeft = ({ userId }) => {
@@ -465,6 +493,7 @@ function RoomSession({ roomId }) {
     socket.on('disconnect', handleDisconnect);
     socket.on('connect_error', handleConnectError);
     socket.on('room-joined', handleRoomJoined);
+    socket.on('room-role', handleRoomRole);
     socket.on('room-users', handleRoomUsers);
     socket.on('room-state-updated', handleRoomStateUpdated);
     socket.on('remote-code-change', handleRemoteCodeChange);
@@ -839,6 +868,13 @@ function RoomSession({ roomId }) {
         )}
 
         <main className="flex-1 min-w-0 flex flex-col bg-[#121824] overflow-hidden rounded-xl border border-[#2b3546] min-h-0">
+          {myRole === 'viewer' && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/25 text-amber-500 shrink-0">
+              <Eye size={13} className="shrink-0" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.08em]">View only</span>
+              <span className="text-[11px] opacity-80 truncate">You can read, run and chat, but editing is disabled. Ask the host for editor access.</span>
+            </div>
+          )}
           <TabBar
             theme={theme}
             roomId={roomId}
@@ -864,6 +900,7 @@ function RoomSession({ roomId }) {
                 activeFileId={activeFileId}
                 activeFileLock={activeFileLock}
                 isReadOnly={false}
+                forceReadOnly={myRole === 'viewer'}
                 lockedByOther={isActiveFileLockedByOther}
                 lockNotice={lockNotice}
               />
@@ -910,13 +947,14 @@ function RoomSession({ roomId }) {
                     activeFileId={splitFileId}
                     onLocalChange={handleLocalChange}
                     isReadOnly={false}
+                    forceReadOnly={myRole === 'viewer'}
                   />
                 </div>
               </>
             )}
           </div>
 
-          <OutputPanel theme={theme} output={output} roomId={roomId} />
+          <OutputPanel theme={theme} output={output} roomId={roomId} myRole={myRole} />
         </main>
 
         {!zenMode && <NeuraPanel theme={theme} />}

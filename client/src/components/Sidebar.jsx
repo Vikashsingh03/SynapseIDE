@@ -19,6 +19,8 @@ import {
   FolderSearch,
   LayoutTemplate,
   Trophy,
+  Download,
+  Upload,
 } from 'lucide-react';
 import {
   DndContext,
@@ -38,6 +40,7 @@ import FileTreeItem from './FileTreeItem';
 import FileIcon from './FileIcon';
 import ChatPanel from './ChatPanel';
 import { copyText } from '../utils/clipboard';
+import { buildProjectZip, importProjectZip } from '../utils/projectZip';
 import { computeReplacements, parseSearchRegex } from '../utils/searchReplace';
 import { getAvatarStyle, getUserInitial } from '../utils/avatar';
 
@@ -152,6 +155,11 @@ export default function Sidebar({
   const [dragOffset, setDragOffset] = useState(0);
   const [contextMenu, setContextMenu] = useState(null); 
   const [renameTargetId, setRenameTargetId] = useState(null);
+  const [zipExporting, setZipExporting] = useState(false);
+  const [zipImporting, setZipImporting] = useState(false);
+  const [zipStatus, setZipStatus] = useState('');
+  const zipInputRef = useRef(null);
+  const zipStatusTimerRef = useRef(null);
   const [seenChatCount, setSeenChatCount] = useState(chatMessages.length);
   const [seenUserCount, setSeenUserCount] = useState(collaborators.length);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -265,6 +273,52 @@ export default function Sidebar({
         toggleFolder(parentId);
       }
     }
+  };
+
+  const showZipStatus = (message) => {
+    setZipStatus(message);
+    if (zipStatusTimerRef.current) clearTimeout(zipStatusTimerRef.current);
+    zipStatusTimerRef.current = setTimeout(() => setZipStatus(''), 5000);
+  };
+
+  useEffect(() => () => {
+    if (zipStatusTimerRef.current) clearTimeout(zipStatusTimerRef.current);
+  }, []);
+
+  const handleExportZip = async () => {
+    if (zipExporting || !files.some((f) => f.type === 'file')) return;
+    setZipExporting(true);
+    try {
+      const blob = await buildProjectZip(files);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'project.zip';
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      showZipStatus('ZIP export failed');
+    }
+    setZipExporting(false);
+  };
+
+  const handleImportZipFile = async (event) => {
+    const selected = event.target.files?.[0];
+    event.target.value = '';
+    if (!selected || zipImporting) return;
+    setZipImporting(true);
+    try {
+      const result = await importProjectZip(selected, { createFile, createFolder, updateContent });
+      const parts = [`Imported ${result.importedFiles} file${result.importedFiles === 1 ? '' : 's'}`];
+      if (result.importedFolders) parts.push(`${result.importedFolders} folder${result.importedFolders === 1 ? '' : 's'}`);
+      if (result.skipped.length) parts.push(`skipped ${result.skipped.length}`);
+      showZipStatus(parts.join(' · '));
+    } catch {
+      showZipStatus('ZIP import failed — invalid file');
+    }
+    setZipImporting(false);
   };
 
   const handleCreateFile = () => {
@@ -681,6 +735,29 @@ export default function Sidebar({
                 >
                   <Trophy size={15} />
                 </button>
+                <button
+                  className={t.iconBtn}
+                  title="Download Project as ZIP"
+                  onClick={handleExportZip}
+                  disabled={zipExporting || !files.some((f) => f.type === 'file')}
+                >
+                  <Download size={15} />
+                </button>
+                <button
+                  className={t.iconBtn}
+                  title="Import Project from ZIP"
+                  onClick={() => zipInputRef.current?.click()}
+                  disabled={zipImporting}
+                >
+                  <Upload size={15} />
+                </button>
+                <input
+                  ref={zipInputRef}
+                  type="file"
+                  accept=".zip"
+                  className="hidden"
+                  onChange={handleImportZipFile}
+                />
               </div>
             )}
           </div>
@@ -697,6 +774,12 @@ export default function Sidebar({
                   <span>Project Files</span>
                   <span className={`${t.chip} ml-auto`}>{files.filter(f => f.type === 'file').length}</span>
                 </div>
+
+                {zipStatus && (
+                  <div className="px-4 pb-1 font-mono text-[11px] text-emerald-500 animate-fade-in">
+                    {zipStatus}
+                  </div>
+                )}
 
                 <DndContext
                   sensors={sensors}

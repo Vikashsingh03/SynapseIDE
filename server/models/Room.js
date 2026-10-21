@@ -27,6 +27,11 @@ const roomMemberSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    role: {
+      type: String,
+      enum: ['host', 'editor', 'viewer'],
+      default: 'editor',
+    },
     joinedAt: {
       type: Date,
       default: Date.now,
