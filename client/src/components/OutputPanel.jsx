@@ -11,12 +11,14 @@ import {
   Zap,
   MemoryStick,
   CircleDashed,
-  Sparkles,
   GitBranch,
+  Lightbulb,
+  Wand2,
 } from 'lucide-react';
 import TerminalPanel from './TerminalPanel';
 import GitPanel from './GitPanel';
 import ProblemsPanel from './ProblemsPanel';
+import { getRunErrorText, buildExplainPrompt, buildRunFixDetail } from '../utils/runError';
 
 export default function OutputPanel({ theme, output, roomId }) {
   const [activeTab, setActiveTab] = useState('output');
@@ -39,23 +41,26 @@ export default function OutputPanel({ theme, output, roomId }) {
   const isRunning = output?.running;
 
    
-  const handleExplainError = () => {
-    const errorText = output?.stderr || output?.compile_output || output?.error || '';
-    if (!errorText) return;
+  const runError = !isRunning ? getRunErrorText(output) : null;
+
+  const handleSamjhao = () => {
+    if (!runError) return;
     const lang = getLanguageByExtension(activeFile?.name || '');
-    const prompt = [
-      'My ' + lang.name + ' program failed with this error:',
-      '',
-      errorText,
-      '',
-      'Here is the code' + (activeFile?.name ? ' from ' + activeFile.name : '') + ':',
-      '```',
-      activeFile?.content || '',
-      '```',
-      '',
-      'Explain in simple words what went wrong and show me exactly how to fix it.',
-    ].join('\n');
+    const prompt = buildExplainPrompt({
+      fileName: activeFile?.name || '',
+      language: lang.name,
+      errorText: runError.text,
+      parsed: runError.parsed,
+      fileContent: activeFile?.content || '',
+    });
     window.dispatchEvent(new CustomEvent('synapse:ask-neura', { detail: { prompt } }));
+  };
+
+  const handleFixRunError = () => {
+    if (!runError || !activeFile) return;
+    const detail = buildRunFixDetail({ outputText: runError.text, file: activeFile });
+    if (!detail) return;
+    window.dispatchEvent(new CustomEvent('synapse:neura-fix', { detail }));
   };
 
   
@@ -149,16 +154,6 @@ export default function OutputPanel({ theme, output, roomId }) {
           })}
         </div>
         <div className="flex items-center gap-2 text-[11px] font-mono">
-          {hasError && !isRunning && (
-            <button
-              onClick={handleExplainError}
-              title="Ask Neura AI to explain this error"
-              className={`${t.btnAccent} px-2.5! py-1! text-[11px]!`}
-            >
-              <Sparkles size={11} />
-              Explain with Neura
-            </button>
-          )}
           {output?.time && (
             <span className={`${t.chip} inline-flex items-center gap-1`}>
               <Zap size={10} className={t.textMuted} />
@@ -193,6 +188,31 @@ export default function OutputPanel({ theme, output, roomId }) {
       )}
       {isOutputExpanded && activeTab !== 'terminal' && activeTab !== 'git' && (
         <div className="flex-1 overflow-auto font-mono text-[12.5px] leading-relaxed custom-scrollbar min-h-0">
+          {runError && (
+            <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2 border-b border-red-400/15 bg-[#1a141c]">
+              <AlertCircle size={13} className="text-red-300 shrink-0" />
+              <span className="text-[11px] font-mono text-red-200/80 truncate flex-1" title={runError.parsed.message}>
+                {runError.parsed.message}
+              </span>
+              <button
+                onClick={handleSamjhao}
+                title="Neura is error ko simple Hindi-English mein samjhayegi"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-white/10 text-[#C7D3E8] hover:bg-white/5 transition-colors cursor-pointer shrink-0"
+              >
+                <Lightbulb size={11} />
+                Samjhao
+              </button>
+              <button
+                onClick={handleFixRunError}
+                disabled={!activeFile}
+                title="Neura se is error ka fix karwao"
+                className={`${t.btnAccent} px-2.5! py-1! text-[11px]! shrink-0 disabled:opacity-40`}
+              >
+                <Wand2 size={11} />
+                Fix with Neura
+              </button>
+            </div>
+          )}
           {displayContent()}
         </div>
       )}
