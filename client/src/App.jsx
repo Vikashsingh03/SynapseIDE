@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import CreateRoom from './pages/CreateRoom';
 import JoinRoom from './pages/JoinRoom';
 import RoomPage from './pages/RoomPage';
+import { KeybindingsHost } from './components/KeybindingsModal';
 
 function AppRoutes() {
   return (
@@ -35,6 +36,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppRoutes />
+        <KeybindingsHost />
       </AuthProvider>
     </BrowserRouter>
   );

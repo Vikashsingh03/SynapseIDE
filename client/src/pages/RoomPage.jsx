@@ -28,6 +28,8 @@ import { PreviewHost } from '../components/PreviewPanel';
 import { TestHost } from '../components/TestPanel';
 import { TimelineHost } from '../components/TimelinePanel';
 import { ReadmeHost } from '../components/ReadmeModal';
+import { DiffHost } from '../components/DiffModal';
+import { QuickOpenHost } from '../components/QuickOpen';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import VoiceChat from '../components/VoiceChat';
@@ -853,6 +855,8 @@ function RoomSession({ roomId }) {
         <TestHost />
         <TimelineHost />
         <ReadmeHost theme={theme} />
+        <DiffHost theme={theme} />
+        <QuickOpenHost />
 
         {!zenMode && (
           <Sidebar

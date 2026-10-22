@@ -6,12 +6,19 @@
 
 
 import { useEffect, useMemo, useState } from 'react';
-import { FlaskConical, Play, X, Check, Loader2 } from 'lucide-react';
+import { FlaskConical, Play, X, Check, Loader2, Sparkles } from 'lucide-react';
 import { useFiles } from '../contexts/FileContext';
 import { API_BASE } from '../config/apiConfig';
 import { getToken } from '../services/authService';
+import {
+  testFileNameFor,
+  cleanGeneratedTests,
+  looksLikeNodeTests,
+  buildGenerateRequest,
+} from '../utils/testGen';
 
 const TEST_RE = /\.(test|spec)\.(js|mjs|cjs|ts|mts)$/;
+const SOURCE_RE = /\.(js|mjs|cjs)$/;
 
 
 function relPathOf(file, files) {
@@ -81,10 +88,69 @@ function StatusChip({ state }) {
 }
 
 function TestPanel({ onClose }) {
-  const { files } = useFiles();
-  const [states, setStates] = useState({}); 
+  const { files, activeFile, createFile, updateContent } = useFiles();
+  const [states, setStates] = useState({});
   const [expandedId, setExpandedId] = useState(null);
   const [runningAll, setRunningAll] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [genResult, setGenResult] = useState(null);
+  const [genError, setGenError] = useState(null);
+
+  const activeIsSource =
+    !!activeFile &&
+    activeFile.type !== 'folder' &&
+    SOURCE_RE.test(activeFile.name || '') &&
+    !TEST_RE.test(activeFile.name || '');
+
+  const generateTests = async () => {
+    if (!activeFile || generating) return;
+    setGenerating(true);
+    setGenError(null);
+    setGenResult(null);
+    try {
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/ai/generate-tests`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(buildGenerateRequest({ file: activeFile })),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      const code = cleanGeneratedTests(data?.code || '');
+      if (!code) throw new Error('Neura returned an empty response. Try again.');
+      const targetName = testFileNameFor(activeFile.name);
+      const existing = (files || []).find(
+        (f) =>
+          f.type !== 'folder' &&
+          f.name === targetName &&
+          (f.parentId || null) === (activeFile.parentId || null)
+      );
+      setGenResult({
+        targetName,
+        code,
+        existingId: existing ? existing.id : null,
+        looksOk: looksLikeNodeTests(code),
+      });
+    } catch (err) {
+      setGenError(err?.message || 'Test generation failed');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const createGenerated = () => {
+    if (!genResult) return;
+    if (genResult.existingId) {
+      updateContent(genResult.existingId, genResult.code);
+    } else if (activeFile) {
+      const id = createFile(genResult.targetName, activeFile.parentId || null);
+      updateContent(id, genResult.code);
+    }
+    setGenResult(null);
+  };
 
   const testFiles = useMemo(
     () =>
@@ -160,6 +226,19 @@ function TestPanel({ onClose }) {
           <h2 className="text-[13.5px] font-bold leading-tight">Test Explorer</h2>
           <p className="text-[11px] text-(--muted) leading-tight">node:test files in this project</p>
         </div>
+        <button
+          onClick={generateTests}
+          disabled={!activeIsSource || generating}
+          title={
+            activeIsSource
+              ? `Generate tests for ${activeFile.name} with Neura`
+              : 'Open a .js, .mjs or .cjs source file to generate tests'
+          }
+          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-bold border border-(--line) text-(--ink) hover:bg-(--hover) disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0"
+        >
+          {generating ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+          {generating ? 'Generating…' : 'Generate with Neura'}
+        </button>
         {testFiles.length > 0 && (
           <button
             onClick={runAll}
@@ -178,6 +257,65 @@ function TestPanel({ onClose }) {
           <X size={15} />
         </button>
       </div>
+
+      {(genError || genResult) && (
+        <div className="px-3 pt-3 shrink-0">
+          {genError && (
+            <div className="rounded-xl border border-red-400/30 bg-red-400/10 px-3 py-2.5 flex items-start gap-2">
+              <p className="flex-1 text-[12px] text-red-300 font-mono leading-relaxed">{genError}</p>
+              <button
+                onClick={() => setGenError(null)}
+                aria-label="Dismiss"
+                className="text-(--muted) hover:text-(--ink) transition shrink-0"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          )}
+          {genResult && (
+            <div className="rounded-xl border border-(--line) bg-(--paper) overflow-hidden">
+              <div className="px-3 py-2.5 border-b border-(--line)">
+                <p className="text-[13px] font-semibold truncate">{genResult.targetName}</p>
+                <p className="text-[11px] font-mono text-(--muted) truncate">
+                  {genResult.existingId
+                    ? 'a file with this name already exists in the same folder'
+                    : 'new test file, next to the source file'}
+                </p>
+              </div>
+              {!genResult.looksOk && (
+                <p className="px-3 py-2 text-[12px] text-amber-400 leading-relaxed border-b border-(--line)">
+                  Neura ka output test jaisa nahi lag raha — file bana sakte ho, pehle preview dekh
+                  lo.
+                </p>
+              )}
+              <pre className="px-3 py-2.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-words max-h-[300px] overflow-y-auto">
+                {genResult.code.split('\n').slice(0, 40).join('\n')}
+                {genResult.code.split('\n').length > 40
+                  ? `\n… ${genResult.code.split('\n').length - 40} more lines`
+                  : ''}
+              </pre>
+              <div className="flex items-center gap-2 px-3 py-2.5 border-t border-(--line)">
+                <button
+                  onClick={createGenerated}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-bold bg-(--blue) text-white hover:brightness-110 transition"
+                >
+                  <Check size={13} />
+                  {genResult.existingId
+                    ? 'Replace existing test file'
+                    : `Create ${genResult.targetName}`}
+                </button>
+                <button
+                  onClick={() => setGenResult(null)}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-bold border border-(--line) text-(--ink) hover:bg-(--hover) transition"
+                >
+                  <X size={13} />
+                  Discard
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       { }
       <div className="flex-1 overflow-y-auto p-3 space-y-2">

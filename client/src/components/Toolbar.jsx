@@ -330,6 +330,13 @@ export default function Toolbar({
         >
           <Code2 size={17} />
         </button>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('synapse:open-keybindings'))}
+          className={t.iconBtn}
+          title="Keyboard Shortcuts"
+        >
+          <Keyboard size={17} />
+        </button>
         <NotificationBell theme={theme} />
         <button
           onClick={onToggleTheme}

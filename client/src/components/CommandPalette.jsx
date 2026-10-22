@@ -49,6 +49,8 @@ import {
   FlaskConical,
   History,
   BookOpen,
+  GitCompare,
+  ClipboardPaste,
 } from 'lucide-react';
 import { fontLabelFor } from '../hooks/useEditorSettings';
 import { getExtensionCommands } from '../extensions/registry';
@@ -334,6 +336,26 @@ export default function CommandPalette({
         label: 'Generate README with Neura',
         hint: 'README.md',
         run: () => window.dispatchEvent(new Event('synapse:generate-readme')),
+      },
+      {
+        key: 'diff-clipboard',
+        icon: ClipboardPaste,
+        label: 'Compare Active File with Clipboard',
+        hint: 'Diff',
+        run: () =>
+          window.dispatchEvent(
+            new CustomEvent('synapse:open-diff', { detail: { mode: 'clipboard' } })
+          ),
+      },
+      {
+        key: 'diff-files',
+        icon: GitCompare,
+        label: 'Compare Two Files',
+        hint: 'Diff',
+        run: () =>
+          window.dispatchEvent(
+            new CustomEvent('synapse:open-diff', { detail: { mode: 'files' } })
+          ),
       },
       {
         key: 'snippets',

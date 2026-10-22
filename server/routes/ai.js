@@ -5,6 +5,7 @@ const { aiChatLimiter } = require('../middleware/rateLimits');
 const { requestAIChat, requestAICompletion } = require('../services/aiProvider');
 const { buildCommitPrompt, cleanCommitMessage } = require('../services/commitPrompt');
 const { buildReadmePrompt, cleanReadmeMarkdown } = require('../services/readmePrompt');
+const { buildTestPrompt, cleanGeneratedTests } = require('../services/testPrompt');
 const { extractAgentActions } = require('../services/agentActions');
 const Conversation = require('../models/Conversation');
 const AIMessage = require('../models/AIMessage');
@@ -172,6 +173,40 @@ router.post('/readme', async (req, res) => {
         error.response?.data?.error?.message ||
         error.message ||
         'README generation failed.',
+    });
+  }
+});
+
+router.post('/generate-tests', async (req, res) => {
+  try {
+    const { fileName, content, truncated } = req.body || {};
+    const safeName = typeof fileName === 'string' ? fileName.trim() : '';
+    if (!safeName || safeName.includes('/') || safeName.includes('\\')) {
+      return res.status(400).json({ error: 'A valid source file name is required.' });
+    }
+    const safeContent = typeof content === 'string' ? content : '';
+    if (!safeContent.trim()) {
+      return res.status(400).json({ error: 'Source file content is required.' });
+    }
+    const prompt = buildTestPrompt({
+      fileName: safeName,
+      content: safeContent,
+      truncated: truncated === true,
+    });
+    const reply = await requestAIChat({
+      message: prompt,
+      history: [],
+      context: {},
+      agent: false,
+    });
+    return res.json({ code: cleanGeneratedTests(reply) });
+  } catch (error) {
+    console.error('AI test generation error:', error.response?.data || error.message);
+    return res.status(502).json({
+      error:
+        error.response?.data?.error?.message ||
+        error.message ||
+        'Test generation failed.',
     });
   }
 });
