@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import ImageViewer from './ImageViewer';
 import { isImageFile } from '../utils/imageFiles';
+import { hasBaseline, setBaseline, getBaseline, computeLineChanges, CHANGE_KIND_CLASSES } from '../utils/changeTracker';
 import { MonacoBinding } from 'y-monaco';
 import { useFiles } from '../contexts/FileContext';
 import { getMonacoLanguage } from '../utils/languageMap';
@@ -263,6 +264,7 @@ export default function EditorPanel({
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const decorationsRef = useRef([]);
+  const changeDecorationsRef = useRef([]);
   const bindingRef = useRef(null);
   
   
@@ -635,6 +637,34 @@ export default function EditorPanel({
     };
   }, [remotePeers, activeFileId]);
 
+  useEffect(() => {
+    if (!effectiveFile) return;
+    if (isImageFile(effectiveFile.name)) return;
+    if (!hasBaseline(effectiveFile.id)) return;
+    const timer = setTimeout(() => {
+      const editor = editorRef.current;
+      const monaco = monacoRef.current;
+      if (!editor || !monaco) return;
+      const changes = computeLineChanges(getBaseline(effectiveFile.id) || '', effectiveFile.content || '');
+      const next = changes.map((c) => ({
+        range: new monaco.Range(c.line, 1, c.line, 1),
+        options: {
+          isWholeLine: false,
+          linesDecorationsClassName: CHANGE_KIND_CLASSES[c.kind],
+          hoverMessage: {
+            value: c.kind === 'added' ? 'Added in this session' : c.kind === 'modified' ? 'Changed in this session' : 'Lines deleted above in this session',
+          },
+        },
+      }));
+      try {
+        changeDecorationsRef.current = editor.deltaDecorations(changeDecorationsRef.current, next);
+      } catch {
+        changeDecorationsRef.current = [];
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [effectiveFile]);
+
   
   useEffect(() => {
     if (!isPrimary) return;
@@ -709,6 +739,10 @@ export default function EditorPanel({
           onMount={(editor, monaco) => {
             editorRef.current = editor;
             monacoRef.current = monaco;
+            changeDecorationsRef.current = [];
+            if (effectiveFile && !hasBaseline(effectiveFile.id)) {
+              setBaseline(effectiveFile.id, effectiveFile.content || '');
+            }
 
             
             

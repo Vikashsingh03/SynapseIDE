@@ -28,6 +28,7 @@ import { ReadmeHost } from '../components/ReadmeModal';
 import { DiffHost } from '../components/DiffModal';
 import { QuickOpenHost } from '../components/QuickOpen';
 import MarkdownPreviewHost from '../components/MarkdownPreviewModal';
+import GitHubImportHost from '../components/GitHubImportModal';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import CommandPalette from '../components/CommandPalette';
@@ -367,6 +368,7 @@ function EditorPage() {
         <DiffHost theme={theme} />
         <QuickOpenHost />
         <MarkdownPreviewHost theme={theme} />
+        <GitHubImportHost theme={theme} />
 
         { }
         <CodeReviewModal

@@ -286,3 +286,16 @@
 .monaco-editor .synapse-debug-line-glyph {
   background: rgba(250, 204, 21, 0.5);
 }
+.monaco-editor .synapse-change-added {
+  border-left: 3px solid #3fb950;
+  margin-left: 3px;
+}
+.monaco-editor .synapse-change-modified {
+  border-left: 3px solid #58a6ff;
+  margin-left: 3px;
+}
+.monaco-editor .synapse-change-deleted {
+  background: #f87171;
+  clip-path: polygon(0 32%, 100% 50%, 0 68%);
+  margin-left: 2px;
+}

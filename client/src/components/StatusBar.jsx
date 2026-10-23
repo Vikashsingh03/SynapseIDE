@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { GitBranch, Check, XCircle, AlertTriangle } from 'lucide-react';
 import { useFiles } from '../contexts/FileContext';
 import FileIcon from './FileIcon';
 import { getCounts, subscribe as subscribeProblems } from '../diagnostics/problemsStore';
+import { computeFileStats, isDataContent } from '../utils/fileStats';
 
 
 
@@ -107,6 +108,10 @@ export default function StatusBar({ contextLabel }) {
 
   const lang = activeFile ? languageLabel(activeFile.name) : '';
 
+  const activeContent = activeFile ? activeFile.content : null;
+  const stats = useMemo(() => computeFileStats(activeContent), [activeContent]);
+  const statsIsData = isDataContent(activeContent);
+
   return (
     <footer
       className="h-[26px] flex items-stretch justify-between text-[11.5px] select-none shrink-0 bg-[#0B0F16]/95 backdrop-blur border-t border-white/10 text-[#A9B7CC] overflow-hidden"
@@ -173,6 +178,21 @@ export default function StatusBar({ contextLabel }) {
             {cursor.selectedChars > 0 && (
               <span className="text-[#7C8CA6]"> ({cursor.selectedChars} selected)</span>
             )}
+          </span>
+        )}
+        {activeFile && !statsIsData && (
+          <span className="flex items-center px-2.5 hover:bg-white/5 transition-colors cursor-default whitespace-nowrap tabular-nums">
+            {stats.words} words
+          </span>
+        )}
+        {activeFile && !statsIsData && (
+          <span className="flex items-center px-2.5 hover:bg-white/5 transition-colors cursor-default whitespace-nowrap tabular-nums">
+            {stats.lines} lines
+          </span>
+        )}
+        {activeFile && (
+          <span className="flex items-center px-2.5 hover:bg-white/5 transition-colors cursor-default whitespace-nowrap tabular-nums">
+            {stats.sizeLabel}
           </span>
         )}
         {lang && (

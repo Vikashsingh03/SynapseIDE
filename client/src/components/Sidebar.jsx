@@ -41,6 +41,7 @@ import FileIcon from './FileIcon';
 import ChatPanel from './ChatPanel';
 import { copyText } from '../utils/clipboard';
 import { buildProjectZip, importProjectZip } from '../utils/projectZip';
+import { dedupeName, readDroppedFile } from '../utils/fileIngest';
 import { computeReplacements, parseSearchRegex } from '../utils/searchReplace';
 import { getAvatarStyle, getUserInitial } from '../utils/avatar';
 
@@ -158,6 +159,7 @@ export default function Sidebar({
   const [zipExporting, setZipExporting] = useState(false);
   const [zipImporting, setZipImporting] = useState(false);
   const [zipStatus, setZipStatus] = useState('');
+  const [explorerDragOver, setExplorerDragOver] = useState(false);
   const zipInputRef = useRef(null);
   const zipStatusTimerRef = useRef(null);
   const [seenChatCount, setSeenChatCount] = useState(chatMessages.length);
@@ -321,6 +323,87 @@ export default function Sidebar({
     setZipImporting(false);
   };
 
+  const handleDownloadFile = (item) => {
+    if (!item || item.type === 'folder') return;
+    const content = item.content || '';
+    let objectUrl = null;
+    let url;
+    if (content.startsWith('data:')) {
+      url = content;
+    } else {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      objectUrl = URL.createObjectURL(blob);
+      url = objectUrl;
+    }
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = item.name;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    if (objectUrl) setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  };
+
+  const ingestExternalFiles = async (fileList, parentId = null) => {
+    const dropped = Array.from(fileList || []);
+    if (!dropped.length) return;
+    const taken = new Set(
+      files.filter((f) => f.parentId === parentId).map((f) => f.name)
+    );
+    let added = 0;
+    let skipped = 0;
+    for (const droppedFile of dropped) {
+      try {
+        const result = await readDroppedFile(droppedFile);
+        if (result.kind === 'skip') {
+          skipped += 1;
+          continue;
+        }
+        const finalName = dedupeName(taken, result.name);
+        taken.add(finalName);
+        const id = createFile(finalName, parentId);
+        if (id) updateContent(id, result.content);
+        added += 1;
+      } catch {
+        skipped += 1;
+      }
+    }
+    if (added) {
+      const parts = [`Added ${added} file${added === 1 ? '' : 's'}`];
+      if (skipped) parts.push(`skipped ${skipped}`);
+      showZipStatus(parts.join(' · '));
+    } else if (skipped) {
+      showZipStatus(`Skipped ${skipped} unsupported file${skipped === 1 ? '' : 's'}`);
+    }
+  };
+
+  const handleExplorerDragOver = (e) => {
+    if (!Array.from(e.dataTransfer?.types || []).includes('Files')) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setExplorerDragOver(true);
+  };
+
+  const handleExplorerDragLeave = (e) => {
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setExplorerDragOver(false);
+  };
+
+  const handleExplorerDrop = (e) => {
+    const droppedFiles = e.dataTransfer?.files;
+    if (!droppedFiles || !droppedFiles.length) return;
+    e.preventDefault();
+    setExplorerDragOver(false);
+    ingestExternalFiles(droppedFiles, null);
+  };
+
+  const handleExplorerPaste = (e) => {
+    const pastedFiles = e.clipboardData?.files;
+    if (!pastedFiles || !pastedFiles.length) return;
+    e.preventDefault();
+    ingestExternalFiles(pastedFiles, null);
+  };
+
   const handleCreateFile = () => {
     if (activeSidebar !== 'explorer') return;
     startCreate('file');
@@ -404,6 +487,14 @@ export default function Sidebar({
       icon: Copy,
       action: () => copyText(item.name),
     });
+
+    if (!isFolder) {
+      menuItems.push({
+        label: 'Download',
+        icon: Download,
+        action: () => handleDownloadFile(item),
+      });
+    }
 
     setContextMenu({ x: e.clientX, y: e.clientY, items: menuItems });
   };
@@ -765,9 +856,14 @@ export default function Sidebar({
           <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
             {activeSidebar === 'explorer' && (
               <div
-                className="flex flex-col min-h-full py-2"
+                className={`flex flex-col min-h-full py-2 ${explorerDragOver ? 'bg-(--blue)/10 shadow-[inset_0_0_0_1px_rgba(88,166,255,0.55)]' : ''}`}
                 onClick={handleExplorerBgClick}
                 onContextMenu={handleExplorerContextMenu}
+                tabIndex={0}
+                onDragOver={handleExplorerDragOver}
+                onDragLeave={handleExplorerDragLeave}
+                onDrop={handleExplorerDrop}
+                onPaste={handleExplorerPaste}
               >
                 <div className={`flex items-center gap-1.5 px-4 py-2 cursor-default select-none ${t.eyebrow}`}>
                   <ChevronRight size={13} className="rotate-90" />

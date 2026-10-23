@@ -1,12 +1,14 @@
-import { useState, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useFiles } from '../contexts/FileContext';
 import { copyText } from '../utils/clipboard';
-import { X, ChevronRight, Lock, Copy, Check, Download, Columns2 } from 'lucide-react';
+import { X, ChevronRight, Lock, Copy, CopyX, SquareX, Check, Download, Columns2 } from 'lucide-react';
 import FileIcon from './FileIcon';
 
 export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, currentUserId, showSplit = false, splitActive = false }) {
   const { files, openTabs, activeFileId, openTab, closeTab } = useFiles();
   const [copied, setCopied] = useState(false);
+  const [tabMenu, setTabMenu] = useState(null);
+  const menuRef = useRef(null);
 
   
   const tabEls = useRef(new Map());
@@ -26,6 +28,63 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
     .filter(Boolean);
 
   const activeFile = files.find(f => f.id === activeFileId);
+
+  const menuFile = tabMenu ? files.find((f) => f.id === tabMenu.fileId) || null : null;
+
+  const handleTabContextMenu = (e, file) => {
+    e.preventDefault();
+    const x = Math.max(0, Math.min(e.clientX, window.innerWidth - 216));
+    const y = Math.max(0, Math.min(e.clientY, window.innerHeight - 176));
+    setTabMenu({ fileId: file.id, x, y });
+  };
+
+  const handleCloseTabFromMenu = (id) => {
+    closeTab(id);
+    setTabMenu(null);
+  };
+
+  const handleCloseOthers = (id) => {
+    openTabs
+      .filter((tabId) => tabId !== id)
+      .forEach((tabId) => closeTab(tabId));
+    openTab(id);
+    setTabMenu(null);
+  };
+
+  const handleCloseAll = () => {
+    [...openTabs].forEach((tabId) => closeTab(tabId));
+    setTabMenu(null);
+  };
+
+  const handleCopyName = (file) => {
+    copyText(file.name);
+    setTabMenu(null);
+  };
+
+  useEffect(() => {
+    if (!tabMenu) return;
+    const handlePointerDown = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setTabMenu(null);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setTabMenu(null);
+    };
+    const handleBlur = () => setTabMenu(null);
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [tabMenu]);
+
+  useEffect(() => {
+    setTabMenu(null);
+  }, [openTabs]);
 
   const handleCopyCode = async () => {
     if (!activeFile) return;
@@ -84,6 +143,7 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
                   closeTab(file.id);
                 }
               }}
+              onContextMenu={(e) => handleTabContextMenu(e, file)}
               className={`relative flex items-center gap-2 px-3 text-[12.5px] font-medium cursor-pointer min-w-33 max-w-50 shrink-0 border-r border-white/6 transition-colors group ${
                 isActive
                   ? 'bg-[#121824] text-[#EAF1FB] border-r-transparent'
@@ -168,6 +228,45 @@ export default function TabBar({ theme, roomId = 'Room', fileLocks = {}, current
           )}
         </span>
       </div>
+
+      {tabMenu && menuFile && (
+        <div
+          ref={menuRef}
+          role="menu"
+          className="fixed z-100 py-1 min-w-52 rounded-lg border border-(--line) bg-(--paper-2) shadow-[0_8px_24px_rgba(0,0,0,0.35)] animate-fade-in"
+          style={{ left: tabMenu.x, top: tabMenu.y }}
+        >
+          <button
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-left transition-colors duration-150 cursor-pointer text-(--ink) hover:bg-(--ink)/5"
+            onClick={() => handleCloseTabFromMenu(menuFile.id)}
+          >
+            <X size={14} className="shrink-0 opacity-70" />
+            <span className="flex-1 font-bold">Close</span>
+          </button>
+          <button
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-left transition-colors duration-150 cursor-pointer text-(--ink) hover:bg-(--ink)/5"
+            onClick={() => handleCloseOthers(menuFile.id)}
+          >
+            <CopyX size={14} className="shrink-0 opacity-70" />
+            <span className="flex-1 font-bold">Close Others</span>
+          </button>
+          <button
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-left transition-colors duration-150 cursor-pointer text-(--ink) hover:bg-(--ink)/5"
+            onClick={handleCloseAll}
+          >
+            <SquareX size={14} className="shrink-0 opacity-70" />
+            <span className="flex-1 font-bold">Close All</span>
+          </button>
+          <div className="my-1 border-t border-(--line)" />
+          <button
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-left transition-colors duration-150 cursor-pointer text-(--ink) hover:bg-(--ink)/5"
+            onClick={() => handleCopyName(menuFile)}
+          >
+            <Copy size={14} className="shrink-0 opacity-70" />
+            <span className="flex-1 font-bold">Copy Name</span>
+          </button>
+        </div>
+      )}
     </>
   );
 }

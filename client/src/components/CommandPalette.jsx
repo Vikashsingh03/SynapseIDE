@@ -53,6 +53,7 @@ import {
   ClipboardPaste,
   ListTree,
   ListTodo,
+  FolderDown,
 } from 'lucide-react';
 import { fontLabelFor } from '../hooks/useEditorSettings';
 import { getExtensionCommands } from '../extensions/registry';
@@ -331,6 +332,13 @@ export default function CommandPalette({
         label: 'Show TODOs',
         hint: 'TODO / FIXME in workspace',
         run: () => window.dispatchEvent(new Event('synapse:open-todos')),
+      },
+      {
+        key: 'github-import',
+        icon: FolderDown,
+        label: 'Import from GitHub',
+        hint: 'public repo URL se project',
+        run: () => window.dispatchEvent(new Event('synapse:import-github')),
       },
       {
         key: 'copy',
