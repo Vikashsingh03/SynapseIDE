@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { imageMimeFor, isImageFile } from './imageFiles.js';
 
 const JUNK_SEGMENTS = new Set(['__MACOSX', '.git', 'node_modules']);
 const BINARY_EXTENSIONS = new Set([
@@ -7,6 +8,9 @@ const BINARY_EXTENSIONS = new Set([
 ]);
 const MAX_IMPORT_FILES = 300;
 const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+const MAX_IMAGE_IMPORT_BYTES = 2 * 1024 * 1024;
+const BASE64_IMAGE_DATA_URL = /^data:image\/[^;,]+;base64,([\s\S]*)$/;
+const UTF8_SVG_DATA_URL = /^data:image\/svg\+xml;utf8,([\s\S]*)$/;
 
 export function relPathOf(file, files) {
   if (!file) return '';
@@ -31,7 +35,20 @@ export function buildZipObject(files) {
     if (!file || file.type === 'folder') continue;
     const path = relPathOf(file, list);
     if (!path) continue;
-    zip.file(path, String(file.content ?? ''));
+    const content = String(file.content ?? '');
+    const base64Match = content.match(BASE64_IMAGE_DATA_URL);
+    const svgMatch = content.match(UTF8_SVG_DATA_URL);
+    if (base64Match) {
+      zip.file(path, base64Match[1], { base64: true });
+    } else if (svgMatch) {
+      try {
+        zip.file(path, decodeURIComponent(svgMatch[1]));
+      } catch {
+        zip.file(path, content);
+      }
+    } else {
+      zip.file(path, content);
+    }
     entries.push(path);
   }
   return { zip, entries };
@@ -97,7 +114,14 @@ export function planZipImport(zipEntries) {
       continue;
     }
 
-    if (BINARY_EXTENSIONS.has(extensionOf(segments[segments.length - 1]))) {
+    const fileName = segments[segments.length - 1];
+    const extension = extensionOf(fileName);
+    const importAsDataUrl = isImageFile(fileName) && extension !== '.svg';
+    if (importAsDataUrl && size > MAX_IMAGE_IMPORT_BYTES) {
+      skipped.push({ path: joined, reason: 'too-large' });
+      continue;
+    }
+    if (!isImageFile(fileName) && BINARY_EXTENSIONS.has(extension)) {
       skipped.push({ path: joined, reason: 'binary' });
       continue;
     }
@@ -112,7 +136,11 @@ export function planZipImport(zipEntries) {
     }
 
     acceptedBytes += size;
-    files.push({ path: joined, size });
+    files.push({
+      path: joined,
+      size,
+      ...(importAsDataUrl ? { importAsDataUrl, mimeType: imageMimeFor(fileName) } : {}),
+    });
     addAncestors(segments);
   }
 
@@ -175,7 +203,10 @@ export async function importProjectZip(file, filesApi) {
     const zipEntry = entryByPath.get(planned.path);
     try {
       if (!zipEntry) throw new Error('Entry missing');
-      const content = await zipEntry.async('string');
+      const rawContent = await zipEntry.async(planned.importAsDataUrl ? 'base64' : 'string');
+      const content = planned.importAsDataUrl
+        ? `data:${planned.mimeType};base64,${rawContent}`
+        : rawContent;
       const segments = planned.path.split('/');
       const name = segments[segments.length - 1];
       const parentPath = segments.slice(0, -1).join('/');

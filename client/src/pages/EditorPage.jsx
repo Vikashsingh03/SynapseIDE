@@ -27,6 +27,7 @@ import { TimelineHost } from '../components/TimelinePanel';
 import { ReadmeHost } from '../components/ReadmeModal';
 import { DiffHost } from '../components/DiffModal';
 import { QuickOpenHost } from '../components/QuickOpen';
+import MarkdownPreviewHost from '../components/MarkdownPreviewModal';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
 import CommandPalette from '../components/CommandPalette';
@@ -365,6 +366,7 @@ function EditorPage() {
         <ReadmeHost theme={theme} />
         <DiffHost theme={theme} />
         <QuickOpenHost />
+        <MarkdownPreviewHost theme={theme} />
 
         { }
         <CodeReviewModal

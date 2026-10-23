@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
+import ImageViewer from './ImageViewer';
+import { isImageFile } from '../utils/imageFiles';
 import { MonacoBinding } from 'y-monaco';
 import { useFiles } from '../contexts/FileContext';
 import { getMonacoLanguage } from '../utils/languageMap';
@@ -662,7 +664,7 @@ export default function EditorPanel({
 
       <div style={{ flex: 1, overflow: 'hidden' }} className="min-h-0 relative">
         { }
-        {isEmpty && (
+        {isEmpty && !(effectiveFile && isImageFile(effectiveFile.name)) && (
           <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none animate-fade-in">
             <div className="flex flex-col items-center gap-4 text-center px-6 max-w-sm">
               <span className="w-14 h-14 rounded-2xl bg-[#ff4d35] flex items-center justify-center shadow-[6px_6px_0_rgba(0,0,0,0.4)]">
@@ -686,6 +688,9 @@ export default function EditorPanel({
             </div>
           </div>
         )}
+        {effectiveFile && isImageFile(effectiveFile.name) ? (
+          <ImageViewer file={effectiveFile} />
+        ) : (
         <Editor
           key={effectiveFile.id}
           height="100%"
@@ -1045,6 +1050,7 @@ export default function EditorPanel({
             inlineSuggest: { enabled: true, mode: 'subwordSmart' },
           }}
         />
+        )}
       </div>
     </div>
   );

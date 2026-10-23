@@ -29,6 +29,7 @@ import { TestHost } from '../components/TestPanel';
 import { TimelineHost } from '../components/TimelinePanel';
 import { ReadmeHost } from '../components/ReadmeModal';
 import { DiffHost } from '../components/DiffModal';
+import MarkdownPreviewHost from '../components/MarkdownPreviewModal';
 import { QuickOpenHost } from '../components/QuickOpen';
 import StatusBar from '../components/StatusBar';
 import NeuraPanel from '../components/NeuraPanel';
@@ -856,6 +857,7 @@ function RoomSession({ roomId }) {
         <TimelineHost />
         <ReadmeHost theme={theme} />
         <DiffHost theme={theme} />
+        <MarkdownPreviewHost theme={theme} />
         <QuickOpenHost />
 
         {!zenMode && (

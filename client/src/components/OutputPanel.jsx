@@ -14,10 +14,14 @@ import {
   GitBranch,
   Lightbulb,
   Wand2,
+  ListTree,
+  ListTodo,
 } from 'lucide-react';
 import TerminalPanel from './TerminalPanel';
 import GitPanel from './GitPanel';
 import ProblemsPanel from './ProblemsPanel';
+import OutlinePanel from './OutlinePanel';
+import TodoPanel from './TodoPanel';
 import { getRunErrorText, buildExplainPrompt, buildRunFixDetail } from '../utils/runError';
 
 export default function OutputPanel({ theme, output, roomId, myRole }) {
@@ -35,6 +39,23 @@ export default function OutputPanel({ theme, output, roomId, myRole }) {
     return () => window.removeEventListener('synapse:open-problems', openProblems);
   }, []);
 
+  useEffect(() => {
+    const openOutline = () => {
+      setActiveTab('outline');
+      setIsOutputExpanded(true);
+    };
+    const openTodos = () => {
+      setActiveTab('todos');
+      setIsOutputExpanded(true);
+    };
+    window.addEventListener('synapse:open-outline', openOutline);
+    window.addEventListener('synapse:open-todos', openTodos);
+    return () => {
+      window.removeEventListener('synapse:open-outline', openOutline);
+      window.removeEventListener('synapse:open-todos', openTodos);
+    };
+  }, []);
+
   const [roleNow, setRoleNow] = useState(myRole || null);
   useEffect(() => {
     setRoleNow(myRole || null);
@@ -46,7 +67,7 @@ export default function OutputPanel({ theme, output, roomId, myRole }) {
     window.addEventListener('synapse:room-role', onRole);
     return () => window.removeEventListener('synapse:room-role', onRole);
   }, [roomId]);
-  const visibleTabs = roleNow === 'viewer' ? ['output', 'errors'] : ['output', 'errors', 'terminal', 'git'];
+  const visibleTabs = roleNow === 'viewer' ? ['output', 'errors', 'outline', 'todos'] : ['output', 'errors', 'terminal', 'git', 'outline', 'todos'];
   const shownTab = visibleTabs.includes(activeTab) ? activeTab : 'output';
 
   const t = getThemeClasses(theme);
@@ -155,7 +176,7 @@ export default function OutputPanel({ theme, output, roomId, myRole }) {
                   isActive ? 'text-[#EAF1FB]' : 'text-[#7E8CA3] hover:text-[#C7D3E8]'
                 }`}
               >
-                {tab === 'output' ? <Terminal size={12} /> : tab === 'terminal' ? <SquareTerminal size={12} /> : tab === 'git' ? <GitBranch size={12} /> : <AlertCircle size={12} />}
+                {tab === 'output' ? <Terminal size={12} /> : tab === 'terminal' ? <SquareTerminal size={12} /> : tab === 'git' ? <GitBranch size={12} /> : tab === 'outline' ? <ListTree size={12} /> : tab === 'todos' ? <ListTodo size={12} /> : <AlertCircle size={12} />}
                 {tab}
                 {tab === 'errors' && hasError && (
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)]" />
@@ -200,7 +221,17 @@ export default function OutputPanel({ theme, output, roomId, myRole }) {
           <GitPanel theme={theme} roomId={roomId} />
         </div>
       )}
-      {isOutputExpanded && shownTab !== 'terminal' && shownTab !== 'git' && (
+      {isOutputExpanded && shownTab === 'outline' && (
+        <div className="flex-1 min-h-0">
+          <OutlinePanel />
+        </div>
+      )}
+      {isOutputExpanded && shownTab === 'todos' && (
+        <div className="flex-1 min-h-0">
+          <TodoPanel />
+        </div>
+      )}
+      {isOutputExpanded && shownTab !== 'terminal' && shownTab !== 'git' && shownTab !== 'outline' && shownTab !== 'todos' && (
         <div className="flex-1 overflow-auto font-mono text-[12.5px] leading-relaxed custom-scrollbar min-h-0">
           {runError && (
             <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2 border-b border-red-400/15 bg-[#1a141c]">

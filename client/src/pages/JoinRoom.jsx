@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Loader2, Users, ClipboardPaste, Zap, Waypoints } from 'lucide-react';
 import { getRoom } from '../services/roomService';
+import { extractInviteCode } from '../utils/inviteLink';
 import { getThemeClasses } from '../utils/theme';
 import { readStorage } from '../utils/storage';
 
 export default function JoinRoom() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [roomId, setRoomId] = useState('');
+  const [fromLink, setFromLink] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,6 +22,14 @@ export default function JoinRoom() {
     document.body.style.backgroundColor = dark ? '#111310' : '#f3f1eb';
     return () => { document.body.style.backgroundColor = ''; };
   }, [dark]);
+
+  useEffect(() => {
+    const code = extractInviteCode(searchParams.toString());
+    if (code) {
+      setRoomId(code.toUpperCase().slice(0, 6));
+      setFromLink(true);
+    }
+  }, [searchParams]);
 
   const handleJoinRoom = async (event) => {
     event.preventDefault();
@@ -110,6 +121,11 @@ export default function JoinRoom() {
               <p className={`text-xs ${t.textMuted2} mt-2 text-center font-mono`}>
                 6-character code — usually looks like <span className="font-bold">X7K2P9</span>
               </p>
+              {fromLink ? (
+                <p className="text-xs mt-2 text-center font-mono text-(--blue)">
+                  Invite code filled from your link — just press Join.
+                </p>
+              ) : null}
             </div>
 
             <button type="submit" className={`${t.btnAccent} w-full`} disabled={loading}>

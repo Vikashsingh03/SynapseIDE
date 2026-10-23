@@ -51,6 +51,8 @@ import {
   BookOpen,
   GitCompare,
   ClipboardPaste,
+  ListTree,
+  ListTodo,
 } from 'lucide-react';
 import { fontLabelFor } from '../hooks/useEditorSettings';
 import { getExtensionCommands } from '../extensions/registry';
@@ -308,6 +310,27 @@ export default function CommandPalette({
         label: 'Show Problems',
         hint: 'errors & warnings',
         run: () => window.dispatchEvent(new Event('synapse:open-problems')),
+      },
+      {
+        key: 'md-preview',
+        icon: BookOpen,
+        label: 'Preview Markdown',
+        hint: 'rendered .md view',
+        run: () => window.dispatchEvent(new Event('synapse:open-md-preview')),
+      },
+      {
+        key: 'outline',
+        icon: ListTree,
+        label: 'Go to Symbol (Outline)',
+        hint: 'functions & classes in this file',
+        run: () => window.dispatchEvent(new Event('synapse:open-outline')),
+      },
+      {
+        key: 'todos',
+        icon: ListTodo,
+        label: 'Show TODOs',
+        hint: 'TODO / FIXME in workspace',
+        run: () => window.dispatchEvent(new Event('synapse:open-todos')),
       },
       {
         key: 'copy',
